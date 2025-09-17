@@ -18,9 +18,15 @@
     --foreground: #ededed;
   }
 }
+/* ... other styles ... */
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  /* Set a light background color for the whole page */
+  background-color: #f8f9fa; /* A standard light gray */
+  color: #212529;
+}
+html,
+body {
+  height: 100%;
+  overflow: hidden; /* Prevent the whole page from scrolling */
 }

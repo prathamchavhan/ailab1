@@ -17,7 +17,7 @@ export default async function Home() {
     if (profile) {
       redirect("/dashboard");
     } else {
-      redirect("/profile");
+      redirect("/profile/create");
     }
   } else {
     redirect("/login");

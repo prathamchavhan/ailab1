@@ -9,19 +9,14 @@ export default function CallbackPage() {
 
   useEffect(() => {
     const handleAuth = async () => {
-      const { data, error } = await supabase.auth.getSession();
-      if (error) {
+      const { data: { user }, error } = await supabase.auth.getUser();
+
+      if (error || !user) {
         router.push("/login");
         return;
       }
 
-      const user = data.session?.user;
-      if (!user) {
-        router.push("/login");
-        return;
-      }
-
-      // Check if profile exists
+      // Check if this user has a profile
       const { data: profile } = await supabase
         .from("profiles")
         .select("id")

@@ -1,5 +1,11 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono ,Inter } from "next/font/google";
+import AppLayout from './AppLayout';
+import "bootstrap/dist/css/bootstrap.min.css";
 import "./globals.css";
+import BootstrapClient from "@/components/BootstrapClient"; 
+
+const inter = Inter({ subsets: ['latin'] });
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,11 +24,12 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
+   <html lang="en">
+      <body className={inter.className}>
+        <AppLayout>
+          {children}
+        </AppLayout>
+        <BootstrapClient /> {/* Add component to the end of the body */}
       </body>
     </html>
   );
