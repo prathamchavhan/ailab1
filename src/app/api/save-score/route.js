@@ -5,30 +5,30 @@ import { cookies } from 'next/headers';
 
 export async function POST(request) {
   try {
-    const { aptitudeType, level, score } = await request.json();
+    // CHANGED: Destructure `type` instead of `aptitudeType` to match the frontend
+    const { type, level, score } = await request.json(); 
     
-    // Create a Supabase client that can get the current user's session
+    if (!type || !level || score === undefined) {
+       return NextResponse.json({ error: 'Missing required fields: type, level, score.' }, { status: 400 });
+    }
+    
     const cookieStore = cookies();
     const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
 
-    // Get the current logged-in user's data
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
       return NextResponse.json({ error: 'User not authenticated.' }, { status: 401 });
     }
-
-    // Map difficulty string to an integer
-    const levelMap = { easy: 1, medium: 2, hard: 3 };
-    const levelInt = levelMap[level.toLowerCase()] || 0;
-
+    
     // Insert the score into the database
+    // CHANGED: Use the correct column names: `type`, `level`, and `score`
     const { data, error } = await supabase
-      .from('apptitude')
+      .from('aptitude') // Note: your table is 'aptitude', not 'apptitude'
       .insert({
-        apptitude_type: aptitudeType,
-        levels: levelInt,
-        scores: score,
+        type: type,         // Matches SQL column `type`
+        level: level,       // Matches SQL column `level`
+        score: score,       // Matches SQL column `score`
         user_id: user.id,
       });
 

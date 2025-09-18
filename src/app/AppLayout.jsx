@@ -9,7 +9,7 @@ const AppLayout = ({ children }) => {
   const pathname = usePathname();
   
   // ✅ Create a list of pages where the sidebar should be hidden
-  const hideSidebarOn = ['/login', '/profile'];
+  const hideSidebarOn = ['/login', '/profile/create'];
 
   // ✅ Check if the current page is in the list
   if (hideSidebarOn.includes(pathname)) {
@@ -21,13 +21,17 @@ const AppLayout = ({ children }) => {
   return (
     <div className="container-fluid">
       <div className="row">
+        <div className="col-auto p-0">
         <Sidebar />
-        <main 
-          className="col-lg-9 ms-auto px-md-4"
-          style={{ height: '100vh', overflowY: 'auto' }}
-        >
+        </div>
+        <div className="col p-0">
+        <main
+            className="px-md-4"
+            style={{ height: '100vh', overflowY: 'auto' }}
+          >
           {children}
         </main>
+         </div>
       </div>
     </div>
   );

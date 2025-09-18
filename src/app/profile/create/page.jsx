@@ -18,6 +18,7 @@ export default function CreateProfilePage() {
   const [streams, setStreams] = useState([]);
   const [departments, setDepartments] = useState([]);
 
+  // ... (Your existing functions: handleChange, fetchStreams, fetchDepartments, useEffects, handleSubmit)
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prevForm) => ({
@@ -89,7 +90,7 @@ export default function CreateProfilePage() {
     }
   };
 
-  // Style for the container to create the rounded gradient border effect
+
   const gradientOuterStyle = {
     background: 'linear-gradient(to right, #1ee3ff, #6f5af8)',
     borderRadius: '1.5rem',
@@ -97,7 +98,6 @@ export default function CreateProfilePage() {
     boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
   };
 
-  // Style for the inner box to create the cutout effect
   const innerBoxStyle = {
     background: 'white',
     borderRadius: '1.3rem',
@@ -114,10 +114,11 @@ export default function CreateProfilePage() {
       <div className="flex flex-col items-center pt-20 w-full max-w-5xl">
         
         {/* "Create Your Profile" Box */}
-        <div className="mb-16 cursor-pointer transition-all duration-300 hover:scale-105" style={gradientOuterStyle}>
-          <div className="px-20 py-6" style={innerBoxStyle}> {/* ✅ UPDATED: Increased width and vertical gaps */}
+        <div className="mb-16 cursor-pointer transition-all duration-300 scale-80" style={gradientOuterStyle}>
+          {/* ✅ CHANGE 1: Further reduced padding and font size */}
+          <div className="px-8 py-3" style={innerBoxStyle}>
             <h1 
-              className="text-2xl font-bold text-center"
+              className="text-lg font-bold text-center"
               style={{
                 background: 'linear-gradient(to right, #1ee3ff, #6f5af8)',
                 WebkitBackgroundClip: 'text',
@@ -208,20 +209,23 @@ export default function CreateProfilePage() {
 
           {/* Save Profile Button */}
           <div className="md:col-span-2 flex justify-center mt-12">
+            {/* ✅ CHANGE 2: Added glowing shadow effect on hover */}
             <button
               type="submit"
-              className="group w-1/2 p-0.5 font-semibold transition-opacity duration-200 cursor-pointer"
+              className="group w-1/3 p-0.5 font-semibold transition-all duration-300 ease-out   cursor-pointer"
               style={gradientOuterStyle}
             >
-              <div 
-                className="w-full h-full p-4 flex justify-center items-center bg-white rounded-[1.3rem] group-hover:bg-transparent transition-all duration-300"
-              >
-                <span 
-                  className="text-xl font-bold bg-gradient-to-r from-[#1ee3ff] to-[#6f5af8] bg-clip-text text-transparent group-hover:bg-none group-hover:text-white transition-colors duration-300"
-                >
-                  SAVE PROFILE
-                </span>
-              </div>
+             <div 
+  // ✅ UPDATED: The background now becomes a gradient on hover
+  className="w-full h-full p-3 flex justify-center items-center bg-white rounded-[1.3rem] group-hover:bg-gradient-to-r group-hover:from-[#1ee3ff] group-hover:to-[#6f5af8] transition-all duration-300"
+>
+  <span 
+    // ✅ UPDATED: The text now properly becomes solid white on hover
+    className="text-xl font-bold bg-gradient-to-r from-[#1ee3ff] to-[#6f5af8] bg-clip-text text-transparent group-hover:bg-none group-hover:text-white transition-colors duration-300"
+  >
+    SAVE PROFILE
+  </span>
+</div>
             </button>
           </div>
         </form>

@@ -1,17 +1,13 @@
 /* --- Base Styles (Applied on medium screens and up) --- */
 .sidebar {
   background-color: #ffffff;
-  padding: 15px; /* Base padding for tablets */
+  padding: 15px;
   border-right: 1px solid #f0f0f0;
- position: sticky;
+  position: sticky;
   top: 0;
- /* Make it full screen height */
-  overflow-y: auto; /* Allow scrolling within the sidebar if needed */
-
-
-
+  overflow-y: auto;
+  width: 280px;
   height: 100vh;
-  
 }
   
 .logoContainer {
@@ -19,13 +15,10 @@
   margin-bottom: 25px;
   padding-bottom: 15px;
   border-radius: 2px;
-
-  /* 1. Define the border's size but make it transparent */
   border-bottom: 3px solid transparent;
-
-  /* 2. Apply the gradient as an image to the border area */
   border-image: linear-gradient(90deg, #2DC7DB 0%, #2166ac 100%) 1;
 }
+
 .navList {
   list-style: none;
   padding: 0;
@@ -37,77 +30,145 @@
   position: relative;
 }
 
+/* --- Main Link Styles --- */
 .navLink {
-    
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
   text-decoration: none;
-  color: #374151;
-  display: block;
-  padding: 10px 15px; /* Base padding for tablets */
-  font-size: 1rem; /* Base font size for tablets */
-  font-weight: 400;
+  color: #374151; 
+  padding: 10px 15px;
+  font-size: 0.9rem; 
+  font-weight: 500;
   border-radius: 10px;
   transition: all 0.2s ease-in-out;
-  white-space: nowrap; /* Prevent text from wrapping */
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* --- Active and Hover Effects --- */
-/* --- Active Link Styles (When Clicked) --- */
+.linkContent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 
-/* This styles the vertical bar for ONLY the active item */
-.active::before {
+.icon {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2;
+  flex-shrink: 0;
+}
+
+/* ✅ NEW (EMPTY) CLASS: Used as a hook to identify dropdown parents */
+.hasSubmenu {
+  /* No styles needed, it's just a selector hook */
+}
+
+/* --- Active and Hover Effects for Main Links --- */
+/* ✅ MODIFIED: This rule now excludes items with the .hasSubmenu class */
+.active:not(.hasSubmenu)::before {
   content: '';
   position: absolute;
   left: -10px;
   top: 50%;
   transform: translateY(-50%);
-  height: 80%;
-  width: 4px;
+  height: 70%;
+  width: 5px;
   background: linear-gradient(90deg, #2DC7DB 0%, #2166ac 100%);
-  border-radius: 2px;
+  border-radius: 10px;
 }
-
-/* This styles the link background for ONLY the active item */
 .active .navLink {
   background: linear-gradient(90deg, #2DC7DB 0%, #2166ac 100%);
   color: #ffffff;
   font-weight: 600;
 }
 
-
-/* --- Hover Styles (For Non-Active Links) --- */
-
-/* This rule adds the gray background when you hover over any item that is NOT active */
 .navItem:not(.active):hover .navLink {
-  background-color: #D9D9D9;
-  color: #000000; /* Black text for readability on gray */
+  background-color: #f0f2f5; 
+}
+
+/* =========================================
+STYLES FOR DROPDOWN FUNCTIONALITY
+=========================================
+*/
+
+/* --- Dropdown Toggle Button --- */
+.dropdownToggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit; 
+}
+
+/* --- Dropdown Arrow Icon --- */
+.arrowIcon {
+  transition: transform 0.2s ease-in-out;
+  width: 18px;
+  height: 18px;
+  stroke-width: 2.5;
+  color: #6b7280; 
+}
+
+.active .arrowIcon {
+  color: #ffffff; 
+}
+
+.arrowOpen {
+  transform: rotate(180deg);
+}
+
+/* --- Sub-Menu Styles --- */
+.subMenu {
+  list-style: none;
+  padding-left: 32px; 
+  margin-top: 4px;
+}
+
+.subNavLink {
+  display: block;
+  padding: 8px 12px;
+  text-decoration: none;
+  color: #4b5563; 
+  font-size: 0.85rem; 
+  font-weight: 500;
+  border-radius: 6px;
+  transition: all 0.2s ease-in-out;
+}
+
+.subNavLink:hover {
+  background-color: #e5e7eb;
+  color: #111827;
+}
+
+.subActive .subNavLink {
+  background-color: #d1d5db; 
+  color: #111827;
   font-weight: 600;
 }
 
-/* --- Media Queries for Responsiveness --- */
 
-/* For standard desktops (like 1200px) */
+/* --- Media Queries for Responsiveness --- */
 @media (min-width: 992px) {
   .sidebar {
     padding: 20px;
   }
   .navLink {
-    padding: 14px 20px;
-    font-size: 1.05rem;
+    padding: 12px 20px;
+    font-size: 0.95rem; 
   }
   .navItem {
     margin-bottom: 8px;
   }
 }
 
-/* For large desktops (like 1400px and up) */
 @media (min-width: 1400px) {
   .sidebar {
     padding: 25px;
   }
   .navLink {
-    font-size: 1.1rem; /* Slightly larger font for better readability */
+    font-size: 1rem;
   }
   .navItem {
     margin-bottom: 10px;
