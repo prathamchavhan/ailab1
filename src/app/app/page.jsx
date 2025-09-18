@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 
-// --- MOCK API FUNCTIONS (Replace with your actual API calls) ---
+// --- API FUNCTIONS ---
 
 async function saveScore(level, score, total) {
   console.log("Saving score:", { level, score, total });
@@ -15,59 +15,39 @@ async function saveScore(level, score, total) {
     if (!response.ok) throw new Error('Failed to save score.');
   } catch (error) {
     console.error("Save score error:", error);
-    // Propagate error to UI if needed
     throw error;
   }
 }
 
+// --- UPDATED to make a single, efficient API call ---
 async function generateQuestions(level) {
-  console.log("Generating questions for level:", level);
-  const aptitudeTypes = ['quantitative', 'logical', 'verbal'];
+  console.log("Generating all questions for level:", level);
+
   try {
-    const questionPromises = aptitudeTypes.map(aptitudeType =>
-      fetch("/api/generate-questions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: aptitudeType, level }),
-      })
-      .then(res => {
-        if (!res.ok) {
-          return Promise.reject(new Error(`Failed to fetch ${aptitudeType} questions. Server status: ${res.status}`));
-        }
-        return res.json();
-      })
-      .then(data => data.map(q => ({ ...q, category: aptitudeType })))
-    );
-
-    // Use Promise.allSettled to handle potential failures gracefully.
-    const allResults = await Promise.allSettled(questionPromises);
-    const combinedQuestions = [];
-    const errors = [];
-
-    // Process the results from each promise
-    allResults.forEach(result => {
-      if (result.status === 'fulfilled') {
-        combinedQuestions.push(...result.value);
-      } else {
-        // Collect the errors from rejected promises
-        errors.push(result.reason.message || `An unknown error occurred fetching ${aptitudeType} questions.`);
-      }
+    // Single API call to get all questions at once
+    const response = await fetch("/api/generate-questions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ level }), // We only need to send the level
     });
-    
-    // If no questions could be fetched at all, throw a comprehensive error
-    if (combinedQuestions.length === 0) {
-      throw new Error(errors.join('. '));
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch questions. Server status: ${response.status}`);
     }
 
-    // Log partial errors but allow the test to start with the questions that were fetched
-    if (errors.length > 0) {
-        console.warn("Some questions could not be loaded:", errors);
-    }
+    const data = await response.json(); // Expected format: { quantitative: [...], logical: [...], verbal: [...] }
 
-    return combinedQuestions;
-    
+    // Combine the arrays from the response and add the 'category' to each question object
+    const quantitativeQs = data.quantitative.map(q => ({ ...q, category: 'quantitative' }));
+    const logicalQs = data.logical.map(q => ({ ...q, category: 'logical' }));
+    const verbalQs = data.verbal.map(q => ({ ...q, category: 'verbal' }));
+
+    // Return a single flat array containing all questions
+    return [...quantitativeQs, ...logicalQs, ...verbalQs];
+
   } catch (error) {
     console.error("Generate questions error:", error);
+    // Re-throw the error so the UI can catch it and display a message
     throw error;
   }
 }
@@ -102,7 +82,9 @@ export default function AptitudeTestPage() {
   }, [testState, timer]);
 
   useEffect(() => {
-      if (timer === 0 && testState === "active") setTestState("finished");
+      if (timer === 0 && testState === "active") {
+        setTestState("finished");
+      }
   }, [timer, testState]);
 
   useEffect(() => {
@@ -153,7 +135,6 @@ export default function AptitudeTestPage() {
     const newAnswers = [...userAnswers];
     newAnswers[originalIndex] = option;
     setUserAnswers(newAnswers);
-    setActiveQuestion(originalIndex); 
   };
   
   const formatTime = (seconds) => `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
@@ -209,7 +190,7 @@ export default function AptitudeTestPage() {
               <span className="font-bold text-xs text-gray-700">Aptitude</span>
               <div className="flex items-center bg-gray-100 rounded-full p-1">
                 {["easy", "medium", "hard"].map((l) => (
-                  <button key={l} disabled className={`px-3 py-1 text-xs font-semibold rounded-full ${level === l ? "bg-cyan-400 text-white shadow" : "text-gray-600 hover:bg-gray-200"}`}>
+                  <button key={l} disabled className={`px-3 py-1 text-xs font-semibold rounded-full ${level === l ? "bg-cyan-400 text-white shadow" : "text-gray-600"}`}>
                     {l.charAt(0).toUpperCase() + l.slice(1)} Level
                   </button>
                 ))}
@@ -223,7 +204,7 @@ export default function AptitudeTestPage() {
           </div>
 
           {/* Sub-header with Category Navigators and Timer */}
-          <div className="my-8 flex gap-8">
+          <div className="my-8 flex flex-col md:flex-row gap-8">
             <div className="flex-grow space-y-4">
               {Object.keys(APTITUDE_TYPE_MAP).map(category => (
                 <div key={category} className="flex items-center gap-4">
@@ -233,11 +214,11 @@ export default function AptitudeTestPage() {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {questionsByCategory[category]?.map((q, index) => (
-                       <a key={q.originalIndex} href={`#q-${q.originalIndex}`} onClick={() => setActiveQuestion(q.originalIndex)} 
+                       <button key={q.originalIndex} onClick={() => setActiveQuestion(q.originalIndex)} 
                           className={`h-6 w-6 flex items-center justify-center rounded-full font-bold text-xs transition-colors duration-200 
                            ${activeQuestion === q.originalIndex ? 'bg-teal-400 text-white' : userAnswers[q.originalIndex] !== null ? 'bg-gray-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
                          {index + 1}
-                       </a>
+                       </button>
                     ))}
                   </div>
                 </div>
@@ -252,34 +233,50 @@ export default function AptitudeTestPage() {
 
           {/* Questions List */}
           <div className="space-y-8">
-            {Object.keys(questionsByCategory).map(category => (
-              <div key={category}>
-                <h3 className="text-xs font-bold text-gray-800 mb-4 border-b-2 pb-2">{APTITUDE_TYPE_MAP[category]}</h3>
-                <div className="space-y-8">
-                {questionsByCategory[category].map(question => (
-                  <div key={question.originalIndex} id={`q-${question.originalIndex}`} className="bg-white p-6 rounded-xl shadow-lg scroll-mt-8">
-                      <div className="bg-gray-800 text-white p-4 rounded-t-lg -m-6 mb-6">
-                         <h2 className="text-xs font-bold">Q {question.originalIndex + 1}. {question.question}</h2>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {question.options.map((option, optIndex) => (
-                          <button key={optIndex} onClick={() => handleAnswerSelect(question.originalIndex, option)} className={`p-2 text-xs rounded-lg border-2 text-left transition-all duration-200 group ${userAnswers[question.originalIndex] === option ? "bg-blue-100 border-blue-500 ring-2 ring-blue-300" : "bg-gray-100 border-gray-200 hover:border-blue-400 hover:bg-blue-50"}`}>
-                          <span className={`font-bold mr-3 ${userAnswers[question.originalIndex] === option ? 'text-blue-600' : 'text-gray-700'}`}>{String.fromCharCode(97 + optIndex)})</span>
-                          <span className={`${userAnswers[question.originalIndex] === option ? 'text-blue-800' : 'text-gray-800'}`}>{option}</span>
-                          </button>
-                      ))}
-                      </div>
-                  </div>
-                  ))}
+            {questions.map((question, index) => {
+              // Show only the active question
+              if (index !== activeQuestion) return null;
+              
+              return (
+                <div key={question.originalIndex} id={`q-${question.originalIndex}`} className="bg-white p-6 rounded-xl shadow-lg">
+                    <div className="bg-gray-800 text-white p-4 rounded-t-lg -m-6 mb-6">
+                       <h2 className="text-xs font-bold">Q {question.originalIndex + 1}. {question.question}</h2>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {question.options.map((option, optIndex) => (
+                        <button key={optIndex} onClick={() => handleAnswerSelect(question.originalIndex, option)} className={`p-2 text-xs rounded-lg border-2 text-left transition-all duration-200 group ${userAnswers[question.originalIndex] === option ? "bg-blue-100 border-blue-500 ring-2 ring-blue-300" : "bg-gray-100 border-gray-200 hover:border-blue-400 hover:bg-blue-50"}`}>
+                        <span className={`font-bold mr-3 ${userAnswers[question.originalIndex] === option ? 'text-blue-600' : 'text-gray-700'}`}>{String.fromCharCode(97 + optIndex)})</span>
+                        <span className={`${userAnswers[question.originalIndex] === option ? 'text-blue-800' : 'text-gray-800'}`}>{option}</span>
+                        </button>
+                    ))}
+                    </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           
-          <div className="mt-8 flex justify-center">
-             <button onClick={() => setTestState('finished')} className="w-full max-w-xs bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition duration-300 text-xs">
-                  Finish Test
+          {/* Navigation Buttons */}
+          <div className="mt-8 flex justify-between items-center">
+             <button 
+                onClick={() => setActiveQuestion(prev => Math.max(0, prev - 1))}
+                disabled={activeQuestion === 0}
+                className="bg-gray-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600 transition duration-300 text-xs disabled:bg-gray-300">
+                  Previous
               </button>
+             <span className="text-xs font-semibold text-gray-600">{activeQuestion + 1} / {questions.length}</span>
+             {activeQuestion < questions.length - 1 ? (
+                <button 
+                    onClick={() => setActiveQuestion(prev => Math.min(questions.length - 1, prev + 1))}
+                    className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300 text-xs">
+                      Next
+                </button>
+             ) : (
+                <button 
+                    onClick={() => setTestState('finished')} 
+                    className="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition duration-300 text-xs">
+                    Finish Test
+                </button>
+             )}
           </div>
         </div>
       </div>

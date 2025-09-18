@@ -2,67 +2,69 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 
-// Ensure your GEMINI_API_KEY is correctly set in your .env.local file
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 export async function POST(request) {
-  try {
-    const { type, level } = await request.json();
+  // 1. Log that the function has started
+  console.log("API route '/api/generate-questions' was hit.");
 
-    if (!type || !level) {
-      return NextResponse.json(
-        { error: "Aptitude type and level are required." },
-        { status: 400 }
-      );
+  try {
+    const { level } = await request.json();
+
+    // 2. Log the received level
+    console.log("Attempting to generate questions for level:", level);
+
+    if (!level) {
+      console.error("Validation Error: Level is required.");
+      return NextResponse.json({ error: "Level is required." }, { status: 400 });
     }
 
-    const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash-latest",
-      generationConfig: {
-        responseMimeType: "application/json",
-      },
-    });
-
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+    
     const promptTemplate = `
-      You are an expert test creator. Generate exactly 10 unique multiple-choice questions for an aptitude test.
-      The topic is "${type}".
-      The difficulty level is "${level}".
-
-      Guidelines:
-      - Vary numbers, wording, and scenarios each time.
-      - Return ONLY a valid JSON array of objects with this structure:
-      [
-        {
-          "question": "string",
-          "options": ["string", "string", "string", "string"],
-          "answer": "string"
-        }
-      ]
-      `;
-
+      Generate a JSON object containing aptitude questions for a test.
+      The difficulty for all questions should be ${level}.
+      The JSON object must have three keys: "quantitative", "logical", and "verbal".
+      For each key, provide an array of exactly 10 unique multiple-choice questions.
+      Return strictly in this JSON format and nothing else:
+      {
+        "quantitative": [
+          { "question": "...", "options": [...], "answer": "..." }
+        ],
+        "logical": [
+          { "question": "...", "options": [...], "answer": "..." }
+        ]
+      }
+      `; // Note: Shortened for brevity in the prompt, but the model understands the pattern.
+      
     const result = await model.generateContent(promptTemplate);
     const response = await result.response;
     const text = response.text();
 
-    try {
-      const jsonData = JSON.parse(text);
-      return NextResponse.json(jsonData);
-    } catch (parseError) {
-      console.error('JSON Parsing Error:', parseError);
-      console.error('Raw text received from Gemini:', text);
-      return NextResponse.json(
-        { error: "The AI model returned a response that was not valid JSON." },
-        { status: 500 }
-      );
-    }
+    // 3. --- THIS IS THE MOST IMPORTANT LOG ---
+    // It prints the raw text from the AI before we try to parse it.
+    console.log("--- RAW RESPONSE FROM GEMINI ---");
+    console.log(text);
+    console.log("--------------------------------");
 
+    // A more robust way to clean the response
+    const startIndex = text.indexOf('{');
+    const endIndex = text.lastIndexOf('}');
+    const jsonString = text.substring(startIndex, endIndex + 1);
+
+    console.log("Attempting to parse JSON...");
+    const parsedJson = JSON.parse(jsonString);
+    console.log("JSON parsed successfully!");
+
+    return NextResponse.json(parsedJson);
+    
   } catch (error) {
-    // This console log is key to debugging. Look at your server terminal for this message.
-    console.error('Gemini API Error:', error.message || error);
-
-    // Return a more descriptive error message to the frontend
+    // 4. Log the full error to see what went wrong
+    console.error("\n!!!!!!!! ERROR in API route !!!!!!!!");
+    console.error(error);
+    console.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
     return NextResponse.json(
-      { error: `Failed to generate questions. Details: ${error.message || 'Unknown error occurred.'}` },
+      { error: "Failed to generate questions. Check server logs for details." },
       { status: 500 }
     );
   }
