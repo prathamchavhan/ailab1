@@ -168,15 +168,23 @@ export default function DashboardPage() {
 
   return (
     <main className="bg-[#F4F5F9] p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Student Performance</h1>
-        <button
-          onClick={handleLogout}
-          className="bg-red-600 text-white px-6 py-3 rounded"
-        >
-          Sign Out
-        </button>
-      </div>
+        <div className="flex justify-between items-center mb-4">
+  <h1 className="text-2xl font-bold">Student Performance</h1>
+  <div className="flex gap-4">
+    <button
+      onClick={() => router.push("/leaderboard")}
+      className="bg-blue-600 text-white px-6 py-3 rounded"
+    >
+      View Leaderboard
+    </button>
+    <button
+      onClick={handleLogout}
+      className="bg-red-600 text-white px-6 py-3 rounded"
+    >
+      Sign Out
+    </button>
+  </div>
+</div>
       <div className="grid grid-cols-1 gap-6 mb-6">
         <Card className="col-span-full">
           <CardHeader>
