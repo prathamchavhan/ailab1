@@ -9,51 +9,14 @@ export default function LeaderboardPage() {
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
-      const { data, error } = await supabase
-        .from("aptitude")
-        .select(`
-          score,
-          user_id,
-          profiles!inner (
-            id,
-            name,
-            roll_no,
-            department_id
-          )
-        `);
+      const { data, error } = await supabase.rpc('get_leaderboard');
 
       if (error) {
         console.error("Error fetching leaderboard:", error);
         return;
       }
 
-      // 🔹 Aggregate scores by user
-      const userScores = {};
-      data.forEach((row) => {
-        const uid = row.user_id;
-        if (!userScores[uid]) {
-          userScores[uid] = {
-            name: row.profiles?.name || "Unknown",
-            roll_no: row.profiles?.roll_no || "-",
-            dept: row.profiles?.department_id || "-", // dept_id for now
-            totalScore: 0,
-            attempts: 0,
-          };
-        }
-        userScores[uid].totalScore += row.score;
-        userScores[uid].attempts += 1;
-      });
-
-      // 🔹 Convert to array + calculate avg
-      const leaderboardArray = Object.values(userScores).map((u) => ({
-        ...u,
-        avgScore: u.attempts > 0 ? u.totalScore / u.attempts : 0,
-      }));
-
-      // 🔹 Sort by total score (highest first)
-      leaderboardArray.sort((a, b) => b.totalScore - a.totalScore);
-
-      setLeaderboard(leaderboardArray);
+      setLeaderboard(data);
     };
 
     fetchLeaderboard();
@@ -85,10 +48,10 @@ export default function LeaderboardPage() {
                   <td className="p-3 font-bold">{index + 1}</td>
                   <td className="p-3">{user.name}</td>
                   <td className="p-3">{user.roll_no}</td>
-                  <td className="p-3">{user.dept}</td>
-                  <td className="p-3">{user.totalScore}</td>
+                  <td className="p-3">{user.department_id}</td>
+                  <td className="p-3">{user.total_score}</td>
                   <td className="p-3">{user.attempts}</td>
-                  <td className="p-3">{user.avgScore.toFixed(2)}</td>
+                  <td className="p-3">{user.avg_score.toFixed(2)}</td>
                 </tr>
               ))}
             </tbody>
