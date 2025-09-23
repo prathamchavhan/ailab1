@@ -1,14 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-// Changed the import to use a different CDN to resolve the build error.
-
-// This code will only compile and run after the library is correctly installed.
 import { createClient } from '@supabase/supabase-js';
 
 
 // --- Supabase Configuration ---
-// This reads from your .env.local file for security.
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -60,29 +56,31 @@ export default function App() {
         if (session) {
             setUser(session.user);
         } else {
-            // Sign in user anonymously if not logged in
             const { data: newSessionData } = await supabase.auth.signInAnonymously();
             if (newSessionData) setUser(newSessionData.user);
         }
 
         // Step 2: Find the active challenge
         const findActiveChallenge = async () => {
-            const now = new Date();
-            const oneHourAgo = new Date(now.getTime() - 3600000); // 1 hour test window
-
+            
+            // ================= THIS IS THE CORRECTED QUERY =================
+            // It now finds any challenge with permission=true, ignoring the time.
+            // This is better for development and testing.
             const { data, error } = await supabase
                 .from('challenges')
                 .select('*')
                 .eq('permission', true)
-                .lte('event_date', now.toISOString()) // Event started
-                .gt('event_date', oneHourAgo.toISOString()) // But not more than an hour ago
                 .order('event_date', { ascending: false })
                 .limit(1);
+            // ===============================================================
 
             if (error) {
                 console.error("Error fetching active challenge:", error);
+                // ALSO, CHECK YOUR RLS POLICY. You need a public SELECT policy.
+                // Example: CREATE POLICY "Public read access for live challenges"
+                // ON public.challenges FOR SELECT USING (permission = true);
             } else {
-                setActiveChallenge(data[0] || null); // Set the first found challenge, or null
+                setActiveChallenge(data[0] || null);
             }
             setIsLoading(false);
         };
@@ -92,7 +90,7 @@ export default function App() {
         // Step 3: Listen for real-time changes
         const channel = supabase.channel('public:challenges')
           .on('postgres_changes', { event: '*', schema: 'public', table: 'challenges' }, payload => {
-            findActiveChallenge(); // Re-run the check for an active challenge
+            findActiveChallenge();
           })
           .subscribe();
 
@@ -120,19 +118,12 @@ export default function App() {
 
   // --- Submit Score to Supabase ---
   const handleSubmit = async () => {
-    if (!activeChallenge || !user || showScore) return; // Prevent double submission
+    if (!activeChallenge || !user || showScore) return; 
 
     try {
         let calculatedScore = 0;
         const detailedAnswers = activeChallenge.question.map((qData, index) => {
-            let q;
-            // This robustly parses the question data, whether it's a string or an object.
-            if (typeof qData === 'string') {
-                q = JSON.parse(qData);
-            } else {
-                q = qData;
-            }
-
+            let q = typeof qData === 'string' ? JSON.parse(qData) : qData;
             const userAnswer = userAnswers[index] || null;
             if (userAnswer === q.correctAnswer) {
                 calculatedScore++;
@@ -150,6 +141,7 @@ export default function App() {
 
         const submissionData = JSON.stringify(detailedAnswers);
 
+        // Make sure you have a table 'challenges_score' and RLS policies for it
         const { error } = await supabase.from('challenges_score').insert({
             challenges_id: activeChallenge.id,
             user_id: user.id,
@@ -168,6 +160,7 @@ export default function App() {
     return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // --- All JSX Rendering remains the same ---
   if (isLoading) {
     return (
       <div className="bg-gray-900 min-h-screen flex flex-col justify-center items-center text-white p-4">
@@ -217,15 +210,8 @@ export default function App() {
           {activeChallenge.question.map((qData, index) => {
             let q;
             try {
-                // This checks if the question data is a string that needs parsing,
-                // or if it's already a usable object. This makes the display logic robust.
-                if (typeof qData === 'string') {
-                    q = JSON.parse(qData);
-                } else if (typeof qData === 'object' && qData !== null) {
-                    q = qData;
-                } else {
-                    throw new Error("Invalid question data format");
-                }
+                q = (typeof qData === 'string') ? JSON.parse(qData) : qData;
+                if (typeof q !== 'object' || q === null) throw new Error("Invalid question data");
 
                 return (
                     <div key={index} className="bg-gray-800 p-6 rounded-xl shadow-lg">
@@ -241,7 +227,7 @@ export default function App() {
                 console.error("Failed to parse or render question data:", qData, e);
                 return (
                     <div key={index} className="bg-red-800 p-4 rounded-lg text-white">
-                        Could not display question {index + 1}. The data from the database might be corrupted.
+                        Could not display question {index + 1}. Data may be corrupted.
                     </div>
                 );
             }
@@ -254,4 +240,3 @@ export default function App() {
     </div>
   );
 }
-
