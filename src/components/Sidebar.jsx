@@ -26,7 +26,7 @@ const navLinks = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/jobs', label: 'Jobs', icon: Briefcase },
   { href: '/news', label: 'News', icon: Newspaper },
-  { href: '/events', label: 'Events', icon: CalendarDays },
+  { href: '/challenges', label: 'Challenges', icon: CalendarDays },
   { href: '/career-counselling', label: 'Career Counselling', icon: MessagesSquare },
   { 
     href: '/assessments', 
