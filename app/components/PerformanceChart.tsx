@@ -28,13 +28,20 @@ export default function PerformanceChart() {
         .order("created_at", { ascending: true })
         .limit(5);
 
-      if (results) {
+      if (results && results.length > 0) {
         setData(
           results.map((r, idx) => ({
             name: `Interview ${idx + 1}`,
             score: r.final_score,
           }))
         );
+      } else {
+        // Default placeholder values if no results yet
+        setData([
+          { name: "Interview 1", score: 0 },
+          { name: "Interview 2", score: 0 },
+          { name: "Interview 3", score: 0 },
+        ]);
       }
     };
 
