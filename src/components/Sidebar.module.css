@@ -12,8 +12,8 @@
   
 .logoContainer {
   text-align: center;
-  margin-bottom: 25px;
-  padding-bottom: 15px;
+  margin-bottom: 16px;
+  padding-bottom: 7px;
   border-radius: 2px;
   border-bottom: 3px solid transparent;
   border-image: linear-gradient(90deg, #2DC7DB 0%, #2166ac 100%) 1;
@@ -26,7 +26,7 @@
 }
 
 .navItem {
-  margin-bottom: 5px;
+  margin-bottom: 0px; /* Decreased margin to zero */
   position: relative;
 }
 
@@ -37,28 +37,32 @@
   justify-content: space-between;
   width: 100%;
   text-decoration: none;
-  color: #374151; 
-  padding: 10px 15px;
-  font-size: 0.9rem; 
-  font-weight: 500;
+  color: #000000; 
+  padding: 8px 15px; /* Decreased vertical padding */
+  /* 🚩 DECREASED FONT SIZE HERE */
+  font-size: 0.8rem; 
+  font-weight: 400;
   border-radius: 10px;
   transition: all 0.2s ease-in-out;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  gap: 2rem; /* Decreased internal gap */
 }
 
 .linkContent {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 12px; /* Add horizontal spacing between icon and text */
 }
 
+
 .icon {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   stroke-width: 2;
   flex-shrink: 0;
+  gap: 2rem;
 }
 
 /* ✅ NEW (EMPTY) CLASS: Used as a hook to identify dropdown parents */
@@ -71,20 +75,20 @@
 .active:not(.hasSubmenu)::before {
   content: '';
   position: absolute;
-  left: -10px;
-  top: 50%;
+  left: -8px; /* Adjusted position */
+  top: 50%; /* Centered vertically */
   transform: translateY(-50%);
-  height: 70%;
-  width: 5px;
+  height: 80%; /* Decreased height */
+  width: 5px; /* Decreased width */
   background: linear-gradient(90deg, #2DC7DB 0%, #2166ac 100%);
   border-radius: 10px;
 }
+
 .active .navLink {
   background: linear-gradient(90deg, #2DC7DB 0%, #2166ac 100%);
   color: #ffffff;
   font-weight: 600;
 }
-
 .navItem:not(.active):hover .navLink {
   background-color: #f0f2f5; 
 }
@@ -130,8 +134,9 @@ STYLES FOR DROPDOWN FUNCTIONALITY
   display: block;
   padding: 8px 12px;
   text-decoration: none;
-  color: #4b5563; 
-  font-size: 0.85rem; 
+  color: #000000; 
+  /* 🚩 DECREASED FONT SIZE HERE */
+  font-size: 0.70rem; 
   font-weight: 500;
   border-radius: 6px;
   transition: all 0.2s ease-in-out;
@@ -155,11 +160,12 @@ STYLES FOR DROPDOWN FUNCTIONALITY
     padding: 20px;
   }
   .navLink {
-    padding: 12px 20px;
-    font-size: 0.95rem; 
+    padding: 10px 20px; /* Decreased vertical padding */
+    /* 🚩 DECREASED FONT SIZE HERE */
+    font-size: 0.85rem; 
   }
   .navItem {
-    margin-bottom: 8px;
+    margin-bottom: 5px; /* Decreased margin */
   }
 }
 
@@ -168,9 +174,10 @@ STYLES FOR DROPDOWN FUNCTIONALITY
     padding: 25px;
   }
   .navLink {
-    font-size: 1rem;
+    /* 🚩 DECREASED FONT SIZE HERE */
+    font-size: 0.9rem;
   }
   .navItem {
-    margin-bottom: 10px;
+    margin-bottom: 8px; /* Decreased margin */
   }
 }

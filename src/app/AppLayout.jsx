@@ -9,7 +9,7 @@ const AppLayout = ({ children }) => {
   const pathname = usePathname();
   
   // ✅ Create a list of pages where the sidebar should be hidden
-  const hideSidebarOn = ['/login', '/profile/create'];
+  const hideSidebarOn = ['/login','/' ,'/profile/create'];
 
   // ✅ Check if the current page is in the list
   if (hideSidebarOn.includes(pathname)) {

@@ -33,7 +33,7 @@ export async function POST(request) {
         const promptTemplate = `
           Generate a JSON object with 3 keys: "quantitative", "logical", "verbal".
           For each key, provide an array of 10 unique multiple-choice questions of ${level} difficulty.
-          Return strictly in the specified JSON format.
+          Return strictly in the specified JSON format and give 4 options.
         `;
 
         // 3. Try to generate content with the current key

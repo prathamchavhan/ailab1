@@ -35,7 +35,7 @@ const navLinks = [
     // Add a subLinks array for the dropdown items
     subLinks: [
       { href: '/aptitude', label: 'Aptitude' },
-      { href: '/assessments/assignment', label: 'Assignment' },
+      { href: '/assignment', label: 'Assignment' },
     ] 
   },
   { href: '/billing', label: 'Billing', icon: CreditCard },
@@ -68,7 +68,7 @@ const Sidebar = () => {
     <nav className={`d-none d-md-block ${styles.sidebar}`}>
       <div className={styles.logoContainer}>
         <Link href="/">
-          <Image src="/images/logo.png" alt="AI Lab Logo" width={270} height={90} priority />
+          <Image src="/images/logo.png" alt="AI Lab Logo" width={220} height={60} priority />
         </Link>
       </div>
       
