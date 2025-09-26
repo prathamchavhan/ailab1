@@ -1,31 +1,32 @@
 "use client";
 
-import { usePathname } from 'next/navigation';
-import Sidebar from '@/components/Sidebar';
-// ... other imports
+import { usePathname } from "next/navigation";
+import Sidebar from "@/components/Sidebar";
+import Navbar from "@/app/navbar/page.jsx"; // Renamed for clarity in structure
 
 const AppLayout = ({ children }) => {
-  // ✅ Get the current URL path
   const pathname = usePathname();
-  
-  // ✅ Create a list of pages where the sidebar should be hidden
-  const hideSidebarOn = ['/login', '/profile'];
 
-  // ✅ Check if the current page is in the list
+  // Pages where sidebar should be hidden
+  const hideSidebarOn = ["/login", "/profile"];
+
   if (hideSidebarOn.includes(pathname)) {
-    // If it is, just show the page content without any layout
-    return <main>{children}</main>;
+    return (
+      <div>
+        <Navbar />
+        <main>{children}</main>
+      </div>
+    );
   }
 
-  // Otherwise, show the full layout with the sidebar
   return (
-    <div className="container-fluid">
-      <div className="row">
-        <Sidebar />
-        <main 
-          className="col-lg-9 ms-auto px-md-4"
-          style={{ height: '100vh', overflowY: 'auto' }}
-        >
+    <div style={{ display: "flex", minHeight: "100vh" }}>
+      <Sidebar />
+
+      <div style={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
+        <Navbar />
+
+        <main style={{ flexGrow: 1, padding: '1rem', overflowY: 'auto' }}>
           {children}
         </main>
       </div>
