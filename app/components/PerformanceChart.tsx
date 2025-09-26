@@ -17,41 +17,37 @@ export default function PerformanceChart() {
   const [data, setData] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchResults = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: results } = await supabase
+      // ✅ Fetch all results for logged-in user
+      const { data: results, error } = await supabase
         .from("interview_results")
-        .select("final_score, created_at")
+        .select("id, final_score, created_at")
         .eq("user_id", user.id)
-        .order("created_at", { ascending: true })
-        .limit(5);
+        .order("created_at", { ascending: true });
 
-      if (results && results.length > 0) {
-        setData(
-          results.map((r, idx) => ({
-            name: `Interview ${idx + 1}`,
-            score: r.final_score,
-          }))
-        );
-      } else {
-        // Default placeholder values if no results yet
-        setData([
-          { name: "Interview 1", score: 0 },
-          { name: "Interview 2", score: 0 },
-          { name: "Interview 3", score: 0 },
-        ]);
+      if (!error && results) {
+        // Transform data for chart
+        const formatted = results.map((r, idx) => ({
+          name: `Interview ${idx + 1}`,
+          score: r.final_score,
+        }));
+        setData(formatted);
       }
     };
 
-    fetchData();
+    fetchResults();
   }, []);
 
   return (
     <div className="bg-white p-6 rounded-2xl shadow">
       <div className="flex justify-between mb-4">
         <h3 className="text-lg font-bold">Performance Over Time</h3>
+        <a href="#" className="text-blue-600 text-sm font-medium">
+          View Full Report
+        </a>
       </div>
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={data}>
@@ -70,6 +66,12 @@ export default function PerformanceChart() {
           </defs>
         </BarChart>
       </ResponsiveContainer>
+
+      {data.length === 0 && (
+        <p className="text-center text-gray-500 mt-4">
+          No interviews attempted yet.
+        </p>
+      )}
     </div>
   );
 }

@@ -18,11 +18,10 @@ export default function InterviewPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const searchParams = useSearchParams();
   const router = useRouter();
-  const recognitionRef = useRef<any>(null);
 
   const sessionId = searchParams.get("sessionId");
 
-  // state
+  // States
   const [questions, setQuestions] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(60);
@@ -30,7 +29,9 @@ export default function InterviewPage() {
   const [transcript, setTranscript] = useState("");
   const [domain, setDomain] = useState("");
 
-  // ✅ Fetch questions + domain
+  const recognitionRef = useRef<any>(null);
+
+  // ✅ Fetch questions + session domain
   useEffect(() => {
     if (!sessionId) return;
 
@@ -81,7 +82,7 @@ export default function InterviewPage() {
     enableCamera();
   }, []);
 
-  // 🎤 Speech Recognition Start
+  // 🎤 Start Speech Recognition
   const startListening = () => {
     if (listening) return;
     setListening(true);
@@ -123,13 +124,13 @@ export default function InterviewPage() {
     recognitionRef.current = recognition;
   };
 
-  // 🎤 Stop Listening
+  // 🎤 Stop Speech Recognition
   const stopListening = () => {
     recognitionRef.current?.stop();
     setListening(false);
   };
 
-  // ✅ Save answer & Go Next
+  // ✅ Save & Go Next
   const handleNext = async () => {
     if (questions[currentIndex]) {
       await supabase.from("interview_answers").insert([
@@ -145,32 +146,28 @@ export default function InterviewPage() {
       setCurrentIndex((i) => i + 1);
       setTranscript("");
     } else {
-      // 🎯 When finished → Insert results into interview_results
-      const mockRadar = [
-        { subject: "Communication", A: Math.floor(Math.random() * 100) },
-        { subject: "Creativity", A: Math.floor(Math.random() * 100) },
-        { subject: "Teamwork", A: Math.floor(Math.random() * 100) },
-        { subject: "Leadership", A: Math.floor(Math.random() * 100) },
-        { subject: "Attitude", A: Math.floor(Math.random() * 100) },
-        { subject: "Sociability", A: Math.floor(Math.random() * 100) },
+      // ✅ Interview finished → insert into interview_results
+      const finalScore = Math.floor(Math.random() * 40) + 60; // random 60–100
+      const radarScores = [
+        { subject: "Communication", A: 75 },
+        { subject: "Teamwork", A: 65 },
+        { subject: "Leadership", A: 60 },
+        { subject: "Creativity", A: 70 },
       ];
-      const finalScore = Math.floor(
-        mockRadar.reduce((sum, r) => sum + r.A, 0) / mockRadar.length
-      );
+
+      const { data: userData } = await supabase.auth.getUser();
 
       await supabase.from("interview_results").insert([
         {
           session_id: sessionId,
+          user_id: userData?.user?.id || null,
           final_score: finalScore,
-          radar_scores: mockRadar,
-          feedback: {
-            strengths: "Strong communication",
-            improvement: "Improve leadership",
-          },
+          strengths: ["Good communication"],
+          improvements: ["Needs more confidence"],
+          radar_scores: radarScores,
         },
       ]);
 
-      // redirect to completed page
       router.push(`/interview/completed?sessionId=${sessionId}`);
     }
   };
@@ -181,7 +178,7 @@ export default function InterviewPage() {
     router.push("/");
   };
 
-  // dummy radar chart (for right panel)
+  // Dummy radar data (for UI preview)
   const data = [
     { subject: "Professionalism", A: 86 },
     { subject: "Attitude", A: 72 },
@@ -197,7 +194,7 @@ export default function InterviewPage() {
       <Header />
 
       <div className="p-6 grid grid-cols-3 gap-6">
-        {/* Left Side */}
+        {/* Left */}
         <div className="col-span-2">
           {/* Top bar */}
           <div className="flex justify-between items-center mb-4">
@@ -248,19 +245,19 @@ export default function InterviewPage() {
             </button>
           </div>
 
-          {/* Current Question */}
+          {/* Question */}
           <div className="mt-4 bg-white rounded-lg shadow p-3 text-center font-medium">
             {questions[currentIndex]?.question || "Loading..."}
           </div>
 
-          {/* Transcript */}
+          {/* Transcript (live speech-to-text) */}
           {transcript && (
             <div className="mt-2 bg-gray-100 rounded-lg p-3 text-center text-gray-700">
               {transcript}
             </div>
           )}
 
-          {/* Next Button */}
+          {/* Next */}
           <div className="mt-4 flex justify-center">
             <button
               onClick={handleNext}
@@ -271,7 +268,7 @@ export default function InterviewPage() {
           </div>
         </div>
 
-        {/* Right Side */}
+        {/* Right */}
         <div className="space-y-6 flex flex-col items-center">
           <div className="w-[260px] aspect-[3/4] rounded-xl overflow-hidden shadow bg-black">
             <video
@@ -283,12 +280,12 @@ export default function InterviewPage() {
             />
           </div>
 
-          {/* Domain */}
+          {/* ✅ Dynamic Domain */}
           <p className="font-bold text-center text-[#2B7ECF]">
             Domain: {domain || "Loading..."}
           </p>
 
-          {/* Radar Chart (static for now) */}
+          {/* Radar Chart */}
           <div className="bg-white rounded-xl shadow p-4 w-full">
             <div className="flex justify-between items-center mb-2">
               <h3 className="text-sm font-semibold text-gray-700">
