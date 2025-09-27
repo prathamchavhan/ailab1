@@ -28,7 +28,7 @@ export async function POST(request) {
         
         // Create a new client for each key
         const genAI = new GoogleGenerativeAI(key.trim());
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
         const promptTemplate = `
           Generate a JSON object with 3 keys: "quantitative", "logical", "verbal".

@@ -61,10 +61,6 @@
   flex-shrink: 0;
 }
 
-/* ✅ NEW (EMPTY) CLASS: Used as a hook to identify dropdown parents */
-.hasSubmenu {
-  /* No styles needed, it's just a selector hook */
-}
 
 /* --- Active and Hover Effects for Main Links --- */
 /* ✅ MODIFIED: This rule now excludes items with the .hasSubmenu class */
