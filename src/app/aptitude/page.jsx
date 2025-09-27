@@ -188,19 +188,35 @@ export default function AptitudeTestPage() {
         <div className="max-w-5xl mx-auto">
           {/* Top Header */}
           <div className="bg-white p-4 rounded-xl shadow-md flex items-center flex-wrap gap-x-6 gap-y-4">
-            <div className="flex items-center gap-4 shrink-0">
-              <span className="font-bold text-xs text-gray-700">Aptitude</span>
-              <div className="flex items-center bg-gray-100 rounded-full p-1">
-                {["easy", "medium", "hard"].map((l) => (
-                  <button key={l} disabled className={`px-3 py-1 text-xs font-semibold rounded-full ${level === l ? "bg-cyan-400 text-white shadow" : "text-gray-600"}`}>
-                    {l.charAt(0).toUpperCase() + l.slice(1)} Level
-                  </button>
-                ))}
-              </div>
+           <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-start">
+    <span className="font-bold text-lg text-gray-700">Aptitude</span> 
+    
+    {/* The Level Selector Container: Apply flex-wrap here */}
+    <div className="flex items-center flex-wrap gap-8 bg-white rounded-full p-1 sm:gap-10"> 
+      {/* 👆 ADDED: flex-wrap, changed default gap to 'gap-2', and kept 'sm:gap-10' for large screens */}
+      {["easy", "medium", "hard"].map((l) => (
+        <button
+          key={l}
+          disabled
+          className={`px-4 py-0.9 font-medium rounded-full ${
+            level === l ? "bg-[#BDF6FD] text-black shadow"  : "text-black"
+          }`}
+          style={{ 
+            borderRadius: '5px'
+          }}
+        >
+          <span style={{ fontSize: "10px" }}>
+            {l.charAt(0).toUpperCase() + l.slice(1)} Level
+          </span>
+        </button>
+      ))}
+    </div>
+
+
             </div>
             <div className="flex-grow min-w-[200px]">
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-cyan-400 h-2 rounded-full" style={{ width: `${progressPercentage}%` }}></div>
+                <div className="w-70 bg-gray-200 border border-black rounded-full h-3">
+                    <div className="bg-cyan-400 h-2.5  border-black rounded-full" style={{ width: `${progressPercentage}%` }}></div>
                 </div>
             </div>
           </div>
@@ -211,16 +227,29 @@ export default function AptitudeTestPage() {
               {Object.keys(APTITUDE_TYPE_MAP).map(category => (
                 <div key={category} className="flex items-center gap-4">
                   <div className="flex items-center gap-2 w-48 shrink-0">
-                     <span className="w-1 h-6 bg-pink-500 rounded-full"></span>
-                     <h6 className="font-medium text-xs text-gray-700 whitespace-nowrap">{APTITUDE_TYPE_MAP[category]}</h6>
+                     <span className="w-1 h-6 bg-graident-200 rounded-full"></span>
+                     <h7 className="font-medium text-xs text-black whitespace-nowrap">{APTITUDE_TYPE_MAP[category]}</h7>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {questionsByCategory[category]?.map((q, index) => (
-                       <a key={q.originalIndex} href={`#q-${q.originalIndex}`} onClick={() => setActiveQuestion(q.originalIndex)} 
-                          className={`h-6 w-6 flex items-center no-underline justify-center rounded-full font-bold text-xs transition-colors duration-200 
-                           ${activeQuestion === q.originalIndex ? 'bg-teal-400 text-white' : userAnswers[q.originalIndex] !== null ? 'bg-gray-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
-                         {index + 1}
-                       </a>
+                       <a
+  key={q.originalIndex}
+  href={`#q-${q.originalIndex}`}
+  onClick={() => setActiveQuestion(q.originalIndex)}
+  style={{ textDecoration: 'none' }}
+  className={`
+    h-6 w-6 inline-flex items-center bg-white text-black justify-center rounded-full font-bold text-xs
+    transition-colors duration-200
+    ${activeQuestion === q.originalIndex
+      ? 'bg-teal-400 text-black'
+      : userAnswers[q.originalIndex] !== null
+        ? 'bg-gray-500 text-black'
+        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}
+  `}
+>
+  {index + 1}
+</a>
+
                     ))}
                   </div>
                 </div>
@@ -230,6 +259,7 @@ export default function AptitudeTestPage() {
                <div className="text-2xl font-mono font-bold text-gray-800 bg-white px-4 py-2 rounded-lg shadow-inner">
                  {formatTime(timer)}
                </div>
+               
             </div>
           </div>
 
@@ -241,15 +271,30 @@ export default function AptitudeTestPage() {
                 <div className="space-y-8">
                 {questionsByCategory[category].map(question => (
                   <div key={question.originalIndex} id={`q-${question.originalIndex}`} className="bg-white p-6 rounded-xl shadow-lg scroll-mt-24">
-                      <div className="bg-gray-800 text-white p-4 rounded-t-lg -m-6 mb-6">
-                         <h5 className="text-xs font-bold">Q {question.originalIndex + 1}. {question.question}</h5>
+                      <div className="bg-[#05445E] text-white p-4 rounded-t-lg -m-6 mb-6">
+                         <h6 className="text-xs font-bold">Q {question.originalIndex + 1}. {question.question}</h6>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ">
                       {question.options.map((option, optIndex) => (
-                          <button key={optIndex} onClick={() => handleAnswerSelect(question.originalIndex, option)} className={`p-2 text-xs rounded-lg border-2 text-left transition-all duration-200 group ${userAnswers[question.originalIndex] === option ? "bg-blue-100 border-blue-500 ring-2 ring-blue-300" : "bg-gray-100 border-gray-200 hover:border-blue-400 hover:bg-blue-50"}`}>
-                          <span className={`font-bold mr-3 ${userAnswers[question.originalIndex] === option ? 'text-blue-600' : 'text-gray-700'}`}>{String.fromCharCode(97 + optIndex)})</span>
-                          <span className={`${userAnswers[question.originalIndex] === option ? 'text-blue-800' : 'text-gray-800'}`}>{option}</span>
-                          </button>
+                        <button 
+    key={optIndex} 
+    onClick={() => handleAnswerSelect(question.originalIndex, option)} 
+    className={`p-2 text-xs border-2 text-left transition-all duration-200 group ${
+        userAnswers[question.originalIndex] === option 
+            ? "bg-[#BDF5FD] border-[#BDF5FD] ring-2 ring-[#BDF5FD]" 
+            : "bg-gray-100 border-gray-200 hover:border-[#BDF5FD] hover:bg-[#BDF5FD]"
+    }`}
+    style={{
+        borderRadius: '8px' // <-- INLINE CSS FIX: Applies moderate rounding (equivalent to rounded-lg)
+    }}
+>
+    <span className={`font-bold mr-3 ${userAnswers[question.originalIndex] === option ? 'text-black' : 'text-gray-700'}`}>
+        {String.fromCharCode(97 + optIndex)})
+    </span>
+    <span className={`${userAnswers[question.originalIndex] === option ? 'text-black' : 'text-gray-700'}`}>
+        {option}
+    </span>
+</button>
                       ))}
                       </div>
                   </div>
