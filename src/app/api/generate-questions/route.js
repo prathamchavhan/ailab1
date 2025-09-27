@@ -27,13 +27,22 @@ export async function POST(request) {
         
         const genAI = new GoogleGenerativeAI(key.trim());
         
-        // Use gemini-2.5-flash for speed, and enforce JSON output
+        // Tell the model we want a JSON response
         const model = genAI.getGenerativeModel({ 
-          model: "gemini-2.5-flash",
+          model: "gemini-1.5-flash",
           generationConfig: {
             response_mime_type: "application/json",
           }
         });
+
+        
+        // // Use gemini-2.5-flash for speed, and enforce JSON output
+        // const model = genAI.getGenerativeModel({ 
+        //   model: "gemini-2.5-flash",
+        //   generationConfig: {
+        //     response_mime_type: "application/json",
+        //   }
+        // });
 
         // NOTE: Temporarily set to 3 questions for stability/speed testing. 
         // You can change '3' back to '10' once this code is confirmed working.
@@ -41,13 +50,18 @@ export async function POST(request) {
           Generate a JSON object with 3 keys: "quantitative", "logical", "verbal".
           For each key, provide an array of 10 unique multiple-choice questions of ${level} difficulty.
           Each question object must have "question", "options" (an array of 4 strings), and "answer" keys.
+          Each question object must have "question", "options" (an array of 4 strings), and "answer" keys.
         `;
 
         const result = await model.generateContent(promptTemplate);
         const response = await result.response;
         
+        
         console.log(`API key "...${key.slice(-4)}" succeeded!`);
         
+        // The response text is now guaranteed to be a JSON string, no need to replace '```json'
+        const jsonData = JSON.parse(response.text());
+        return NextResponse.json(jsonData);
         // --- ROBUST JSON PARSING BLOCK to prevent 500 errors ---
         try {
             let responseText = response.text().trim();
@@ -90,19 +104,16 @@ export async function POST(request) {
         // --- END OF ROBUST JSON PARSING BLOCK ---
 
       } catch (error) {
-        // Handle API specific errors (e.g., Quota exceeded)
         if (error.message && error.message.includes('[429 Too Many Requests]')) {
           console.warn(`API key "...${key.slice(-4)}" is exhausted. Trying next key...`);
-          continue; // Try the next key
+          continue;
         } else {
-          // Re-throw any other unexpected API error to be caught by the outer block
           console.error("A non-quota error occurred:", error);
           throw error; 
         }
       }
     }
 
-    // If the loop finishes without success
     console.error("All API keys are exhausted or failed.");
     return NextResponse.json(
       { error: "All available API keys have exceeded their quota." },
@@ -112,6 +123,7 @@ export async function POST(request) {
   } catch (error) {
     // Handle errors outside the loop (e.g., request.json() failure, or re-thrown API error)
     console.error("A critical error occurred in the API route:", error);
+    // Include more error details for easier debugging
     return NextResponse.json(
       { error: "Failed to generate questions due to a server error.", details: error.message },
       { status: 500 }
