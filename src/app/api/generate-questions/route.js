@@ -24,9 +24,7 @@ export async function POST(request) {
         console.log(`Attempting to use API key ending with "...${key.slice(-4)}"`);
         
         const genAI = new GoogleGenerativeAI(key.trim());
-<<<<<<< Updated upstream
-        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-=======
+        // const model = genAI.getGenerativeModel({ model: "gemini-pro" });
         
         // Tell the model we want a JSON response
         const model = genAI.getGenerativeModel({ 
@@ -35,16 +33,11 @@ export async function POST(request) {
             response_mime_type: "application/json",
           }
         });
->>>>>>> Stashed changes
 
         const promptTemplate = `
           Generate a JSON object with 3 keys: "quantitative", "logical", "verbal".
           For each key, provide an array of 10 unique multiple-choice questions of ${level} difficulty.
-<<<<<<< Updated upstream
-          Return strictly in the specified JSON format.
-=======
           Each question object must have "question", "options" (an array of 4 strings), and "answer" keys.
->>>>>>> Stashed changes
         `;
 
         const result = await model.generateContent(promptTemplate);
