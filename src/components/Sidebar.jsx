@@ -32,7 +32,7 @@ const navLinks = [
     href: '/assessments', 
     label: 'Assessments (Quiz,Test)', 
     icon: ClipboardCheck,
-    // Add a subLinks array for the dropdown items
+  
     subLinks: [
       { href: '/aptitude', label: 'Aptitude' },
       { href: '/assessments/assignment', label: 'Assignment' },
