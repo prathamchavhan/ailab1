@@ -1,64 +1,146 @@
-const users = [
-  { name: "John Doe", score: 95, avatar: "/avatars/john.png" },
-  { name: "Sarah Lee", score: 89, avatar: "/avatars/sarah.png" },
-  { name: "Mike Johnson", score: 82, avatar: "/avatars/mike.png" },
-  { name: "Emily Davis", score: 76, avatar: "/avatars/emily.png" },
-  { name: "Daniel Smith", score: 72, avatar: "/avatars/daniel.png" },
-  { name: "Olivia Brown", score: 68, avatar: "/avatars/olivia.png" },
-  { name: "James Wilson", score: 65, avatar: "/avatars/james.png" },
-  { name: "Sophia Clark", score: 61, avatar: "/avatars/sophia.png" },
-  { name: "William Taylor", score: 58, avatar: "/avatars/william.png" },
-  { name: "Ava Martinez", score: 55, avatar: "/avatars/ava.png" },
-];
+"use client";
+
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function Dashboard() {
-  return (
-    <div className="bg-gradient-to-b from-[#C8F4F9] via-[#B0E7ED] to-[#F1FDFF] rounded-2xl shadow p-4">
-      {/* Title */}
-      <h3 className="text-lg font-bold mb-4 text-gray-800">
-        <span className="bg-gradient-to-r from-[#191717] to-[#2B96D3] bg-clip-text text-transparent">
-          Dashboard
-        </span>
-      </h3>
+  const [results, setResults] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-      {/* Header Row */}
-      <div className="flex justify-between items-center mb-3 font-semibold text-sm">
-        <span className="px-3 py-1 bg-[#2B96D3] text-white rounded-lg">
-          Profile
-        </span>
-        <span className="px-3 py-1 bg-[#2B96D3] text-white rounded-lg">
-          Rank
-        </span>
-        <span className="px-3 py-1 bg-[#2B96D3] text-white rounded-lg">
-          Score
-        </span>
+  useEffect(() => {
+    const fetchResults = async () => {
+      try {
+        // 1️⃣ Fetch interview results + join interview_sessions
+        const { data: results, error } = await supabase
+          .from("interview_results")
+          .select(`
+            id,
+            final_score,
+            created_at,
+            user_id,
+            interview_sessions ( company )
+          `)
+          .order("final_score", { ascending: false });
+
+        if (error) {
+          console.error("Supabase error fetching results:", error.message);
+          throw error;
+        }
+
+        if (!results || results.length === 0) {
+          setResults([]);
+          return;
+        }
+
+        // 2️⃣ Collect unique user_ids
+        const userIds = results.map((r) => r.user_id).filter(Boolean);
+
+        // 3️⃣ Fetch profiles for these users
+        let profilesMap: Record<string, any> = {};
+        if (userIds.length > 0) {
+          const { data: profiles, error: profileError } = await supabase
+            .from("profiles")
+            .select("user_id, name, avatar_url")
+            .in("user_id", userIds);
+
+          if (profileError) {
+            console.error("Supabase error fetching profiles:", profileError.message);
+            throw profileError;
+          }
+
+          profilesMap = (profiles || []).reduce((acc, p) => {
+            acc[p.user_id] = p;
+            return acc;
+          }, {});
+        }
+
+        // 4️⃣ Merge results with profiles
+        const merged = results.map((r) => ({
+          ...r,
+          profile: profilesMap[r.user_id] || null,
+        }));
+
+        setResults(merged);
+      } catch (err) {
+        console.error("Error fetching results:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchResults();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen text-gray-600">
+        Loading dashboard...
       </div>
+    );
+  }
 
-      {/* Users */}
-      <ul className="space-y-3">
-        {users.map((user, idx) => (
-          <li
-            key={idx}
-            className="flex justify-between items-center bg-white rounded-lg shadow-sm px-3 py-2"
+  if (results.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-screen text-gray-600">
+        No interview results yet 🚀
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-blue-100 to-blue-200 p-6">
+      <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-xl p-6">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">Leaderboard</h2>
+
+        {/* Table Header */}
+        <div className="grid grid-cols-4 gap-4 font-semibold text-gray-700 border-b pb-2">
+          <span>Profile</span>
+          <span>Company</span>
+          <span>Rank</span>
+          <span className="text-right">Score</span>
+        </div>
+
+        {/* Dynamic rows */}
+        {results.map((result, idx) => (
+          <div
+            key={result.id}
+            className="grid grid-cols-4 gap-4 items-center py-3 border-b last:border-0"
           >
-            {/* Avatar + Name */}
+            {/* Profile + Name */}
             <div className="flex items-center gap-3">
-              <img
-                src={user.avatar}
-                alt={user.name}
-                className="w-8 h-8 rounded-full object-cover"
-              />
-              <span className="font-medium text-gray-800">{user.name}</span>
+              {result.profile?.avatar_url ? (
+                <img
+                  src={result.profile.avatar_url}
+                  alt={result.profile.name}
+                  className="w-8 h-8 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-xs text-gray-600">
+                  {result.profile?.name
+                    ? result.profile.name.charAt(0)
+                    : "?"}
+                </div>
+              )}
+              <span className="text-gray-800 font-medium">
+                {result.profile?.name || "Unknown User"}
+              </span>
             </div>
+
+            {/* Company */}
+            <span className="text-gray-700">
+              {result.interview_sessions?.company || "N/A"}
+            </span>
 
             {/* Rank */}
             <span className="text-gray-700 font-semibold">#{idx + 1}</span>
 
             {/* Score */}
-            <span className="font-bold text-gray-900">{user.score}</span>
-          </li>
+            <span className="text-right font-bold text-blue-600">
+              {result.final_score ?? "--"}
+            </span>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }

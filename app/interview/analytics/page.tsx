@@ -31,7 +31,14 @@ export default function AnalyticsPage() {
       try {
         const { data: result, error } = await supabase
           .from("interview_results")
-          .select("*")
+          .select(
+            `
+            final_score,
+            radar_scores,
+            feedback,
+            interview_sessions ( domain )
+          `
+          )
           .eq("session_id", sessionId)
           .single();
 
@@ -43,6 +50,9 @@ export default function AnalyticsPage() {
 
         // ✅ Final Score
         setScore(result.final_score ?? 0);
+
+        // ✅ Domain (from joined interview_sessions)
+        setDomain(result.interview_sessions?.domain || "Not available");
 
         // ✅ Radar Data
         setRadarData(result.radar_scores || []);

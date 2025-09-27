@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { model } from "@/lib/geminiClient";
-import { openai } from "@/lib/openaiClient";
 
 export default function AIInterviewForm() {
   const [level, setLevel] = useState("Easy");
@@ -26,10 +25,9 @@ export default function AIInterviewForm() {
     setLoading(true);
 
     try {
-      // 1️⃣ Create session
       const { data: session, error: sessionError } = await supabase
         .from("interview_sessions")
-        .insert([{ type: level, domain, experience: round, job_desc: company }])
+        .insert([{ type: level, domain, round, company }])
         .select()
         .single();
 
@@ -37,11 +35,10 @@ export default function AIInterviewForm() {
 
       const numQuestions = roundQuestions[round as keyof typeof roundQuestions];
 
-      // 2️⃣ Prompt
       const prompt = `You are an expert interview question generator.
 
 Generate ${numQuestions} unique and domain-specific interview questions 
-for a candidate applying in the field of "${domain}".
+for a candidate applying in the field of "${domain}" at "${company}".
 
 Difficulty: ${level}.
 Round: ${round}.
@@ -49,36 +46,14 @@ Round: ${round}.
 The questions should test both theoretical knowledge and practical problem-solving in ${domain}.
 Return ONLY the list of questions, one per line, no numbering, no explanations.`;
 
-      let text: string | null = null;
+      const result = await model.generateContent(prompt);
+      const text = result.response.text();
 
-      // 3️⃣ Try Gemini first
-      try {
-        const result = await model.generateContent(prompt);
-        text = result.response.text();
-      } catch (err) {
-        console.warn("⚠️ Gemini failed, falling back to OpenAI:", err);
-
-        // 4️⃣ Fallback to OpenAI GPT-4o mini
-        const completion = await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [
-            { role: "system", content: "You generate interview questions." },
-            { role: "user", content: prompt },
-          ],
-        });
-
-        text =
-          completion.choices[0]?.message?.content ||
-          "Fallback Question 1\nFallback Question 2\nFallback Question 3";
-      }
-
-      // 5️⃣ Clean up questions
       const questions = text
         .split("\n")
         .map((q) => q.replace(/^\d+[\).\s]/, "").trim())
         .filter((q) => q.length > 0);
 
-      // 6️⃣ Save into Supabase
       const formattedQuestions = questions.map((q) => ({
         round,
         question: q,
@@ -91,7 +66,6 @@ Return ONLY the list of questions, one per line, no numbering, no explanations.`
 
       if (qError) throw qError;
 
-      // 7️⃣ Redirect
       router.push(`/interview?sessionId=${session.id}`);
     } catch (err) {
       console.error("❌ Error generating questions:", err);
@@ -102,7 +76,14 @@ Return ONLY the list of questions, one per line, no numbering, no explanations.`
   };
 
   return (
-    <div>
+    <div className="relative">
+      {/* Loader only in the middle, no dark overlay */}
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center z-50">
+          <img src="/loading.gif" alt="Loading..." className="w-24 h-24" />
+        </div>
+      )}
+
       <h2 className="text-2xl font-bold text-center mb-4">
         AI{" "}
         <span className="bg-gradient-to-r from-[#191717] to-[#2B96D3] bg-clip-text text-transparent">
@@ -110,7 +91,11 @@ Return ONLY the list of questions, one per line, no numbering, no explanations.`
         </span>
       </h2>
 
-      <div className="bg-gradient-to-b from-[#C8F4F9] via-[#B0E7ED] to-[#F1FDFF] p-6 rounded-2xl shadow">
+      <div
+        className={`bg-gradient-to-b from-[#C8F4F9] via-[#B0E7ED] to-[#F1FDFF] p-6 rounded-2xl shadow ${
+          loading ? "opacity-50 pointer-events-none" : ""
+        }`}
+      >
         {/* Level */}
         <div className="mb-4">
           <p className="text-gray-700 font-semibold mb-2">Level</p>
@@ -169,7 +154,7 @@ Return ONLY the list of questions, one per line, no numbering, no explanations.`
           />
         </div>
 
-        {/* Start */}
+        {/* Start Button */}
         <button
           onClick={handleStart}
           disabled={loading}

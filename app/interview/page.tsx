@@ -1,9 +1,9 @@
 "use client";
 
-import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import Header from "@/app/components/Header";
+import Header from "../components/Header";
 import {
   Radar,
   RadarChart,
@@ -28,6 +28,9 @@ export default function InterviewPage() {
   const [listening, setListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [domain, setDomain] = useState("");
+
+  // ✅ Keep all answers in memory
+  const [answers, setAnswers] = useState<Record<string, string>>({});
 
   const recognitionRef = useRef<any>(null);
 
@@ -133,10 +136,19 @@ export default function InterviewPage() {
   // ✅ Save & Go Next
   const handleNext = async () => {
     if (questions[currentIndex]) {
-      await supabase.from("interview_answers").insert([
+      const qId = questions[currentIndex].id;
+
+      // Save in memory
+      setAnswers((prev) => ({
+        ...prev,
+        [qId]: transcript || "(No response)",
+      }));
+
+      // Auto-save to Supabase (so progress is never lost)
+      await supabase.from("interview_answers").upsert([
         {
           session_id: sessionId,
-          question_id: questions[currentIndex].id,
+          question_id: qId,
           response: transcript || "(No response)",
         },
       ]);
@@ -146,29 +158,38 @@ export default function InterviewPage() {
       setCurrentIndex((i) => i + 1);
       setTranscript("");
     } else {
-      // ✅ Interview finished → insert into interview_results
-      const finalScore = Math.floor(Math.random() * 40) + 60; // random 60–100
-      const radarScores = [
-        { subject: "Communication", A: 75 },
-        { subject: "Teamwork", A: 65 },
-        { subject: "Leadership", A: 60 },
-        { subject: "Creativity", A: 70 },
-      ];
-
-      const { data: userData } = await supabase.auth.getUser();
-
-      await supabase.from("interview_results").insert([
-        {
+      // ✅ On last question → Final save + Evaluation
+      try {
+        // Bulk final save (just in case)
+        const finalPayload = Object.entries(answers).map(([qId, resp]) => ({
           session_id: sessionId,
-          user_id: userData?.user?.id || null,
-          final_score: finalScore,
-          strengths: ["Good communication"],
-          improvements: ["Needs more confidence"],
-          radar_scores: radarScores,
-        },
-      ]);
+          question_id: qId,
+          response: resp,
+        }));
 
-      router.push(`/interview/completed?sessionId=${sessionId}`);
+        if (finalPayload.length > 0) {
+          await supabase.from("interview_answers").upsert(finalPayload);
+        }
+
+        // Trigger evaluation
+        const res = await fetch("/api/evaluate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId }),
+        });
+
+        if (!res.ok) {
+          console.error("Evaluation failed:", await res.json());
+          return;
+        }
+
+        const { evaluation } = await res.json();
+        console.log("Evaluation complete:", evaluation);
+
+        router.push(`/interview/completed?sessionId=${sessionId}`);
+      } catch (error) {
+        console.error("Error running evaluation:", error);
+      }
     }
   };
 
@@ -177,17 +198,6 @@ export default function InterviewPage() {
     stopListening();
     router.push("/");
   };
-
-  // Dummy radar data (for UI preview)
-  const data = [
-    { subject: "Professionalism", A: 86 },
-    { subject: "Attitude", A: 72 },
-    { subject: "Creativity", A: 65 },
-    { subject: "Communication", A: 75 },
-    { subject: "Leadership", A: 60 },
-    { subject: "Teamwork", A: 80 },
-    { subject: "Sociability", A: 70 },
-  ];
 
   return (
     <div className="min-h-screen bg-[#F5F7FA]">
@@ -250,7 +260,7 @@ export default function InterviewPage() {
             {questions[currentIndex]?.question || "Loading..."}
           </div>
 
-          {/* Transcript (live speech-to-text) */}
+          {/* Transcript */}
           {transcript && (
             <div className="mt-2 bg-gray-100 rounded-lg p-3 text-center text-gray-700">
               {transcript}
@@ -285,7 +295,7 @@ export default function InterviewPage() {
             Domain: {domain || "Loading..."}
           </p>
 
-          {/* Radar Chart */}
+          {/* Radar Chart (dummy sidebar) */}
           <div className="bg-white rounded-xl shadow p-4 w-full">
             <div className="flex justify-between items-center mb-2">
               <h3 className="text-sm font-semibold text-gray-700">
@@ -294,7 +304,7 @@ export default function InterviewPage() {
               <span className="text-gray-400 cursor-pointer">ℹ️</span>
             </div>
             <ResponsiveContainer width="100%" height={250}>
-              <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
+              <RadarChart cx="50%" cy="50%" outerRadius="80%" data={[]}>
                 <PolarGrid />
                 <PolarAngleAxis dataKey="subject" />
                 <PolarRadiusAxis angle={30} domain={[0, 100]} />

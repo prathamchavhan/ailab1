@@ -18,21 +18,32 @@ export default function PerformanceChart() {
 
   useEffect(() => {
     const fetchResults = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
-      // ✅ Fetch all results for logged-in user
+      if (userError || !user) {
+        console.error("User fetch error:", userError);
+        return;
+      }
+
+      // ✅ Fetch results directly by user_id
       const { data: results, error } = await supabase
         .from("interview_results")
         .select("id, final_score, created_at")
-        .eq("user_id", user.id)
+        .eq("user_id", user.id) // 👈 filter directly
         .order("created_at", { ascending: true });
 
-      if (!error && results) {
-        // Transform data for chart
+      if (error) {
+        console.error("Error fetching results:", error);
+        return;
+      }
+
+      if (results) {
         const formatted = results.map((r, idx) => ({
           name: `Interview ${idx + 1}`,
-          score: r.final_score,
+          score: r.final_score ?? 0,
         }));
         setData(formatted);
       }
@@ -49,25 +60,26 @@ export default function PerformanceChart() {
           View Full Report
         </a>
       </div>
-      <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="name" />
-          <YAxis domain={[0, 100]} />
-          <Tooltip />
-          <Bar dataKey="score" fill="url(#gradientMain)">
-            <LabelList dataKey="score" position="top" />
-          </Bar>
-          <defs>
-            <linearGradient id="gradientMain" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#2DC7DB" stopOpacity={1} />
-              <stop offset="95%" stopColor="#2B7ECF" stopOpacity={1} />
-            </linearGradient>
-          </defs>
-        </BarChart>
-      </ResponsiveContainer>
 
-      {data.length === 0 && (
+      {data.length > 0 ? (
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" />
+            <YAxis domain={[0, 100]} />
+            <Tooltip />
+            <Bar dataKey="score" fill="url(#gradientMain)">
+              <LabelList dataKey="score" position="top" />
+            </Bar>
+            <defs>
+              <linearGradient id="gradientMain" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#2DC7DB" stopOpacity={1} />
+                <stop offset="95%" stopColor="#2B7ECF" stopOpacity={1} />
+              </linearGradient>
+            </defs>
+          </BarChart>
+        </ResponsiveContainer>
+      ) : (
         <p className="text-center text-gray-500 mt-4">
           No interviews attempted yet.
         </p>

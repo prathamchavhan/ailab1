@@ -11,10 +11,10 @@ export default function CompletedPage() {
 
   const sessionId = searchParams.get("sessionId");
 
-  // ✅ State for user
   const [userName, setUserName] = useState<string>("User");
+  const [score, setScore] = useState<number | null>(null);
 
-  // ✅ Fetch logged-in user
+  // ✅ Fetch logged-in user name
   useEffect(() => {
     const fetchUser = async () => {
       const {
@@ -23,21 +23,19 @@ export default function CompletedPage() {
       } = await supabase.auth.getUser();
 
       if (error || !user) {
-        console.error("No logged-in user:", error);
+        console.error("Error fetching user:", error);
         return;
       }
 
-      // If you have a "profiles" table with full_name
       const { data: profile } = await supabase
         .from("profiles")
-        .select("full_name")
-        .eq("id", user.id)
+        .select("name") // 👈 in your schema, the field is "name", not "full_name"
+        .eq("user_id", user.id)
         .single();
 
-      if (profile?.full_name) {
-        setUserName(profile.full_name);
+      if (profile?.name) {
+        setUserName(profile.name);
       } else if (user.user_metadata?.name) {
-        // fallback to auth metadata
         setUserName(user.user_metadata.name);
       } else {
         setUserName(user.email || "User");
@@ -47,12 +45,32 @@ export default function CompletedPage() {
     fetchUser();
   }, []);
 
+  // ✅ Fetch latest score for this session
+  useEffect(() => {
+    const fetchScore = async () => {
+      if (!sessionId) return;
+
+      const { data, error } = await supabase
+        .from("interview_results")
+        .select("final_score")
+        .eq("session_id", sessionId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (!error && data) {
+        setScore(data.final_score);
+      }
+    };
+
+    fetchScore();
+  }, [sessionId]);
+
   return (
     <div className="min-h-screen bg-[#F5F7FA]">
       <Header />
 
       <div className="flex flex-col items-center justify-center h-[80vh] text-center">
-        {/* Title with dynamic name */}
         <h2 className="text-2xl font-bold">
           Thank you <span className="text-blue-600">{userName}</span>! 🎉
         </h2>
@@ -60,19 +78,23 @@ export default function CompletedPage() {
           Completed an interview
         </p>
 
-        {/* Progress messages */}
+        {score !== null && (
+          <p className="mt-4 text-lg font-bold text-green-700">
+            Your Score: {score}
+          </p>
+        )}
+
         <ul className="mt-6 space-y-2 text-blue-700 font-medium">
           <li>✔ Responses are being uploaded…</li>
           <li>✔ The interview is being analyzed…</li>
           <li>✔ Actionable feedback is being created…</li>
         </ul>
 
-        {/* Navigate to Analytics with sessionId */}
         <button
           onClick={() =>
             router.push(`/interview/analytics?sessionId=${sessionId}`)
           }
-          disabled={!sessionId} // 🔒 prevent navigation if sessionId missing
+          disabled={!sessionId}
           className="mt-6 px-8 py-2 rounded-lg bg-gradient-to-r from-[#2DC7DB] to-[#2B7ECF] text-white font-semibold shadow disabled:opacity-50 disabled:cursor-not-allowed"
         >
           VIEW ANALYTICS
