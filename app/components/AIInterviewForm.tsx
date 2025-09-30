@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
-import { model } from "@/lib/geminiClient";
 
 export default function AIInterviewForm() {
   const [level, setLevel] = useState("Easy");
@@ -14,8 +12,6 @@ export default function AIInterviewForm() {
 
   const router = useRouter();
 
-  const roundQuestions = { R1: 5, R2: 7, R3: 10 };
-
   const handleStart = async () => {
     if (!domain || !company) {
       alert("Please fill in both Domain and Company");
@@ -25,50 +21,30 @@ export default function AIInterviewForm() {
     setLoading(true);
 
     try {
-      const { data: session, error: sessionError } = await supabase
-        .from("interview_sessions")
-        .insert([{ type: level, domain, round, company }])
-        .select()
-        .single();
+      // 🔥 Call secure API route
+      const res = await fetch("/api/generate-questions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ level, round, domain, company }),
+      });
 
-      if (sessionError) throw sessionError;
+      if (!res.ok) {
+        console.error("❌ API error:", await res.text());
+        alert("Failed to generate questions. Please try again.");
+        return;
+      }
 
-      const numQuestions = roundQuestions[round as keyof typeof roundQuestions];
+      const { sessionId } = await res.json();
 
-      const prompt = `You are an expert interview question generator.
+      if (!sessionId) {
+        alert("Something went wrong. No session created.");
+        return;
+      }
 
-Generate ${numQuestions} unique and domain-specific interview questions 
-for a candidate applying in the field of "${domain}" at "${company}".
-
-Difficulty: ${level}.
-Round: ${round}.
-
-The questions should test both theoretical knowledge and practical problem-solving in ${domain}.
-Return ONLY the list of questions, one per line, no numbering, no explanations.`;
-
-      const result = await model.generateContent(prompt);
-      const text = result.response.text();
-
-      const questions = text
-        .split("\n")
-        .map((q) => q.replace(/^\d+[\).\s]/, "").trim())
-        .filter((q) => q.length > 0);
-
-      const formattedQuestions = questions.map((q) => ({
-        round,
-        question: q,
-        session_id: session.id,
-      }));
-
-      const { error: qError } = await supabase
-        .from("interview_question")
-        .insert(formattedQuestions);
-
-      if (qError) throw qError;
-
-      router.push(`/interview?sessionId=${session.id}`);
+      // ✅ Redirect to interview
+      router.push(`/interview?sessionId=${sessionId}`);
     } catch (err) {
-      console.error("❌ Error generating questions:", err);
+      console.error("❌ Unexpected error:", err);
       alert("Something went wrong while generating questions.");
     } finally {
       setLoading(false);
@@ -77,9 +53,9 @@ Return ONLY the list of questions, one per line, no numbering, no explanations.`
 
   return (
     <div className="relative">
-      {/* Loader only in the middle, no dark overlay */}
+      {/* 🔥 Full-page loader overlay */}
       {loading && (
-        <div className="absolute inset-0 flex items-center justify-center z-50">
+        <div className="fixed inset-0 flex items-center justify-center bg-white/70 z-50">
           <img src="/loading.gif" alt="Loading..." className="w-24 h-24" />
         </div>
       )}
@@ -91,11 +67,7 @@ Return ONLY the list of questions, one per line, no numbering, no explanations.`
         </span>
       </h2>
 
-      <div
-        className={`bg-gradient-to-b from-[#C8F4F9] via-[#B0E7ED] to-[#F1FDFF] p-6 rounded-2xl shadow ${
-          loading ? "opacity-50 pointer-events-none" : ""
-        }`}
-      >
+      <div className="bg-gradient-to-b from-[#C8F4F9] via-[#B0E7ED] to-[#F1FDFF] p-6 rounded-2xl shadow">
         {/* Level */}
         <div className="mb-4">
           <p className="text-gray-700 font-semibold mb-2">Level</p>
