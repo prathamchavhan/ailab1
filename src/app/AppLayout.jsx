@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
+import AdComponent from '@/components/AdComponent';
 // ... other imports
 
 const AppLayout = ({ children }) => {
@@ -23,11 +24,14 @@ const AppLayout = ({ children }) => {
       <div className="row">
         <Sidebar />
         <main 
-          className="col-lg-9 ms-auto px-md-4"
+          className="col-lg-8 px-md-4"
           style={{ height: '100vh', overflowY: 'auto' }}
         >
           {children}
         </main>
+        <div className="col-lg-2">
+          <AdComponent />
+        </div>
       </div>
     </div>
   );

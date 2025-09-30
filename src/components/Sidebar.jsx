@@ -22,7 +22,7 @@ const Sidebar = () => {
   const pathname = usePathname();
 
   return (
-    <nav className={`d-none d-md-block col-lg-3 ${styles.sidebar}`}>
+    <nav className={`d-none d-md-block col-lg-2 ${styles.sidebar}`}>
       <div className={styles.logoContainer}>
         <Link href="/">
           <Image src="/images/logo.png" alt="AI Lab Logo" width={270} height={90} priority />
