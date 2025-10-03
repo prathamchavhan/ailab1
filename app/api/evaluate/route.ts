@@ -1,10 +1,10 @@
-// app/api/evaluate/route.ts
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from "@/lib/utils/supabase/server";
 import { model } from "@/lib/geminiClient";
 
 export async function POST(req: Request) {
   try {
+    const supabase = await createClient();
     const { sessionId } = await req.json();
 
     if (!sessionId) {
@@ -30,15 +30,20 @@ export async function POST(req: Request) {
     }
 
     // 2️⃣ Fetch session to get user_id
-    const { data: session, error: sessionError } = await supabase
+    const { data: sessions, error: sessionError } = await supabase
       .from("interview_sessions")
       .select("user_id")
-      .eq("id", sessionId)
-      .single();
+      .eq("id", sessionId);
 
     if (sessionError) {
       console.error("Error fetching session:", sessionError);
       return NextResponse.json({ error: "Failed to fetch session" }, { status: 500 });
+    }
+
+    const session = sessions && sessions.length > 0 ? sessions[0] : null;
+
+    if (!session) {
+        return NextResponse.json({ error: "No session found" }, { status: 404 });
     }
 
     // 3️⃣ Prompt for Gemini
@@ -89,7 +94,7 @@ Give ONLY a JSON response in this exact format:
       .insert([
         {
           session_id: sessionId,
-          user_id: session?.user_id, // ✅ now results are linked to user
+          user_id: session?.user_id,
           final_score: evaluation.final_score,
           radar_scores: evaluation.radar_scores,
           feedback: evaluation.feedback,

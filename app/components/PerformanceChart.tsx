@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from "@/lib/utils/supabase/client";
 import {
   BarChart,
   Bar,
@@ -15,6 +15,7 @@ import {
 
 export default function PerformanceChart() {
   const [data, setData] = useState<any[]>([]);
+  const supabase = createClient();
 
   useEffect(() => {
     const fetchResults = async () => {

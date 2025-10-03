@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from "@/lib/utils/supabase/client";
 import Header from "../components/Header";
 import {
   Radar,
@@ -18,6 +18,7 @@ export default function InterviewPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const searchParams = useSearchParams();
   const router = useRouter();
+  const supabase = createClient();
 
   const sessionId = searchParams.get("sessionId");
 
@@ -34,18 +35,29 @@ export default function InterviewPage() {
 
   const recognitionRef = useRef<any>(null);
 
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push('/login');
+      }
+    };
+    checkUser();
+  }, [router]);
+
   // ✅ Fetch questions + session domain
   useEffect(() => {
     if (!sessionId) return;
 
     const fetchData = async () => {
-      const { data: session } = await supabase
+      const { data: sessions } = await supabase
         .from("interview_sessions")
         .select("domain")
-        .eq("id", sessionId)
-        .single();
+        .eq("id", sessionId);
 
-      if (session) setDomain(session.domain);
+      if (sessions && sessions.length > 0) {
+        setDomain(sessions[0].domain);
+      }
 
       const { data: qData } = await supabase
         .from("interview_question")
@@ -115,7 +127,7 @@ export default function InterviewPage() {
     };
 
     recognition.onerror = (e: any) => {
-      console.error("Recognition error:", e);
+      console.error("Recognition error:", e.error);
       setListening(false);
     };
 

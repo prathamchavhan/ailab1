@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from "@/lib/utils/supabase/client";
 
 export default function Dashboard() {
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const supabase = createClient();
 
   useEffect(() => {
     const fetchResults = async () => {
@@ -40,7 +41,7 @@ export default function Dashboard() {
         if (userIds.length > 0) {
           const { data: profiles, error: profileError } = await supabase
             .from("profiles")
-            .select("user_id, name, avatar_url")
+            .select("user_id, name")
             .in("user_id", userIds);
 
           if (profileError) {
@@ -108,19 +109,11 @@ export default function Dashboard() {
           >
             {/* Profile + Name */}
             <div className="flex items-center gap-3">
-              {result.profile?.avatar_url ? (
-                <img
-                  src={result.profile.avatar_url}
-                  alt={result.profile.name}
-                  className="w-8 h-8 rounded-full object-cover"
-                />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-xs text-gray-600">
-                  {result.profile?.name
-                    ? result.profile.name.charAt(0)
-                    : "?"}
-                </div>
-              )}
+              <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-xs text-gray-600">
+                {result.profile?.name
+                  ? result.profile.name.charAt(0)
+                  : "?"}
+              </div>
               <span className="text-gray-800 font-medium">
                 {result.profile?.name || "Unknown User"}
               </span>

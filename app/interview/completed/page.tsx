@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Header from "@/app/components/Header";
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from "@/lib/utils/supabase/client";
 
 export default function CompletedPage() {
+  const supabase = createClient();
   const searchParams = useSearchParams();
   const router = useRouter();
 

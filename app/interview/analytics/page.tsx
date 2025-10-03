@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from "@/lib/utils/supabase/client";
 import Header from "@/app/components/Header";
 import {
   Radar,
@@ -16,6 +16,7 @@ import {
 export default function AnalyticsPage() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("sessionId");
+  const supabase = createClient();
 
   const [loading, setLoading] = useState(true);
   const [score, setScore] = useState<number | null>(null);

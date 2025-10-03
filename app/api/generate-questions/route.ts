@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabaseClient";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { model } from "@/lib/geminiClient";
 import { openai } from "@/lib/openaiClient";
+import { createClient } from "@/lib/utils/supabase/server";
+
 
 export async function POST(req: Request) {
   try {
@@ -11,10 +13,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
+    const supabaseUserClient = await createClient();
+    const { data: { user } } = await supabaseUserClient.auth.getUser();
+
+    if (!user) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const supabaseAdmin = createAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
     // 1️⃣ Create session
-    const { data: session, error: sessionError } = await supabase
+    const { data: session, error: sessionError } = await supabaseAdmin
       .from("interview_sessions")
-      .insert([{ type: level, domain, experience: round, job_desc: company }])
+      .insert([{ user_id: user.id, type: level, domain, experience: round, job_desc: company }])
       .select()
       .single();
 
@@ -24,16 +38,7 @@ export async function POST(req: Request) {
     const numQuestions = roundQuestions[round as keyof typeof roundQuestions];
 
     // 2️⃣ Prompt
-    const prompt = `You are an expert interview question generator.
-
-Generate ${numQuestions} unique and domain-specific interview questions 
-for a candidate applying in the field of "${domain}" at "${company}".
-
-Difficulty: ${level}.
-Round: ${round}.
-
-The questions should test both theoretical knowledge and practical problem-solving in ${domain}.
-Return ONLY the list of questions, one per line, no numbering, no explanations.`;
+    const prompt = `You are an expert interview question generator.\n\nGenerate ${numQuestions} unique and domain-specific interview questions \nfor a candidate applying in the field of \"${domain}\" at \"${company}\".\n\nDifficulty: ${level}.\nRound: ${round}.\n\nThe questions should test both theoretical knowledge and practical problem-solving in ${domain}.\nReturn ONLY the list of questions, one per line, no numbering, no explanations.`;
 
     let text: string | null = null;
 
@@ -70,7 +75,7 @@ Return ONLY the list of questions, one per line, no numbering, no explanations.`
       session_id: session.id,
     }));
 
-    const { error: qError } = await supabase
+    const { error: qError } = await supabaseAdmin
       .from("interview_question")
       .insert(formatted);
 
