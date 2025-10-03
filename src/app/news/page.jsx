@@ -6,6 +6,7 @@ import { SlCalender } from "react-icons/sl";
 import { supabase } from '../../lib/supabaseClient'
 
 import { FaPlus, FaUpload, FaSortAmountDown, FaFilter } from 'react-icons/fa'
+import AdComponent from '../../components/AdComponent'
 
 export default function NewsDashboard() {
   const router = useRouter()
@@ -45,11 +46,14 @@ export default function NewsDashboard() {
     <div className="p-6 space-y-6 bg-[#f9f9fb] min-h-screen">
 
       {/* Top Section */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-semibold text-black">Latest News</h1>
-        <div className="flex gap-2">
-          
-         
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="flex-1">
+          <h1 className="text-3xl font-semibold text-black">Latest News</h1>
+        </div>
+
+        {/* Ad slot - show on md+ */}
+        <div className="hidden md:block md:w-72">
+          <AdComponent />
         </div>
       </div>
 
@@ -138,6 +142,11 @@ export default function NewsDashboard() {
             <p className="text-sm text-gray-600 truncate">{news.description}</p>
           </div>
         ))}
+      </div>
+
+      {/* Mobile ad slot (below news) */}
+      <div className="block md:hidden mt-6">
+        <AdComponent />
       </div>
     </div>
   )

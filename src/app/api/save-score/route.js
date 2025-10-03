@@ -8,7 +8,7 @@ export async function POST(request) {
     const { aptitudeType, level, score } = await request.json();
     
     // Create a Supabase client that can get the current user's session
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
 
     // Get the current logged-in user's data
