@@ -1,0 +1,8 @@
+Q1: Tell me about a project where you solved a tough problem.
+A1: Yeah, so in my last job we had memory leaks in a Node.js app. It kept crashing in production. I used Chrome DevTools heap snapshots and found unclosed event listeners. Fixing that reduced memory use by 40%.
+
+Q2: How do you write clean code?
+A2: Uh, I try to follow SOLID principles and keep functions short. I also write unit tests, which kinda forces me to keep things modular. Code reviews help too.
+
+Q3: What’s your approach to learning new tech?
+A3: Honestly, I start with the docs, then build a small project. Like, when I picked up GraphQL, I just made a mini todo app first. That helps me learn faster.

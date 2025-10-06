@@ -1,0 +1,4 @@
+.env
+score_model/__pycache__/
+score_model/venv/
+score_model/.env

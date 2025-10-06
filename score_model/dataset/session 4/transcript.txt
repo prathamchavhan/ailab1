@@ -1,0 +1,9 @@
+
+Q1: What’s your background in data analysis?
+A1: Uh, I’ve done like some projects in Python, mostly using Pandas. I’m not, like, super advanced, but I can clean data and make some visualizations with Matplotlib.
+
+Q2: Can you explain what a regression model does?
+A2: Umm, it’s basically like trying to predict a number based on inputs. So like, house prices depending on area or bedrooms. I think it fits a line through the data? Yeah.
+
+Q3: How do you validate your models?
+A3: Uh, I’ve only really split data into training and testing sets. I know there are other methods like cross-validation but I haven’t done that much.
