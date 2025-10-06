@@ -1,10 +1,10 @@
+// --- Start of Corrected Code ---
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 
 export async function POST(request) {
   console.log("API route '/api/generate-questions' was hit.");
 
-  // Get API keys from environment variables and split them
   const apiKeys = (process.env.GEMINI_API_KEYS || "").split(',');
   if (!apiKeys.length || !apiKeys[0]) {
     console.error("GEMINI_API_KEYS environment variable is not set or empty.");
@@ -20,27 +20,39 @@ export async function POST(request) {
       return NextResponse.json({ error: "Level is required." }, { status: 400 });
     }
 
-    // Loop through API keys for fallback/quota management
     for (const key of apiKeys) {
       try {
         console.log(`Attempting to use API key ending with "...${key.slice(-4)}"`);
         
         const genAI = new GoogleGenerativeAI(key.trim());
         
-        // Use gemini-2.5-flash for speed, and enforce JSON output
         const model = genAI.getGenerativeModel({ 
           model: "gemini-2.5-flash",
           generationConfig: {
             response_mime_type: "application/json",
           }
         });
-
-        // NOTE: Temporarily set to 3 questions for stability/speed testing. 
-        // You can change '3' back to '10' once this code is confirmed working.
+        
+        // **REFINED PROMPT to ensure consistent JSON output**
         const promptTemplate = `
-          Generate a JSON object with 3 keys: "quantitative", "logical", "verbal".
-          For each key, provide an array of 10 unique multiple-choice questions of ${level} difficulty.
-          Each question object must have "question", "options" (an array of 4 strings), and "answer" keys.
+          Generate a JSON object for multiple-choice questions. The JSON should strictly follow this structure and nothing else:
+          
+          {
+            "quantitative": [
+              { "question": "...", "options": ["...", "...", "...", "..."], "answer": "..." },
+              // ... 9 more questions
+            ],
+            "logical": [
+              { "question": "...", "options": ["...", "...", "...", "..."], "answer": "..." },
+              // ... 9 more questions
+            ],
+            "verbal": [
+              { "question": "...", "options": ["...", "...", "...", "..."], "answer": "..." },
+              // ... 9 more questions
+            ]
+          }
+          
+          The questions should be of "${level}" difficulty. Ensure each array contains exactly 10 unique questions. Do not include any text, code fences, or explanations outside the JSON object itself.
         `;
 
         const result = await model.generateContent(promptTemplate);
@@ -48,34 +60,29 @@ export async function POST(request) {
         
         console.log(`API key "...${key.slice(-4)}" succeeded!`);
         
-        // --- ROBUST JSON PARSING BLOCK to prevent 500 errors ---
         try {
             let responseText = response.text().trim();
             
-            // Clean markdown fences (```json...```)
+            // Clean markdown fences. The `response_mime_type` should prevent this, but this is a good fallback.
             if (responseText.startsWith('```json')) {
                 const startIndex = responseText.indexOf('```json') + 7;
                 const endIndex = responseText.lastIndexOf('```');
-                
                 if (endIndex > startIndex) {
                     responseText = responseText.substring(startIndex, endIndex).trim();
                 } else {
-                    // Fallback for missing closing fence
                     responseText = responseText.replace(/^```json\s*/, '').trim();
                 }
             }
             
-            // Check for a leading single backtick
-            if (responseText.startsWith('`')) {
-                responseText = responseText.substring(1).trim();
-            }
+            // **New, more aggressive cleanup for leading/trailing junk**
+            // This is the most important change. It removes any non-JSON characters from the start and end.
+            responseText = responseText.replace(/^[^\{]*/, '').replace(/[^\}]*$/, '');
 
             const jsonData = JSON.parse(responseText);
             return NextResponse.json(jsonData);
             
         } catch (parseError) {
             console.error("JSON Parsing failed for LLM output:", parseError);
-            // Return a specific error with the raw text snippet for debugging
             const originalRawText = response.text();
             
             return NextResponse.json(
@@ -87,22 +94,17 @@ export async function POST(request) {
                 { status: 500 }
             );
         }
-        // --- END OF ROBUST JSON PARSING BLOCK ---
-
       } catch (error) {
-        // Handle API specific errors (e.g., Quota exceeded)
         if (error.message && error.message.includes('[429 Too Many Requests]')) {
           console.warn(`API key "...${key.slice(-4)}" is exhausted. Trying next key...`);
-          continue; // Try the next key
+          continue;
         } else {
-          // Re-throw any other unexpected API error to be caught by the outer block
           console.error("A non-quota error occurred:", error);
-          throw error; 
+          throw error;
         }
       }
     }
 
-    // If the loop finishes without success
     console.error("All API keys are exhausted or failed.");
     return NextResponse.json(
       { error: "All available API keys have exceeded their quota." },
@@ -110,7 +112,6 @@ export async function POST(request) {
     );
 
   } catch (error) {
-    // Handle errors outside the loop (e.g., request.json() failure, or re-thrown API error)
     console.error("A critical error occurred in the API route:", error);
     return NextResponse.json(
       { error: "Failed to generate questions due to a server error.", details: error.message },
@@ -118,3 +119,4 @@ export async function POST(request) {
     );
   }
 }
+// --- End of Corrected Code ---

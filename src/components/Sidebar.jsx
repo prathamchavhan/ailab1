@@ -35,7 +35,7 @@ const navLinks = [
   
     subLinks: [
       { href: '/aptitude', label: 'Aptitude' },
-      { href: '/assessments/assignment', label: 'Assignment' },
+      { href: '/assignment', label: 'Assignment' },
     ] 
   },
   { href: '/billing', label: 'Billing', icon: CreditCard },

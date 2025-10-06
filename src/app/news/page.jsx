@@ -4,8 +4,118 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { SlCalender } from "react-icons/sl";
 import { supabase } from '../../lib/supabaseClient'
+import { FaSortAmountDown, FaFilter } from 'react-icons/fa' // Keeping for functionality, though visually moved
 
-import { FaPlus, FaUpload, FaSortAmountDown, FaFilter } from 'react-icons/fa'
+// --- Utility Components for the New Layout ---
+
+// 1. Component for the Large 'Latest Tech News' Card
+const LatestNewsCard = ({ newsItem }) => {
+  if (!newsItem) return null;
+  
+  // A dark-to-light blue/teal background gradient to match the image
+  const cardGradient = "bg-gradient-to-r from-blue-500 to-teal-400"; 
+  
+  // Format the date for the display style in the image
+  const dateStr = newsItem.created_at ? new Date(newsItem.created_at).toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric'
+  }) : 'September 26, 2025';
+
+  return (
+    <div className={`p-0 rounded-xl overflow-hidden shadow-lg flex w-full h-full ${cardGradient} text-white`}>
+      {/* Image Section - Adjust width as needed */}
+      <div className="w-1/3 min-w-[200px] h-full">
+        {/* Use the news item's image or a placeholder */}
+        <img
+          src={newsItem.image_url || 'https://via.placeholder.com/600x400?text=AI+Workstation'}
+          alt={newsItem.title}
+          className="w-full h-full object-cover"
+        />
+      </div>
+
+      {/* Content Section */}
+      <div className="flex-1 p-6 flex flex-col justify-center">
+        <h2 className="text-2xl font-bold mb-3 leading-snug">{newsItem.title || 'AI Job Market Trends 2025'}</h2>
+        <p className="text-base mb-4 opacity-90">
+          {/* Using a placeholder description or truncate the actual one */}
+          {newsItem.description ? `${newsItem.description.substring(0, 100)}...` : 'AI jobs continue to grow worldwide, with rising demand in data science, prompt engineering, and AI ethics roles.'}
+        </p>
+        <div className="flex items-center text-sm font-light mb-4 border-b border-white/50 pb-2">
+          <span>{dateStr}</span>
+          <span className="mx-2">|</span>
+          <span className="font-medium">{newsItem.author || 'TechSource'}</span>
+        </div>
+        <button
+          onClick={() => console.log('Read more clicked')}
+          className="mt-3 px-6 py-2 bg-white text-blue-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition self-start"
+        >
+          Read More
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// 2. Component for the 'Announcement' Box
+const AnnouncementBox = () => {
+    // A dark purple background to match the image
+    const backgroundStyle = "bg-purple-800 bg-cover bg-center";
+    const imageOverlayStyle = { 
+      backgroundImage: "url('')",
+      backgroundRepeat: 'no-repeat',
+      backgroundPosition: 'right top',
+      backgroundSize: '35%'
+    };
+
+    return (
+        <div className={`p-6 rounded-xl shadow-lg h-full min-h-[250px] text-white flex flex-col justify-center relative overflow-hidden`} 
+             style={{...backgroundStyle, ...imageOverlayStyle}}>
+            {/* Overlay to dim the background image for text clarity, similar to the image */}
+            <div className="absolute inset-0 bg-purple-900/50"></div>
+            <div className="relative z-10">
+                <h3 className="text-xl font-medium mb-2">Announcement</h3>
+                <h2 className="text-3xl font-extrabold mb-4 leading-tight">
+                    Something New is <span className="text-yellow-300">Coming!</span> Exciting News
+                </h2>
+                <p className="text-sm opacity-80">
+                    Big improvements are on the way. Stay tuned for more details we can't wait to share.
+                </p>
+            </div>
+        </div>
+    );
+};
+
+// 3. Component for the Smaller 'Recent Tech News' Cards
+const RecentNewsCard = ({ news }) => {
+    const formattedDate = new Date(news.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    return (
+        <div
+            key={news.id}
+            className="bg-white p-4 rounded-xl border border-gray-200 shadow hover:shadow-lg transition cursor-pointer"
+        >
+            <div className="flex items-start gap-4 mb-3">
+                {/* Small Image/Icon on the left */}
+                <img
+                    src={news.image_url || 'https://via.placeholder.com/100x100?text=News+Icon'}
+                    alt={news.title}
+                    className="w-16 h-16 object-cover rounded-md flex-shrink-0 border border-gray-100"
+                />
+                
+                {/* Title and date on the right */}
+                <div>
+                    <h2 className="font-semibold text-gray-900 leading-snug">{news.title}</h2>
+                    <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                        <SlCalender className="inline" />
+                        {formattedDate} | {news.author || 'TechSource'}
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// --- Main Dashboard Component ---
 
 export default function NewsDashboard() {
   const router = useRouter()
@@ -15,11 +125,13 @@ export default function NewsDashboard() {
   const [sortOrder, setSortOrder] = useState('newest')
   const [showSortOptions, setShowSortOptions] = useState(false)
 
+  // Fetch news data
   useEffect(() => {
     const fetchNews = async () => {
+      // Order by created_at descending to get the newest first
       const { data, error } = await supabase
         .from('news')
-        .select('*')
+        .select('id, created_at, title, description, image_url, author') 
         .order('created_at', { ascending: false })
 
       if (!error) setNewsList(data)
@@ -28,7 +140,8 @@ export default function NewsDashboard() {
     fetchNews()
   }, [])
 
-  const filteredNews = newsList
+  // Filtering and Sorting logic (kept from original code)
+  const sortedAndFilteredNews = newsList
     .filter(
       (item) =>
         item.title?.toLowerCase().includes(search.toLowerCase()) ||
@@ -38,22 +151,48 @@ export default function NewsDashboard() {
       if (sortOrder === 'newest') return new Date(b.created_at) - new Date(a.created_at)
       if (sortOrder === 'oldest') return new Date(a.created_at) - new Date(b.created_at)
       if (sortOrder === 'title') return a.title.localeCompare(b.title)
+      return 0;
     })
+    
+  // Separate the data according to the image layout
+  const latestNewsItem = sortedAndFilteredNews[0]; // The very first item for the large card
+  const recentNewsItems = sortedAndFilteredNews.slice(1); // The rest of the items
 
   return (
-    
-    <div className="p-6 space-y-6 bg-[#f9f9fb] min-h-screen">
-
-      {/* Top Section */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-semibold text-black">Latest News</h1>
-        <div className="flex gap-2">
+    <div className="p-6 space-y-8 bg-[#f9f9fb] min-h-screen">
+      
+      {/* ========================================
+        TOP SECTION: Latest Tech News + Announcement
+        ======================================== 
+      */}
+      
+      {/* Container for Latest News and Announcement (Side-by-side) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
-         
+        {/* Latest Tech News (Left, takes 2/3 width on large screens) */}
+        <div className="lg:col-span-2">
+            <h2 className="text-xl font-semibold text-black mb-3">Latest Tech News</h2>
+            <LatestNewsCard newsItem={latestNewsItem} />
+        </div>
+        
+        {/* Announcement (Right, takes 1/3 width on large screens) */}
+        <div className="lg:col-span-1">
+            <h2 className="text-xl font-semibold text-black mb-3">Announcement</h2>
+            <AnnouncementBox />
         </div>
       </div>
+      
+      {/* --- Horizontal Separator --- */}
+      <hr className="border-gray-200" />
+      
+      {/* ========================================
+        RECENT TECH NEWS SECTION + Filters
+        ======================================== 
+      */}
 
-      {/* Search + Filters */}
+      <h2 className="text-xl font-semibold text-black">Recent Tech News</h2>
+
+      {/* Search + Filters (Moved below the main visual elements) */}
       <div className="flex flex-wrap justify-between items-center gap-4">
         <input
           type="text"
@@ -66,7 +205,7 @@ export default function NewsDashboard() {
         <div className="flex items-center gap-2 relative">
           <button
             onClick={() => alert('Filter clicked')}
-            className="border border-blue-600 px-4 py-2 text-blue-800  bg-gray-200 rounded-lg hover:bg-gray-100 flex items-center gap-2"
+            className="border border-blue-600 px-4 py-2 text-blue-800 bg-gray-200 rounded-lg hover:bg-gray-100 flex items-center gap-2"
           >
             <FaFilter /> Filters
           </button>
@@ -74,7 +213,7 @@ export default function NewsDashboard() {
           <div className="relative">
             <button
               onClick={() => setShowSortOptions(!showSortOptions)}
-              className="border border-blue-600 text-blue-800 px-4 py-2 rounded-lg  bg-gray-200 hover:bg-gray-300 flex items-center gap-2"
+              className="border border-blue-600 text-blue-800 px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 flex items-center gap-2"
             >
               <FaSortAmountDown />
               Sort: {sortOrder === 'newest' ? 'Newest' : sortOrder === 'oldest' ? 'Oldest' : 'Title (A-Z)'}
@@ -108,35 +247,14 @@ export default function NewsDashboard() {
 
       {/* Showing Count */}
       <p className="text-gray-600 text-sm">
-        Showing {filteredNews.length} of {newsList.length} news items
+        Showing {recentNewsItems.length} of {newsList.length} news items
       </p>
 
-      {/* News Cards */}
+      {/* Recent News Cards (Grid Layout) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {filteredNews.map((news) => (
-          <div
-            key={news.id}
-            className="bg-white p-4 rounded-xl border border-gray-200 shadow hover:shadow-md transition"
-          >
-           <div className="relative group mb-3">
-  <img
-    src={news.image_url}
-    alt={news.title}
-    className="w-full h-[160px] object-cover rounded-t-lg"
-  />
-  <div className="absolute inset-0 bg-white/10 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 flex items-end p-3 rounded-t-lg transition duration-300">
-    <p className="text-white font-bold text-sm">
-      Published by: {news.author || 'Unknown'}
-    </p>
-  </div>
-</div>
-
-
-            
-            <p className="text-xs text-black mb-1"><SlCalender />{new Date(news.created_at).toLocaleDateString()}</p>
-            <h2 className="font-semibold text-gray-900 truncate">{news.title}</h2>
-            <p className="text-sm text-gray-600 truncate">{news.description}</p>
-          </div>
+        {recentNewsItems.map((news) => (
+          // Using the new RecentNewsCard component
+          <RecentNewsCard key={news.id} news={news} /> 
         ))}
       </div>
     </div>

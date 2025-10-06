@@ -2,6 +2,7 @@ import { Geist, Geist_Mono ,Inter } from "next/font/google";
 import AppLayout from './AppLayout';
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./globals.css";
+import { Toaster } from 'react-hot-toast';
 import BootstrapClient from "@/components/BootstrapClient"; 
 
 const inter = Inter({ subsets: ['latin'] });
@@ -27,6 +28,7 @@ export default function RootLayout({ children }) {
    <html lang="en">
       <body className={inter.className}>
         <AppLayout>
+          <Toaster position="top-right" />
           {children}
         </AppLayout>
         <BootstrapClient /> {/* Add component to the end of the body */}
