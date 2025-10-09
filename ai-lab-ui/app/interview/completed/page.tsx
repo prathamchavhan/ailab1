@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Header from "@/app/components/Header";
+import Sidebar from "@/app/components/Sidebar";
 import { createClient } from "@/lib/utils/supabase/client";
 
 export default function CompletedPage() {
@@ -11,7 +12,6 @@ export default function CompletedPage() {
   const router = useRouter();
 
   const sessionId = searchParams.get("sessionId");
-
   const [userName, setUserName] = useState<string>("User");
   const [score, setScore] = useState<number | null>(null);
 
@@ -30,7 +30,7 @@ export default function CompletedPage() {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("name") // 👈 in your schema, the field is "name", not "full_name"
+        .select("name")
         .eq("user_id", user.id)
         .single();
 
@@ -68,38 +68,50 @@ export default function CompletedPage() {
   }, [sessionId]);
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA]">
-      <Header />
+    <div className="flex min-h-screen bg-[#F5F7FA]">
+      {/* ✅ Sidebar */}
+      <Sidebar />
 
-      <div className="flex flex-col items-center justify-center h-[80vh] text-center">
-        <h2 className="text-2xl font-bold">
-          Thank you <span className="text-blue-600">{userName}</span>! 🎉
-        </h2>
-        <p className="mt-2 text-xl font-semibold text-blue-900">
-          Completed an interview
-        </p>
+      {/* ✅ Main content area */}
+      <div className="flex-1 flex flex-col">
+        <Header />
 
-        {score !== null && (
-          <p className="mt-4 text-lg font-bold text-green-700">
-            Your Score: {score}
+        {/* ✅ Center content */}
+        <div className="flex flex-col items-center justify-center flex-1 text-center px-6 space-y-8">
+          {/* Thank You */}
+          <h2
+            className="font-[Poppins] font-semibold text-[36px] leading-[100%] text-[#0029A3]"
+            style={{ letterSpacing: "0px" }}
+          >
+            Thank you {userName}! 
+          </h2>
+
+          {/* Completed */}
+          <p
+            className="font-[Poppins] font-bold text-[36px] leading-[100%] text-[#0029A3]"
+            style={{ letterSpacing: "0px" }}
+          >
+            Completed an interview
           </p>
-        )}
 
-        <ul className="mt-6 space-y-2 text-blue-700 font-medium">
-          <li>✔ Responses are being uploaded…</li>
-          <li>✔ The interview is being analyzed…</li>
-          <li>✔ Actionable feedback is being created…</li>
-        </ul>
+          {/* Status Lines */}
+          <ul className="space-y-4 font-[Poppins] text-[24px] font-medium leading-[100%] text-[#0029A3] tracking-[0px]">
+            <li>✔ Responses are being uploaded...</li>
+            <li>✔ The interview is being analyzed...</li>
+            <li>✔ Actionable feedback is being created...</li>
+          </ul>
 
-        <button
-          onClick={() =>
-            router.push(`/interview/analytics?sessionId=${sessionId}`)
-          }
-          disabled={!sessionId}
-          className="mt-6 px-8 py-2 rounded-lg bg-gradient-to-r from-[#2DC7DB] to-[#2B7ECF] text-white font-semibold shadow disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          VIEW ANALYTICS
-        </button>
+          {/* ✅ View Analytics Button */}
+          <button
+            onClick={() =>
+              router.push(`/interview/analytics?sessionId=${sessionId}`)
+            }
+            disabled={!sessionId}
+            className="w-[325px] h-[75px] rounded-[12px] bg-gradient-to-r from-[#2DC6DB] to-[#2B83D0] text-white font-[Poppins] font-semibold text-[20px] shadow hover:opacity-95 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            VIEW ANALYTICS
+          </button>
+        </div>
       </div>
     </div>
   );

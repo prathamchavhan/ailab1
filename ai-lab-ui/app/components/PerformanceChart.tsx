@@ -24,7 +24,6 @@ interface OverallSummaryData {
 const embeddedCSS = `
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
 
-/* Summary Cards */
 .performance-card {
   font-family: 'Poppins', sans-serif;
   display: flex;
@@ -59,7 +58,6 @@ const embeddedCSS = `
   color: #1A202C;
 }
 
-/* Tooltip */
 .custom-hover-tooltip {
   background: white;
   border: 1px solid #cfe8f9;
@@ -97,7 +95,6 @@ const embeddedCSS = `
   font-size: 12px;
   color: #09407F;
   cursor: pointer;
-  margin-right: 10px; /* 👈 added space to move right */
   transition: opacity 0.2s ease;
 }
 .view-report-link:hover {
@@ -221,18 +218,18 @@ export default function PerformanceChart() {
           </div>
 
           <ResponsiveContainer width="100%" height={350}>
-            <BarChart data={chartData} barCategoryGap="28%" barGap={6} margin={{ bottom: 40 }}>
+            <BarChart data={chartData} barCategoryGap="28%" barGap={6}>
               <CartesianGrid stroke="#E5E7EB" vertical={false} />
               <XAxis
                 dataKey="name"
                 tickLine={false}
                 axisLine={{ stroke: "#999" }}
-                height={60}
+                height={50}
                 tick={{ fill: "#1A202C", fontSize: 13, fontWeight: 600 }}
                 label={{
                   value: "Interview Rounds",
                   position: "bottom",
-                  dy: 20, // 👈 ensures visibility below ticks
+                  dy: 25,
                   style: {
                     fill: "#1A202C",
                     fontWeight: 600,
@@ -241,7 +238,7 @@ export default function PerformanceChart() {
                   },
                 }}
                 interval={0}
-                padding={{ left: 30, right: 30 }}
+                padding={{ left: 20, right: 20 }}
               />
               <YAxis
                 domain={[0, 100]}
