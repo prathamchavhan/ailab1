@@ -3,137 +3,241 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/utils/supabase/client";
 
-export default function Dashboard() {
-  const [results, setResults] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const supabase = createClient();
+// Define a type for the merged result object for better clarity
+interface InterviewResult {
+    id: string;
+    final_score: number;
+    user_id: string;
+    interview_sessions: { company: string };
+    profile: { user_id: string; name: string } | null;
+}
 
-  useEffect(() => {
-    const fetchResults = async () => {
-      try {
-        // 1️⃣ Fetch interview results + join interview_sessions
-        const { data: results, error } = await supabase
-          .from("interview_results")
-          .select(`
-            id,
-            final_score,
-            created_at,
-            user_id,
-            interview_sessions ( company )
-          `)
-          .order("final_score", { ascending: false });
+// -------------------------------------------------------------
+// Component for the Leaderboard Table with Inter/Intra Toggle
+// -------------------------------------------------------------
+function InterviewDashboardTable({ results }: { results: InterviewResult[] }) {
+    const [view, setView] = useState("Inter"); // State for Inter / Intra toggle
 
-        if (error) {
-          console.error("Supabase error fetching results:", error.message);
-          throw error;
-        }
+    const displayResults = results.slice(0, 10); 
 
-        if (!results || results.length === 0) {
-          setResults([]);
-          return;
-        }
-
-        // 2️⃣ Collect unique user_ids
-        const userIds = results.map((r) => r.user_id).filter(Boolean);
-
-        // 3️⃣ Fetch profiles for these users
-        let profilesMap: Record<string, any> = {};
-        if (userIds.length > 0) {
-          const { data: profiles, error: profileError } = await supabase
-            .from("profiles")
-            .select("user_id, name")
-            .in("user_id", userIds);
-
-          if (profileError) {
-            console.error("Supabase error fetching profiles:", profileError.message);
-            throw profileError;
-          }
-
-          profilesMap = (profiles || []).reduce((acc, p) => {
-            acc[p.user_id] = p;
-            return acc;
-          }, {});
-        }
-
-        // 4️⃣ Merge results with profiles
-        const merged = results.map((r) => ({
-          ...r,
-          profile: profilesMap[r.user_id] || null,
-        }));
-
-        setResults(merged);
-      } catch (err) {
-        console.error("Error fetching results:", err);
-      } finally {
-        setLoading(false);
-      }
+    // Custom styles for the unified teal header background (Rank, Score, AND Candidate Profile)
+    const tealHeaderBgStyle = {
+        background: '#0CA396', // Teal color
+        color: 'white',
+        fontWeight: 'bold',
+        borderRadius: '8px', 
+        display: 'flex', 
+        alignItems: 'center',
+        padding: '8px 15px', 
+        height: '60px', 
+        fontSize: '15px', 
+        lineHeight: '1.2', 
     };
 
-    fetchResults();
-  }, []);
+    // Style for the non-score data rows (Candidate Name, Rank) - Poppins 500
+    const rowTextStyleMedium = {
+        fontFamily: 'Poppins, sans-serif',
+        fontWeight: 500, // Medium
+        fontSize: '12px', // 12px
+        color: '#09407F', // Dark Blue
+        lineHeight: '1',
+    };
+    
+    // Style for the Score data - Poppins 600
+    const scoreTextStyleSemiBold = {
+        fontFamily: 'Poppins, sans-serif',
+        fontWeight: 600, // SemiBold
+        fontSize: '12px', // 12px
+        color: '#09407F', // Dark Blue
+        lineHeight: '1',
+    };
 
-  if (loading) {
+    // ACTIVE BUTTON GRADIENT STYLE
+    const activeGradientStyle = {
+        background: 'linear-gradient(to right, #0CA396, #04A2CF)', // Teal to Blue gradient
+        color: 'white',
+    };
+    // INACTIVE BUTTON BACKGROUND COLOR
+    const inactiveBgColor = '#D4F6FA';
+
     return (
-      <div className="flex items-center justify-center min-h-screen text-gray-600">
-        Loading dashboard...
-      </div>
-    );
-  }
-
-  if (results.length === 0) {
-    return (
-      <div className="flex items-center justify-center min-h-screen text-gray-600">
-        No interview results yet 🚀
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-100 to-blue-200 p-6">
-      <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-xl p-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Leaderboard</h2>
-
-        {/* Table Header */}
-        <div className="grid grid-cols-4 gap-4 font-semibold text-gray-700 border-b pb-2">
-          <span>Profile</span>
-          <span>Company</span>
-          <span>Rank</span>
-          <span className="text-right">Score</span>
-        </div>
-
-        {/* Dynamic rows */}
-        {results.map((result, idx) => (
-          <div
-            key={result.id}
-            className="grid grid-cols-4 gap-4 items-center py-3 border-b last:border-0"
-          >
-            {/* Profile + Name */}
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-xs text-gray-600">
-                {result.profile?.name
-                  ? result.profile.name.charAt(0)
-                  : "?"}
-              </div>
-              <span className="text-gray-800 font-medium">
-                {result.profile?.name || "Unknown User"}
-              </span>
+        <div className="w-full">
+            {/* 1. Toggle Button Group (Inter / Intra) */}
+            <div className="rounded-lg mb-4 p-1" style={{background: '#D4F6FA', boxShadow: '0 2px 4px rgba(0,0,0,0.1)'}}>
+                <div className="flex justify-between rounded-md overflow-hidden">
+                    {["Inter", "Intra"].map((v) => (
+                        <button
+                            key={v}
+                            onClick={() => setView(v)}
+                            className={`flex-1 text-center py-2 text-lg font-semibold transition duration-200 rounded-md
+                                ${v !== view
+                                    ? 'text-gray-500 hover:text-gray-900'
+                                    : ''
+                                }
+                            `}
+                            style={v === view ? activeGradientStyle : {backgroundColor: inactiveBgColor}}
+                        >
+                            {v}
+                        </button>
+                    ))}
+                </div>
             </div>
 
-            {/* Company */}
-            <span className="text-gray-700">
-              {result.interview_sessions?.company || "N/A"}
-            </span>
+            {/* 2. Leaderboard Table Card */}
+            <div className="bg-[#D4F6FA] rounded-2xl p-4 shadow-xl">
+                
+                {/* Table Header Row */}
+                <div className="grid grid-cols-[3fr_1fr_1fr] gap-3 mb-4">
+                    
+                    {/* Candidate Profile Header */}
+                    <span style={{...tealHeaderBgStyle, justifyContent: 'flex-start'}}> 
+                        Candidate Profile
+                    </span>
 
-            {/* Rank */}
-            <span className="text-gray-700 font-semibold">#{idx + 1}</span>
+                    {/* Rank Header */}
+                    <span style={tealHeaderBgStyle}>
+                        Rank
+                    </span>
 
-            {/* Score */}
-            <span className="text-right font-bold text-blue-600">
-              {result.final_score ?? "--"}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+                    {/* Score Header */}
+                    <span style={tealHeaderBgStyle}>
+                        Score
+                    </span>
+                </div>
+
+                {/* Dynamic Rows */}
+                {displayResults.map((result, idx) => (
+                    <div
+                        key={result.id}
+                        className="grid grid-cols-[3fr_1fr_1fr] gap-2 items-center py-3 border-b border-gray-300/50 last:border-0"
+                    >
+                        {/* Profile + Name (Uses rowTextStyleMedium) */}
+                        <div className="flex items-center gap-3" style={rowTextStyleMedium}>
+                            {/* Placeholder Avatar */}
+                            <div className="w-9 h-9 rounded-full bg-gray-300 flex items-center justify-center text-sm font-medium text-gray-600">
+                                {result.profile?.name
+                                    ? result.profile.name.charAt(0)
+                                    : "U"}
+                            </div>
+                            <span className="font-medium">
+                                {result.profile?.name || "Unknown User"}
+                            </span>
+                        </div>
+
+                        {/* Rank (Uses rowTextStyleMedium) */}
+                        <span className="text-center font-medium" style={rowTextStyleMedium}>
+                            #{idx + 1}
+                        </span>
+
+                        {/* Score (Uses scoreTextStyleSemiBold) */}
+                        <span className="text-center" style={scoreTextStyleSemiBold}>
+                            {result.final_score ?? "--"}
+                        </span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+// -------------------------------------------------------------
+// Main Dashboard Component (Data Fetching Logic)
+// -------------------------------------------------------------
+export default function Dashboard() {
+    // --- Data Fetching Logic (UNCHANGED) ---
+    const [results, setResults] = useState<InterviewResult[]>([]);
+    const [loading, setLoading] = useState(true);
+    const supabase = createClient();
+
+    useEffect(() => {
+        const fetchResults = async () => {
+            try {
+                const { data: results, error } = await supabase
+                    .from("interview_results")
+                    .select(`
+                        id,
+                        final_score,
+                        created_at,
+                        user_id,
+                        interview_sessions ( company )
+                    `)
+                    .order("final_score", { ascending: false });
+
+                if (error) {
+                    console.error("Supabase error fetching results:", error.message);
+                    throw error;
+                }
+
+                const userIds = (results || []).map((r) => r.user_id).filter(Boolean);
+                let profilesMap: Record<string, any> = {};
+
+                if (userIds.length > 0) {
+                    const { data: profiles, error: profileError } = await supabase
+                        .from("profiles")
+                        .select("user_id, name")
+                        .in("user_id", userIds);
+
+                    if (profileError) throw profileError;
+
+                    profilesMap = (profiles || []).reduce((acc, p) => {
+                        acc[p.user_id] = p;
+                        return acc;
+                    }, {});
+                }
+
+                const merged = (results || []).map((r) => ({
+                    ...r,
+                    profile: profilesMap[r.user_id] || null,
+                }));
+
+                setResults(merged as InterviewResult[]);
+            } catch (err) {
+                console.error("Error fetching results:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchResults();
+    }, []);
+
+    // --- Loading and Empty State (UNCHANGED) ---
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen text-gray-600">
+                Loading dashboard...
+            </div>
+        );
+    }
+
+    if (results.length === 0) {
+        return (
+            <div className="flex items-center justify-center min-h-screen text-gray-600">
+                No interview results yet 🚀
+            </div>
+        );
+    }
+
+    // --- Main Render (UPDATED UI) ---
+    return (
+        <div style={{fontFamily: 'Poppins, sans-serif'}} className="p-6"> 
+            <div className="max-w-4xl mx-auto">
+                {/* Interview dashboard Title - NEW STYLING */}
+                <h2 
+                    className="mb-4"
+                    style={{
+                        fontFamily: 'Poppins, sans-serif',
+                        fontWeight: 600, // SemiBold
+                        fontSize: '20px', 
+                        color: '#09407F', // Dark Blue
+                        lineHeight: '1',
+                        letterSpacing: '0',
+                    }}
+                >
+                    Interview dashboard
+                </h2>
+                <InterviewDashboardTable results={results} />
+            </div>
+        </div>
+    );
 }
