@@ -2,30 +2,134 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import JobCard from '../../components/ui/JobCard'; 
-import { FaSortAlphaUp, FaSortAmountUp, FaSortAmountDown, FaFilter } from 'react-icons/fa'; // Added FaFilter for consistency
-import { supabase } from '../../lib/supabaseClient';
+import { FaSortAlphaUp, FaSortAmountUp, FaSortAmountDown, FaSearch, FaChevronDown, FaSortAlphaDown, FaTimes } from 'react-icons/fa'; 
+import { supabase } from '../../lib/supabaseClient'; 
 
-// --- Dropdown Options (Unchanged) ---
+// --- Constants ---
+const BLUE_COLOR = '#00A1F0';
+const GRADIENT_BG = 'linear-gradient(to right, #00C6FF, #0072FF)'; 
+const DARK_TEAL_COLOR = '#1B7192'; 
+const HOVER_TEXT_COLOR = '#09407F'; 
+const TAG_BG_COLOR = '#1B7192'; 
+const TAG_TEXT_COLOR = 'white'; 
+
 const SORT_OPTIONS = [
-    { label: 'Most Recent', value: 'recent', icon: FaSortAmountUp },
-    { label: 'Salary: High to Low', value: 'salary_desc', icon: FaSortAmountDown },
-    { label: 'Salary: Low to High', value: 'salary_asc', icon: FaSortAmountUp },
-    { label: 'Company Name (A-Z)', value: 'company_asc', icon: FaSortAlphaUp },
-    { label: 'Company Name (Z-A)', value: 'company_desc', icon: FaSortAlphaUp },
+    { label: 'Latest', value: 'latest', icon: FaSortAmountDown },
+    { label: 'Oldest', value: 'oldest', icon: FaSortAmountUp },
+    { label: 'Relevance', value: 'relevance', icon: FaSortAlphaUp },
+    { label: 'A-Z', value: 'a_z', icon: FaSortAlphaUp },
+    { label: 'Z-A', value: 'z_a', icon: FaSortAlphaDown },
+    { label: 'By Exp (Low -> High)', value: 'exp_asc', icon: FaSortAmountUp },
+    { label: 'By Exp (High -> Low)', value: 'exp_desc', icon: FaSortAmountDown },
 ];
 
-const parseSalaryForSort = (salary_lakh) => {
-    if (!salary_lakh) return 0;
-    const parts = salary_lakh.toString().split('-').map(Number);
-    return parts[0] || 0;
+const JOB_TYPE_OPTIONS = [
+    { label: 'Interns', key: 'interns' }, { label: 'Full-Time', key: 'full_time' }, 
+    { label: 'Part-time', key: 'part_time' }, { label: 'Freelance', key: 'freelance' },
+    { label: 'Contract', key: 'contract' }, { label: 'Temporary', key: 'temporary' },
+];
+
+const MODE_OPTIONS = [
+    { label: 'Onsite', key: 'onsite' }, { label: 'Remote', key: 'remote' }, 
+    { label: 'Hybrid', key: 'hybrid' },
+];
+
+const EXPERIENCE_OPTIONS = [
+    { label: 'Fresher', key: 'fresher' }, { label: '0–1 Year', key: '0_1' },
+    { label: '1–3 Years', key: '1_3' }, 
+    { label: '3–5 Years', key: '3_5' }, { label: '5+ Years', key: '5_plus' },
+];
+
+const CATEGORY_OPTIONS = [
+    { label: 'Marketing', key: 'marketing' }, { label: 'Design', key: 'design' },
+    { label: 'Finance', key: 'finance' }, { label: 'HR / Recruitment', key: 'hr_recruitment' },
+    { label: 'Sales', key: 'sales' }, { label: 'Customer Support', key: 'customer_support' }, 
+    { label: 'Data Science', key: 'data_science' }, { label: 'Product Management', key: 'product_management' },
+    { label: 'Software Development', key: 'software_development' },
+];
+
+const parseExperienceForSort = (experience_range) => {
+    if (!experience_range || typeof experience_range !== 'string') return 0;
+    const match = experience_range.match(/^\d+/);
+    return match ? parseInt(match[0], 10) : 0;
 };
 
-// --- Sort Dropdown Component (Unchanged) ---
-// ... (The SortByDropdown component code remains the same as in the previous response)
-const SortByDropdown = ({ selectedSort, onSelectSort }) => {
+
+// -------------------------------------------------------------------
+//                        ACTIVE FILTER TAG COMPONENT
+// -------------------------------------------------------------------
+
+const ActiveFilterTag = ({ type, label, onRemove }) => {
+    if (label === null || label === 'Latest') return null; 
+    
+    return (
+        <div 
+            className={`flex items-center px-3 py-1 mr-2 rounded-lg text-sm font-medium whitespace-nowrap`}
+            style={{ 
+                backgroundColor: TAG_BG_COLOR, 
+                color: TAG_TEXT_COLOR 
+            }}
+        >
+            <span className="mr-2">
+                {label}
+            </span>
+            <button 
+                onClick={() => onRemove(type)} 
+                className="text-white hover:text-red-300 transition duration-150"
+            >
+                <FaTimes className="w-3 h-3" />
+            </button>
+        </div>
+    );
+};
+
+
+// -------------------------------------------------------------------
+//                          DROPDOWN COMPONENTS
+// -------------------------------------------------------------------
+
+// --- Helper for conditional styling based on active selection and hover ---
+const getDropdownItemStyle = (isActive, isHovering) => ({
+    backgroundColor: isActive || isHovering ? 'white' : DARK_TEAL_COLOR,
+    color: isActive || isHovering ? HOVER_TEXT_COLOR : 'white',
+    fontWeight: isActive ? '600' : '400',
+});
+
+// Reusable logic for dropdown menu items
+const DropdownMenu = ({ options, activeSelection, filterType, onSelect, onClose }) => {
+    const [hoverKey, setHoverKey] = useState(null);
+
+    return (
+        <div className="py-1">
+            {options.map((item) => {
+                const isActive = activeSelection === item.key || activeSelection === item.value;
+                const isHovering = hoverKey === item.key || hoverKey === item.value;
+                
+                const selectionKey = item.key || item.value;
+                const selectionLabel = item.label;
+
+                return (
+                    <div
+                        key={selectionKey}
+                        onClick={() => { onSelect(filterType, selectionKey, selectionLabel); onClose(); }} 
+                        className={`flex items-center px-4 py-3 text-sm cursor-pointer transition duration-150`}
+                        style={getDropdownItemStyle(isActive, isHovering)}
+                        onMouseEnter={() => setHoverKey(selectionKey)}
+                        onMouseLeave={() => setHoverKey(null)}
+                    >
+                        {item.label}
+                    </div>
+                );
+            })}
+        </div>
+    );
+};
+
+
+// --- 1. Sort By Dropdown ---
+const SortByDropdown = ({ activeSelection, onSelect }) => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef(null);
-    const BLUE_COLOR = '#00A1F0'; 
 
     useEffect(() => {
         function handleClickOutside(event) {
@@ -37,134 +141,150 @@ const SortByDropdown = ({ selectedSort, onSelectSort }) => {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [dropdownRef]);
 
-    const activeOption = SORT_OPTIONS.find(opt => opt.value === selectedSort) || SORT_OPTIONS[0];
-
     return (
         <div className="relative inline-block text-left" ref={dropdownRef}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="inline-flex justify-center items-center rounded-lg border shadow-sm px-4 py-2 bg-white text-sm font-medium text-black hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150"
-                style={{ borderColor: BLUE_COLOR }} 
+                className="inline-flex justify-center items-center px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none transition duration-150"
             >
                 Sort by
-                <activeOption.icon className="ml-2 -mr-1 h-4 w-4" style={{ color: BLUE_COLOR }} />
+                <FaChevronDown className="ml-2 h-3 w-3 text-gray-500" />
             </button>
-
             {isOpen && (
                 <div
-                    className="origin-top-right absolute right-0 mt-2 w-64 rounded-xl shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50 overflow-hidden"
-                    style={{ minWidth: '200px' }} 
+                    className="origin-top-right absolute right-0 mt-2 w-64 rounded-xl shadow-2xl ring-1 ring-black ring-opacity-5 z-50 overflow-hidden"
+                    style={{ minWidth: '200px', backgroundColor: DARK_TEAL_COLOR, color: 'white' }} 
                 >
-                    <div className="py-1">
-                        <div className="flex items-center px-4 py-2 text-sm font-bold text-gray-700 border-b border-gray-100">
-                            <span>Sort by</span>
-                            <FaSortAmountUp className="ml-auto h-4 w-4 text-gray-500" />
-                        </div>
-
-                        {SORT_OPTIONS.map((option) => (
-                            <div
-                                key={option.value}
-                                onClick={() => {
-                                    onSelectSort(option.value);
-                                    setIsOpen(false);
-                                }}
-                                className={`flex items-center px-4 py-3 text-sm cursor-pointer transition duration-150 text-gray-900 hover:bg-gray-50
-                                    ${selectedSort === option.value ? 'font-semibold' : ''}`
-                                }
-                                style={selectedSort === option.value ? { backgroundColor: '#E0F7FA', color: BLUE_COLOR } : {}}
-                            >
-                                {option.label}
-                            </div>
-                        ))}
-                    </div>
+                    <DropdownMenu 
+                        options={SORT_OPTIONS}
+                        activeSelection={activeSelection}
+                        filterType="sort"
+                        onSelect={onSelect}
+                        onClose={() => setIsOpen(false)}
+                    />
                 </div>
             )}
         </div>
     );
 };
 
-
-// --- Filter Dropdown Component (NEW) ---
-const FilterDropdown = ({ isOpen, onClose, setFilterActive, handleApplyFilters }) => {
-    // Note: Since this is just a mockup of the visual, we won't implement the full filter logic here,
-    // but structure the menu as requested.
-    
-    // The items shown in the image are: Job Type, Mode, Experience, Category
-    const menuItems = [
-        { label: 'Job Type', isHeader: true, hasDropdown: true },
-        { label: 'Mode', isHeader: false, key: 'Mode' },
-        { label: 'Experience', isHeader: false, key: 'Experience' },
-        { label: 'Category', isHeader: false, key: 'Category' },
-    ];
-    
-    const dropdownRef = useRef(null);
-
-    // Close dropdown when clicking outside
-    useEffect(() => {
-        function handleClickOutside(event) {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-                onClose();
-            }
-        }
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, [dropdownRef, onClose]);
-
+// --- Filter Dropdown Container Component (Used by Job Type, Mode, Exp, Category) ---
+const FilterDropdownContainer = ({ keyName, isOpen, onClose, activeSelection, onSelect, options, width = 'w-56' }) => {
     if (!isOpen) return null;
-
     return (
-        // Dropdown Menu Container (Mimics the style in the image)
         <div 
-            ref={dropdownRef}
-            className="origin-top-right absolute right-0 mt-2 w-56 rounded-xl shadow-xl bg-white ring-1 ring-black ring-opacity-5 z-50 overflow-hidden"
-            style={{ 
-                // Adjust position relative to the button
-                top: 'calc(100% + 8px)', 
-                right: '0' 
-            }}
+            className={`origin-top-left absolute left-0 mt-2 ${width} rounded-xl shadow-2xl ring-1 ring-black ring-opacity-5 z-50 overflow-hidden`}
+            style={{ top: 'calc(100% + 8px)', left: '0', backgroundColor: DARK_TEAL_COLOR, color: 'white' }}
         >
-            <div className="py-1">
-                {menuItems.map((item, index) => (
-                    <div
-                        key={index}
-                        // Use special styling for the "Job Type" header
-                        className={`flex items-center px-4 py-3 text-sm transition duration-150 cursor-pointer 
-                            ${item.isHeader 
-                                ? 'bg-[#E0F7FA] text-gray-900 font-semibold border-b border-[#00A1F0]/50' // Light blue BG for header
-                                : 'text-gray-900 hover:bg-gray-50' // Regular menu items
-                            }`}
-                    >
-                        {item.label}
-                        {/* Dropdown icon for the header */}
-                        {item.hasDropdown && (
-                            <svg className="ml-auto h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                        )}
-                    </div>
-                ))}
-            </div>
-            
-            {/* Note: In a full implementation, clicking these would expand sub-menus or trigger the modal */}
+            <DropdownMenu 
+                options={options}
+                activeSelection={activeSelection}
+                filterType={keyName}
+                onSelect={onSelect}
+                onClose={onClose}
+            />
         </div>
     );
 };
 
 
-// --- Main Page Component ---
+// --- Filter Button Component ---
+const FilterButton = ({ label, keyName, isOpen, onClick, activeSelection, handleSelect }) => {
+    const handleClose = () => onClick(null);
+
+    const dropdownProps = {
+        isOpen, onClose: handleClose, activeSelection, onSelect: handleSelect,
+    };
+
+    return (
+        <div className="relative">
+            <button
+                onClick={() => onClick(keyName)}
+                className={`inline-flex items-center px-4 py-2 text-sm font-medium transition duration-150 text-gray-700 hover:bg-gray-50 focus:outline-none ${isOpen || activeSelection ? 'text-blue-600' : ''}`}
+            >
+                {label}
+                <FaChevronDown className={`ml-2 h-3 w-3 ${isOpen || activeSelection ? 'text-blue-600' : 'text-gray-500'}`} />
+            </button>
+            
+            {isOpen && keyName === 'job_type' && (
+                 <FilterDropdownContainer {...dropdownProps} keyName={keyName} options={JOB_TYPE_OPTIONS} />
+            )}
+            {isOpen && keyName === 'mode' && (
+                 <FilterDropdownContainer {...dropdownProps} keyName={keyName} options={MODE_OPTIONS} />
+            )}
+            {isOpen && keyName === 'experience' && (
+                 <FilterDropdownContainer {...dropdownProps} keyName={keyName} options={EXPERIENCE_OPTIONS} />
+            )}
+            {isOpen && keyName === 'category' && (
+                 <FilterDropdownContainer {...dropdownProps} keyName={keyName} options={CATEGORY_OPTIONS} width="w-72" />
+            )}
+        </div>
+    );
+};
+
+
+// -------------------------------------------------------------------
+//                          MAIN PAGE COMPONENT
+// -------------------------------------------------------------------
 export default function JobsPage() {
     const [jobs, setJobs] = useState([]);
     const [searchTerm, setSearchTerm] = useState(''); 
-    const [selectedSort, setSelectedSort] = useState(SORT_OPTIONS[0].value); 
-    const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false); // ⬅️ NEW: Dropdown visibility state
-    const [activeFilters, setActiveFilters] = useState({}); 
+    const [openFilter, setOpenFilter] = useState(null); 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    const BLUE_COLOR = '#00A1F0';
-    const BLACK_TEXT = 'text-black';
+    const [activeFilterValues, setActiveFilterValues] = useState({
+        sort: { key: 'latest', label: 'Latest' }, 
+        job_type: { key: null, label: null },      
+        mode: { key: null, label: null },                
+        experience: { key: null, label: null },          
+        category: { key: null, label: null }, 
+    });
 
-    // ... (useEffect and fetchJobs logic remains the same)
+    const toggleFilterDropdown = (key) => {
+        setOpenFilter(openFilter === key ? null : key);
+    };
+
+    const handleFilterSelect = (type, key, label) => {
+        setActiveFilterValues(prev => ({
+            ...prev,
+            [type]: { key, label }
+        }));
+    };
+
+    const handleFilterRemove = (type) => {
+        const defaultSort = { key: 'latest', label: 'Latest' };
+        
+        setActiveFilterValues(prev => ({
+            ...prev,
+            [type]: type === 'sort' ? defaultSort : { key: null, label: null }
+        }));
+    };
+
+    const handleClearAll = () => {
+        setSearchTerm(''); 
+        setOpenFilter(null);
+        setActiveFilterValues({
+            sort: { key: 'latest', label: 'Latest' },
+            job_type: { key: null, label: null },
+            mode: { key: null, label: null },
+            experience: { key: null, label: null },
+            category: { key: null, label: null },
+        });
+    };
+    
+    // Filters out null labels and the default 'Latest' sort label.
+    const activeTags = useMemo(() => {
+        return Object.entries(activeFilterValues)
+            .filter(([, value]) => value.label && value.label !== 'Latest')
+            .map(([type, value]) => ({ type, label: value.label, key: value.key }));
+    }, [activeFilterValues]);
+
+
+    // --- SUPABASE LOGIC (INTACT) ---
     useEffect(() => {
         const fetchJobs = async () => {
+            // ... (fetch logic remains the same)
             try {
                 setLoading(true);
                 const { data, error } = await supabase
@@ -185,61 +305,47 @@ export default function JobsPage() {
 
         fetchJobs();
     }, []);
+    // ----------------------------------------
 
-    const handleApplyFilters = (newFilters) => {
-        setActiveFilters(newFilters);
-    };
-
+    // Filter, Search, and Sort logic 
     const sortedAndFilteredJobs = useMemo(() => {
         let currentJobs = [...jobs];
-
-        // ... (Filter and Sorting logic remains the same)
-        // 1. Filter Logic
-        if (Object.keys(activeFilters).length > 0) {
-            currentJobs = currentJobs.filter(job => {
-                let matches = true;
-                
-                if (activeFilters.Mode && activeFilters.Mode.length > 0) {
-                    if (!activeFilters.Mode.includes(job.work_mode)) {
-                        matches = false;
-                    }
-                }
-                
-                if (activeFilters.Category && activeFilters.Category.length > 0) {
-                    if (!activeFilters.Category.includes(job.category)) {
-                        matches = false;
-                    }
-                }
-
-                return matches;
-            });
+        // ... (filtering and sorting logic remains the same)
+        if (searchTerm) {
+            const lowerCaseSearchTerm = searchTerm.toLowerCase();
+            currentJobs = currentJobs.filter(job =>
+                (job.job_title && job.job_title.toLowerCase().includes(lowerCaseSearchTerm)) ||
+                (job.company_name && job.company_name.toLowerCase().includes(lowerCaseSearchTerm))
+            );
         }
         
-        // 2. Sorting Logic
+        const selectedSort = activeFilterValues.sort.key;
         switch (selectedSort) {
-            case 'salary_desc':
-                currentJobs.sort((a, b) => parseSalaryForSort(b.salary_lakh) - parseSalaryForSort(a.salary_lakh));
+            case 'oldest':
+                currentJobs.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
                 break;
-            case 'salary_asc':
-                currentJobs.sort((a, b) => parseSalaryForSort(a.salary_lakh) - parseSalaryForSort(b.salary_lakh));
+            case 'a_z':
+                currentJobs.sort((a, b) => (a.job_title || '').localeCompare(b.job_title || ''));
                 break;
-            case 'company_asc':
-                currentJobs.sort((a, b) => (a.company_name || '').localeCompare(b.company_name || ''));
+            case 'z_a':
+                currentJobs.sort((a, b) => (b.job_title || '').localeCompare(a.job_title || ''));
                 break;
-            case 'company_desc':
-                currentJobs.sort((a, b) => (b.company_name || '').localeCompare(a.company_name || ''));
+            case 'exp_asc':
+                currentJobs.sort((a, b) => parseExperienceForSort(a.experience) - parseExperienceForSort(b.experience));
                 break;
-            case 'recent':
+            case 'exp_desc':
+                currentJobs.sort((a, b) => parseExperienceForSort(b.experience) - parseExperienceForSort(a.experience));
+                break;
+            case 'latest':
+            case 'relevance':
             default:
+                currentJobs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
                 break;
         }
 
         return currentJobs;
-    }, [jobs, selectedSort, activeFilters]);
+    }, [jobs, activeFilterValues, searchTerm]);
 
-    const isAnyFilterActive = useMemo(() => {
-        return Object.values(activeFilters).some(arr => arr && arr.length > 0);
-    }, [activeFilters]);
 
     if (loading) {
         return <div className="min-h-screen bg-[#f9f9fb] p-6 md:p-8 text-center">Loading...</div>;
@@ -252,39 +358,96 @@ export default function JobsPage() {
     return (
         <div className="min-h-screen bg-[#f9f9fb] p-6 md:p-8">
 
-            {/* CONTROL ROW */}
-            <div className="flex justify-end items-center space-x-4 pt-2 mb-8">
-                <div className="flex space-x-4">
-                    {/* Sort By Dropdown */}
-                    <SortByDropdown selectedSort={selectedSort} onSelectSort={setSelectedSort} />
+            {/* MAIN CONTROL SECTION: Search Bar and Filters */}
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-4 lg:space-y-0 lg:space-x-8 mb-4 relative">
 
-                    {/* Filter Button and Dropdown Container */}
-                    <div className="relative"> {/* Added relative positioning for the dropdown */}
-                        <button
-                            onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)} // ⬅️ Toggle dropdown
-                            // Apply the blue outline when open (mimicking the image)
-                            className={`inline-flex justify-center items-center rounded-lg border shadow-sm px-4 py-2 text-sm font-medium transition duration-150 ${BLACK_TEXT} ${isFilterDropdownOpen ? 'ring-2 ring-offset-1 ring-blue-500' : ''}`}
-                            style={{ borderColor: BLUE_COLOR }} 
-                        >
-                            Filter
-                            {/* Filter icon, centered */}
-                            <FaFilter 
-                                className="ml-2 -mr-1 h-4 w-4" 
-                                style={{ color: BLUE_COLOR }} 
+                {/* 1. Search Bar (Left Side) */}
+                <div className="w-full lg:w-2/3">
+                    <div className="p-[2px] rounded-3xl shadow-md" style={{ backgroundImage: GRADIENT_BG }}>
+                        <div className="flex items-center w-full rounded-3xl bg-white px-4 py-3 transition duration-150">
+                            <FaSearch className="mr-3 h-5 w-5" style={{ color: BLUE_COLOR }} />
+                            <input
+                                type="text"
+                                placeholder="Search...."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full focus:outline-none text-gray-800"
                             />
-                            {/* Filter active indicator */}
-                            {isAnyFilterActive && <span className="absolute -top-1 -right-1 flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span></span>}
-                        </button>
-                        
-                        {/* ⬅️ Filter Dropdown Menu */}
-                        <FilterDropdown
-                            isOpen={isFilterDropdownOpen}
-                            onClose={() => setIsFilterDropdownOpen(false)}
-                            // We pass these handlers even though the dropdown only shows the menu visually
-                            setFilterActive={setActiveFilters} 
-                            handleApplyFilters={handleApplyFilters}
-                        />
+                        </div>
                     </div>
+                </div>
+
+                {/* 2. Filter/Sort Bar (Right Side) */}
+                <div className="w-full lg:w-auto relative z-20">
+                    <div 
+                        className={`
+                            flex justify-start items-center bg-[#F7FEFF] rounded-xl px-1 py-1 transition duration-200
+                            border-2 border-transparent 
+                            hover:border-blue-500 hover:shadow-md
+                        `}
+                    >
+                        {/* Filter/Sort Buttons Row */}
+                        <div className="flex items-center space-x-2 overflow-x-visible"> 
+                            <SortByDropdown activeSelection={activeFilterValues.sort.key} onSelect={handleFilterSelect} /> 
+                            <FilterButton 
+                                label="Job Type" 
+                                keyName="job_type" 
+                                isOpen={openFilter === 'job_type'} 
+                                onClick={toggleFilterDropdown} 
+                                activeSelection={activeFilterValues.job_type.key} 
+                                handleSelect={handleFilterSelect}
+                            />
+                            <FilterButton 
+                                label="Mode" 
+                                keyName="mode" 
+                                isOpen={openFilter === 'mode'} 
+                                onClick={toggleFilterDropdown} 
+                                activeSelection={activeFilterValues.mode.key} 
+                                handleSelect={handleFilterSelect}
+                            />
+                            <FilterButton 
+                                label="Experience" 
+                                keyName="experience" 
+                                isOpen={openFilter === 'experience'} 
+                                onClick={toggleFilterDropdown} 
+                                activeSelection={activeFilterValues.experience.key} 
+                                handleSelect={handleFilterSelect}
+                            />
+                            <FilterButton 
+                                label="Category" 
+                                keyName="category" 
+                                isOpen={openFilter === 'category'} 
+                                onClick={toggleFilterDropdown} 
+                                activeSelection={activeFilterValues.category.key} 
+                                handleSelect={handleFilterSelect}
+                            />
+                        </div>
+                    </div>
+                    {activeTags.length > 0 && (
+                        <button 
+                            onClick={handleClearAll}
+                            className="text-sm font-medium text-blue-500 hover:text-blue-700 transition duration-150 absolute right-0 top-full mt-2 mr-2 whitespace-nowrap"
+                        >
+                            Clear All
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            {/* ACTIVE FILTERS SECTION 
+                - Now only responsible for showing the tags, no Clear All button here.
+            */}
+            <div className="flex justify-start items-center mb-10 mt-1">
+                {/* Active Tags */}
+                <div className="flex flex-wrap items-center overflow-x-auto">
+                    {activeTags.map((tag) => (
+                        <ActiveFilterTag 
+                            key={tag.type}
+                            type={tag.type}
+                            label={tag.label}
+                            onRemove={handleFilterRemove}
+                        />
+                    ))}
                 </div>
             </div>
             
