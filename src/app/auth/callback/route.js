@@ -4,14 +4,7 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-/**
- * Handles the initial OAuth callback from Supabase after a user logs in.
- * This function is responsible for the core login flow.
- * - It exchanges the auth code for a user session.
- * - It verifies the user has premium access before allowing them to proceed.
- * - For new, approved users, it redirects to the profile creation page.
- * - For returning, approved users, it redirects to the main dashboard.
- */
+
 export async function GET(request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
@@ -67,11 +60,7 @@ export async function GET(request) {
 }
 
 
-/**
- * Handles the POST request to create a new user profile.
- * This function performs authentication, permission checks, and database insertion.
- * It's called when a new user submits their profile form.
- */
+
 export async function POST(request) {
   const supabase = createRouteHandlerClient({ cookies });
 
@@ -91,8 +80,6 @@ export async function POST(request) {
     .eq('email', user.email)
     .single();
 
-  // Handle potential database errors during the permission check.
-  // We ignore the 'PGRST116' error code because it means no user was found, which we handle next.
   if (premiumCheckError && premiumCheckError.code !== 'PGRST116') {
     console.error('API Error [POST /auth/callback]: Checking premium access failed.', premiumCheckError.message);
     return NextResponse.json({ success: false, message: 'Server error while verifying permissions.' }, { status: 500 });
@@ -115,7 +102,6 @@ export async function POST(request) {
     ...profileData,     // Spread the rest of the form data (name, roll_no, etc.)
   });
 
-  // Handle potential errors during the database insert operation.
   if (insertError) {
     console.error('API Error [POST /auth/callback]: Inserting profile failed.', insertError.message);
     // Handle the specific error for duplicate profiles (unique constraint violation).

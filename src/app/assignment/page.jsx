@@ -94,9 +94,9 @@ const AssignmentDashboard = () => {
                            {formatDate(assignment.created_at)}
                         </p>
                     )}
-                <h7 className="text-sm font-bold mb-2 truncate">
+                <p className="text-[10px] font-bold mb-2 truncate">
                     Assignment {assignment.subject_id}: {assignment.subject_name || 'title'}
-                </h7>
+                </p>
                 
                 {/* Description - Clamped to 3 lines */}
                 {assignment.description && (
