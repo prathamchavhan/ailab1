@@ -21,18 +21,14 @@ const JobCard = ({ job }) => {
         }
 
         // Format the salary without specifying "LPA" or "Lakh"
-        // Using Math.round() for a whole number display, but you can keep .toFixed(1) if decimals are needed.
-        return `Salary: ${Math.round(numericSalary)}K+ USD Annually`; // Example format
-        
-        // If you want one decimal point:
-        // return `Salary: ${numericSalary.toFixed(1)}K+ Annually`;
+        return `Salary: ${Math.round(numericSalary)}K+ USD Annually`;
     };
 
     return (
-        <div className="bg-white p-4 border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-blue-100 p-4 border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-start mb-3">
                 {/* Company Logo */}
-                <div className="w-8 h-8 mr-3 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
+                <div className="w-8 h-8 md:w-10 md:h-10 mr-3 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
                     {/* Using first letter as fallback if logo is null/placeholder */}
                     {job.company_logo ? (
                         <img 
@@ -47,34 +43,35 @@ const JobCard = ({ job }) => {
                 
                 {/* Job Title and Company */}
                 <div>
-                    <h3 className="font-semibold text-lg text-gray-800">{job.job_role} - {job.company_name}</h3>
+                    {/* 1. Changed text-blue-950 to text-[#09407F] */}
+                    <h3 className="font-semibold text-lg text-[#09407F]">{job.job_role} - {job.company_name}</h3>
                 </div>
             </div>
 
             {/* Short Description/Summary */}
-            <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+            <p className="text-sm text-blue-700 mb-3 line-clamp-2">
                 {job.summary || job.job_description || 'No summary provided.'}
             </p>
 
             {/* Tags/Details */}
             <div className="flex flex-wrap gap-2 mb-4 text-xs font-medium">
                 {job.job_type && (
-                    <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full">
+                    <span className="px-3 py-1 bg-blue-200 text-blue-800 rounded-full">
                         {job.job_type}
                     </span>
                 )}
                 {job.location && (
-                    <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full">
+                    <span className="px-3 py-1 bg-blue-200 text-blue-800 rounded-full">
                         {job.location}
                     </span>
                 )}
                 {job.work_mode && (
-                    <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full">
+                    <span className="px-3 py-1 bg-blue-200 text-blue-800 rounded-full">
                         {job.work_mode}
                     </span>
                 )}
                 {job.experience_years && (
-                    <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full">
+                    <span className="px-3 py-1 bg-blue-200 text-blue-800 rounded-full">
                         {job.experience_years} Yrs Exp
                     </span>
                 )}
@@ -82,14 +79,17 @@ const JobCard = ({ job }) => {
 
             {/* Salary and Apply */}
             <div className="flex justify-between items-center pt-2 border-t border-gray-100">
-                <p className="text-sm font-medium text-gray-700">
+                <p className="text-sm font-medium text-blue-900">
                     {formatSalary(job.salary_lakh)}
                 </p>
                 <a 
                     href={job.apply_url || '#'} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition duration-150"
+                    // 2. Changed text-gray-900 to text-[#364040]
+                    // 3. Kept bg-white for white background
+                    // BONUS: Changed hover color to match primary blue
+                    className="px-4 py-2 text-sm font-semibold text-[#364040] bg-white rounded-lg hover:bg-[#09407F] hover:text-white transition duration-150"
                 >
                     Apply Now
                 </a>

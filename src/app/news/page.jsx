@@ -7,6 +7,22 @@ import { supabase } from '../../lib/supabaseClient' // Keeping the Supabase impo
 import { FaSortAmountDown, FaFilter } from 'react-icons/fa'
 import { Bell, User } from 'lucide-react'; // For the top header icons
 
+const CategoryTabButton = ({ label, isActive, onClick }) => {
+    const baseClasses = "px-5 py-2 text-sm rounded-lg transition font-medium cursor-pointer";
+    
+    // Classes applied based on the last image's style
+    const activeClasses = "bg-[#d0f6fa] text-[#0494b5] shadow-inner"; 
+    const inactiveClasses = "bg-gray-100 text-[#3f5773] shadow-md border border-gray-200";
+
+    return (
+        <button
+            onClick={onClick}
+            className={`${baseClasses} ${isActive ? activeClasses : inactiveClasses}`}
+        >
+            {label}
+        </button>
+    );
+};
 // --- UI Helper Components for Structure and Style ---
 
 // Custom Component for the Latest News Card (Large Gradient Card)
@@ -29,7 +45,7 @@ const LatestNewsCard = ({ news }) => (
                 {/* Using a fallback for the title if data isn't perfect */}
                 {news.title || 'AI Job Market Trends 2025'} 
             </h2>
-            <p className="text-sm mb-4 opacity-95 line-clamp-3">
+            <p className="text-sm mb-2 opacity-95 line-clamp-3">
                 {news.description || 'AI jobs continue to grow worldwide, with rising demand in data science, prompt engineering, and AI ethics roles.'}
             </p>
             <div className="flex items-center text-xs opacity-80 mb-4">
@@ -76,16 +92,18 @@ const RecentNewsCard = ({ news }) => (
         </div>
 
         {/* Right Content Section */}
-        <div className="w-2/3 flex flex-col justify-between">
-            <h3 className="text-sm font-medium text-gray-900 line-clamp-2">
-                {news.title}
-            </h3>
-            <div className="flex justify-between items-center mt-2">
-                <span className="text-xs text-gray-600">{new Date(news.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
-                {/* Specific blue color for Read More text: #0494b5 */}
-                <span className="text-xs font-semibold text-[#0494b5] hover:text-[#037c95] transition">Read More</span>
-            </div>
-        </div>
+       <div className="w-2/3 flex flex-col justify-between">
+    <h3 className="text-xs font-medium text-gray-900 line-clamp-2">
+        {/* News Title */}
+        {news.title}
+    </h3>
+    <div className="flex justify-between items-center mt-2">
+        {/* Date: Already text-xs */}
+        <span className="text-xs text-gray-600">{new Date(news.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+        {/* Read More: Already text-xs */}
+        <span className="text-xs font-semibold text-[#0494b5] hover:text-[#037c95] transition">Read More</span>
+    </div>
+</div>
     </div>
 )
 
@@ -153,23 +171,35 @@ export default function NewsDashboard() {
     return (
         <div className="p-6 space-y-6 bg-[#f9f9fb] min-h-full">
 
-            {/* --- Category Tabs (Styled to match image) --- */}
-            <div className="flex space-x-3">
-                {['All', 'Start up', 'Founders', 'Jobs', 'AI'].map(tab => (
-                    <button
-                        key={tab}
-                        onClick={() => setActiveTab(tab)}
-                        className={`px-5 py-2 text-sm rounded-lg transition font-medium ${
-                            activeTab === tab 
-                                ? 'bg-[#0494b5] text-white shadow-md' // Active blue
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200' // Inactive gray
-                        }`}
-                    >
-                        {tab}
-                    </button>
-                ))}
+            {/* --- Category Tabs (Modified to use 5 distinct components) --- */}
+            <div className="flex space-x-6"> 
+                {/* 5 distinct components created using the new CategoryTabButton */}
+                <CategoryTabButton 
+                    label="All" 
+                    isActive={activeTab === 'All'} 
+                    onClick={() => setActiveTab('All')} 
+                />
+                <CategoryTabButton 
+                    label="Start up" 
+                    isActive={activeTab === 'Start up'} 
+                    onClick={() => setActiveTab('Start up')} 
+                />
+                <CategoryTabButton 
+                    label="Founders" 
+                    isActive={activeTab === 'Founders'} 
+                    onClick={() => setActiveTab('Founders')} 
+                />
+                <CategoryTabButton 
+                    label="Jobs" 
+                    isActive={activeTab === 'Jobs'} 
+                    onClick={() => setActiveTab('Jobs')} 
+                />
+                <CategoryTabButton 
+                    label="AI" 
+                    isActive={activeTab === 'AI'} 
+                    onClick={() => setActiveTab('AI')} 
+                />
             </div>
-            
             {/* --- Latest News & Announcement (Main Row) --- */}
             <div className="flex gap-6">
                 {/* Latest Tech News Section (2/3 width) */}
@@ -190,67 +220,6 @@ export default function NewsDashboard() {
             {/* --- Search, Filters, and Recent News --- */}
             <div className="space-y-4 pt-4">
                 <h2 className="text-xl font-semibold text-gray-800 ml-1">Recent Tech News</h2>
-                
-                {/* Search + Filters (Using original structure but refined styles) */}
-                <div className="flex flex-wrap justify-between items-center gap-4">
-                    <input
-                        type="text"
-                        placeholder="Search news by title, content or author..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        // Styled for a clean white/shadow look
-                        className="flex-1 max-w-lg px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-[#0494b5] text-gray-600 focus:outline-none bg-white"
-                    />
-
-                    <div className="flex items-center gap-2 relative">
-                         {/* Filter button styled with white BG and blue icon/text */}
-                        <button
-                            onClick={() => alert('Filter clicked')}
-                            className="border border-gray-300 px-4 py-2 text-gray-700 bg-white rounded-lg hover:bg-gray-50 flex items-center gap-2 shadow-sm text-sm"
-                        >
-                            <FaFilter className="text-blue-600" /> Filters
-                        </button>
-
-                         {/* Sort dropdown styled with white BG and blue icon/text */}
-                        <div className="relative">
-                            <button
-                                onClick={() => setShowSortOptions(!showSortOptions)}
-                                className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg bg-white hover:bg-gray-50 flex items-center gap-2 shadow-sm text-sm"
-                            >
-                                <FaSortAmountDown className="text-blue-600" />
-                                Sort: {sortOrder === 'newest' ? 'Newest' : sortOrder === 'oldest' ? 'Oldest' : 'Title (A-Z)'}
-                            </button>
-
-                            {showSortOptions && (
-                                <div className="absolute right-0 top-12 bg-white shadow-xl rounded-lg text-black border border-gray-200 z-10 w-40">
-                                    <ul>
-                                        {['newest', 'oldest', 'title'].map((item) => (
-                                            <li
-                                                key={item}
-                                                onClick={() => {
-                                                    setSortOrder(item)
-                                                    setShowSortOptions(false)
-                                                }}
-                                                className="px-4 py-2 cursor-pointer hover:bg-gray-100 text-sm"
-                                            >
-                                                {item === 'newest'
-                                                    ? 'Newest First'
-                                                    : item === 'oldest'
-                                                    ? 'Oldest First'
-                                                    : 'Title (A-Z)'}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Showing Count (Kept original logic) */}
-                <p className="text-gray-600 text-sm">
-                    Showing {filteredNews.length} of {newsList.length} news items
-                </p>
 
                 {/* Recent News Grid (3-column layout with the new aqua card style) */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
