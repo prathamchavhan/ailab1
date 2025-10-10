@@ -1,8 +1,0 @@
-Q1: Do you have leadership experience?
-A1: Uh, not really formal leadership. But I did mentor a junior once. I showed them how to set up their local dev environment. That’s about it.
-
-Q2: How do you prioritize tasks?
-A2: I kinda just do the easy ones first, then the hard ones. Sometimes I get stuck though. I don’t always manage time well.
-
-Q3: How do you handle feedback?
-A3: Uh, I mean, I don’t mind it. If it’s constructive, I’ll try to improve. But sometimes it stings, you know?

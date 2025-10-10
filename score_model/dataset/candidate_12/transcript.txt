@@ -1,0 +1,1 @@
+I made a calculator using Python. It performs basic arithmetic operations and uses Tkinter for GUI. It was my first coding project.

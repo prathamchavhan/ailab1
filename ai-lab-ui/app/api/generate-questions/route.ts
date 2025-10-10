@@ -69,16 +69,20 @@ export async function POST(req: Request) {
     // 🔢 Determine number of questions for the selected round
     const roundQuestions = { R1: 5, R2: 7, R3: 10 };
     const numQuestions = roundQuestions[round as keyof typeof roundQuestions] ?? 5;
+// 🧠 Step 1: Company + Domain Interview Context
+const contextPrompt = `
+You are an expert summarizing how ${company} typically conducts technical interviews 
+for candidates applying in the ${domain} domain.
 
-    // 🧠 Step 1: Company + Domain Interview Context
-    const contextPrompt = `
-You are an assistant summarizing how ${company} conducts interviews
-for ${domain} roles.
+Describe briefly (in 3 concise lines):
+1. The main areas of focus or skill assessment (e.g., problem-solving, system design, domain expertise).
+2. The overall tone and structure of the interview (e.g., analytical, practical, scenario-driven).
+3. The evaluation style or qualities they prioritize (e.g., clarity of thought, technical depth, communication).
 
-In 3 lines, describe the likely focus, tone, and evaluation style
-this company uses when interviewing candidates in ${domain}.
-Keep it professional and factual. Avoid generic statements.
+Keep the tone factual, professional, and specific to ${company}.
+Avoid generic descriptions or HR commentary.
 `;
+
 
     let companyContext = "";
     try {
@@ -89,29 +93,34 @@ Keep it professional and factual. Avoid generic statements.
       companyContext = `Focus on ${domain}-related conceptual and scenario-based interview questions relevant to ${company}.`;
     }
 
-    // 💬 Step 2: Generate Non-Coding, Realistic Questions
-    const prompt = `
-You are an expert interviewer generating realistic, non-coding interview questions.
+   // 💬 Step 2: Generate Technical, Spoken Interview Questions
+const prompt = `
+You are an expert technical interviewer generating realistic interview questions 
+that are designed to be answered verbally (spoken).
 
 Context:
 Company: ${company}
 Domain: ${domain}
-Difficulty: ${level}
-Round: ${round}
+Difficulty Level: ${level}
+Interview Round: ${round}
 
-Interview Style Insight:
+Company Insight:
 ${companyContext}
 
 Guidelines:
-1. Do NOT include coding, algorithmic, or math questions.
-2. Focus on real-world decision-making, reasoning, and conceptual understanding.
-3. Use open-ended, situational, or "how would you handle..." type questions.
-4. Reflect ${company}'s professional tone.
-5. Avoid yes/no or factual recall questions.
+1. Focus on technical, conceptual, and problem-solving questions.
+2. Do NOT ask the candidate to write or type code.
+3. Instead, ask them to explain approaches, logic, or design decisions verbally.
+4. Use "How would you explain...", "Describe how...", or "What is the difference between..." style questions.
+5. Include scenario-based, architecture, debugging, or optimization questions that require reasoning.
+6. Keep the tone and complexity aligned with ${company}'s real interview style.
+7. Avoid HR, behavioral, or purely theoretical questions.
+8. Each question should be concise and clear, easy to answer verbally.
+9. Do not include numbering or any additional commentary.
 
-Generate ${numQuestions} questions.
-Output each question on a new line with no numbering or extra commentary.
+Generate ${numQuestions} technical, spoken-response interview questions.
 `;
+
 
     let text: string | null = null;
 

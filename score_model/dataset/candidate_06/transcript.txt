@@ -1,0 +1,1 @@
+My project was focused on predicting crop yields using machine learning. I used weather and soil data to train a regression model that achieved high accuracy. The project helped farmers plan better based on seasonal predictions.

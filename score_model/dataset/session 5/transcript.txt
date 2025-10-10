@@ -1,8 +1,0 @@
-Q1: Tell me about yourself.
-A1: Sure, so I’m a computer science grad and I’ve been working as a backend engineer for two years. I mostly focus on APIs in Node.js and databases like PostgreSQL. I enjoy optimizing queries and making systems scalable.
-
-Q2: How do you ensure your APIs are secure?
-A2: Uh, so I always add authentication, usually JWT-based. I also sanitize inputs to prevent SQL injection. We use HTTPS everywhere. And I like to log failed attempts to catch patterns.
-
-Q3: What’s an example of a performance bottleneck you fixed?
-A3: Yeah, once we had this report query that took like 15 seconds. I analyzed the query plan and added indexes, and it went down to under a second. That felt really good.

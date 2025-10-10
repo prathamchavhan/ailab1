@@ -35,8 +35,10 @@ export default function InterviewPage() {
   const [showExitPopup, setShowExitPopup] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
 
-  const recognitionRef = useRef<any>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunks = useRef<Blob[]>([]);
 
+  // ✅ Check for user authentication
   useEffect(() => {
     const checkUser = async () => {
       const {
@@ -47,6 +49,7 @@ export default function InterviewPage() {
     checkUser();
   }, [router]);
 
+  // ✅ Fetch interview details & questions
   useEffect(() => {
     if (!sessionId) return;
     const fetchData = async () => {
@@ -71,6 +74,7 @@ export default function InterviewPage() {
     fetchData();
   }, [sessionId]);
 
+  // ✅ Timer logic
   useEffect(() => {
     if (timeLeft <= 0) {
       handleNext();
@@ -82,6 +86,7 @@ export default function InterviewPage() {
 
   useEffect(() => setTimeLeft(60), [currentIndex]);
 
+  // ✅ Enable webcam
   useEffect(() => {
     async function enableCamera() {
       try {
@@ -94,85 +99,112 @@ export default function InterviewPage() {
     enableCamera();
   }, []);
 
-  const startListening = () => {
-    if (listening) return;
-    setListening(true);
-    setTranscript("");
-    const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      alert("Speech Recognition not supported in this browser.");
-      setListening(false);
-      return;
+  // 🎤 Start recording + send to Whisper for transcription
+  const startListening = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunks.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) audioChunks.current.push(event.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunks.current, { type: "audio/webm" });
+        const formData = new FormData();
+        formData.append("file", audioBlob, "recording.webm");
+
+        try {
+          const res = await fetch("/api/transcribe", {
+            method: "POST",
+            body: formData,
+          });
+
+          const data = await res.json();
+          if (data.text) {
+            setTranscript(data.text);
+
+            // 💾 Save to Supabase immediately
+            if (questions[currentIndex]) {
+              const qId = questions[currentIndex].id;
+              await supabase.from("interview_answers").upsert([
+                {
+                  session_id: sessionId,
+                  question_id: qId,
+                  response: data.text,
+                  created_at: new Date().toISOString(),
+                },
+              ]);
+            }
+          } else {
+            console.error("No transcription text found:", data);
+          }
+        } catch (err) {
+          console.error("Transcription error:", err);
+        }
+      };
+
+      mediaRecorder.start();
+      setListening(true);
+    } catch (err) {
+      console.error("Microphone access error:", err);
+      alert("Could not access microphone. Please allow permissions.");
     }
-    const recognition = new SpeechRecognition();
-    recognition.lang = "en-US";
-    recognition.interimResults = true;
-    recognition.continuous = true;
-    recognition.onresult = (event: any) => {
-      let text = "";
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        text += event.results[i][0].transcript + " ";
-      }
-      setTranscript(text.trim());
-    };
-    recognition.onerror = (e: any) => {
-      console.error("Recognition error:", e.error);
-      setListening(false);
-    };
-    recognition.onend = () => setListening(false);
-    recognition.start();
-    recognitionRef.current = recognition;
   };
 
   const stopListening = () => {
-    recognitionRef.current?.stop();
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
+    }
     setListening(false);
   };
 
+  // ✅ Next Question Handler
   const handleNext = async () => {
-    if (questions[currentIndex]) {
-      const qId = questions[currentIndex].id;
+    if (!sessionId || !questions[currentIndex]) return;
+
+    const qId = questions[currentIndex].id;
+    const answerText = transcript.trim() || "(No response)";
+
+    try {
+      await supabase.from("interview_answers").upsert(
+        [
+          {
+            session_id: sessionId,
+            question_id: qId,
+            response: answerText,
+            created_at: new Date().toISOString(),
+          },
+        ],
+        { onConflict: "session_id,question_id" }
+      );
+
       setAnswers((prev) => ({
         ...prev,
-        [qId]: transcript || "(No response)",
+        [qId]: answerText,
       }));
 
-      await supabase.from("interview_answers").upsert([
-        {
-          session_id: sessionId,
-          question_id: qId,
-          response: transcript || "(No response)",
-        },
-      ]);
-    }
-
-    if (currentIndex < questions.length - 1) {
-      setCurrentIndex((i) => i + 1);
-      setTranscript("");
-    } else {
-      try {
-        const finalPayload = Object.entries(answers).map(([qId, resp]) => ({
-          session_id: sessionId,
-          question_id: qId,
-          response: resp,
-        }));
-        if (finalPayload.length > 0) {
-          await supabase.from("interview_answers").upsert(finalPayload);
-        }
+      if (currentIndex < questions.length - 1) {
+        setCurrentIndex((i) => i + 1);
+        setTranscript("");
+      } else {
         const res = await fetch("/api/evaluate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ sessionId }),
         });
+
         if (!res.ok) {
           console.error("Evaluation failed:", await res.json());
           return;
         }
+
         router.push(`/interview/completed?sessionId=${sessionId}`);
-      } catch (error) {
-        console.error("Error running evaluation:", error);
       }
+    } catch (error) {
+      console.error("Error saving answer:", error);
     }
   };
 
@@ -194,10 +226,8 @@ export default function InterviewPage() {
 
   return (
     <div className="min-h-screen bg-[#F5F7FA] text-[#1A1A1A] flex">
-      {/* ✅ Sidebar */}
       <Sidebar />
 
-      {/* ✅ Main Section */}
       <div className="flex-1 relative">
         <Header />
 
@@ -215,7 +245,6 @@ export default function InterviewPage() {
         <div className="font-[Poppins] p-8 grid grid-cols-3 gap-8">
           {/* LEFT SECTION */}
           <div className="col-span-2 flex flex-col items-center mt-4">
-            {/* Round + Level */}
             <div className="w-full flex justify-between items-center mb-3 px-2">
               <div className="flex gap-10 font-semibold text-[15px] text-[#09407F]">
                 <p>Round: {round || "1"}</p>
@@ -224,7 +253,6 @@ export default function InterviewPage() {
               <p className="text-[#2B7ECF] font-semibold mr-6">{timeLeft}s</p>
             </div>
 
-            {/* Tracker */}
             {questions.length > 0 && (
               <div className="flex justify-center gap-4 mb-3">
                 {questions.map((_, idx) => {
@@ -250,12 +278,10 @@ export default function InterviewPage() {
               </div>
             )}
 
-            {/* Interviewer */}
             <p className="font-semibold text-[18px] text-[#09407F] mb-2 text-center">
               Interviewer Aavi
             </p>
 
-            {/* Interviewer Video */}
             <div className="relative w-[830px] h-[490px] rounded-[12px] overflow-hidden shadow bg-black border-[2px] border-[#2B81D0] mb-5">
               <video
                 src="/ai-interviewer.mp4"
@@ -269,27 +295,32 @@ export default function InterviewPage() {
                 <button
                   onClick={listening ? stopListening : startListening}
                   className="flex items-center gap-2 bg-[#7CE5FF] text-[#000000] 
-                            font-semibold text-[15px] w-[210px] h-[49px] rounded-[5px] 
-                            justify-center shadow-sm hover:opacity-90 transition-all"
+                    font-semibold text-[15px] w-[210px] h-[49px] rounded-[5px] 
+                    justify-center shadow-sm hover:opacity-90 transition-all"
                 >
                   <FiMic />
-                  {listening ? "Listening..." : "Start Answer"}
+                  {listening ? "Recording..." : "Start Answer"}
                 </button>
               </div>
             </div>
 
             {/* Question Display */}
             <div className="bg-white rounded-[10px] shadow-md px-6 py-4 text-center text-[#000000] font-medium mb-4 w-[780px]">
-              Q{currentIndex + 1}.{" "}
-              {questions[currentIndex]?.question || "Loading..."}
+              Q{currentIndex + 1}. {questions[currentIndex]?.question || "Loading..."}
             </div>
 
-            {/* Next / Finish Button */}
+            {/* Transcript Display */}
+            <div className="bg-[#F0FAFF] border border-[#2DC5DB] rounded-[10px] shadow-sm px-6 py-4 text-[#000000] text-[15px] font-normal mb-5 w-[780px] text-left">
+              <p className="font-semibold text-[#09407F] mb-2">Your Answer:</p>
+              <p>{transcript || "Start speaking to record your answer..."}</p>
+            </div>
+
+            {/* Next Button */}
             <div className="flex justify-center">
               <button
                 onClick={handleNext}
                 className="w-[162px] h-[54px] rounded-[12px] bg-gradient-to-r 
-                            from-[#2DC5DB] to-[#2B81D0] text-[#000000] font-semibold shadow"
+                  from-[#2DC5DB] to-[#2B81D0] text-[#000000] font-semibold shadow"
               >
                 {currentIndex < questions.length - 1 ? "Next →" : "Finish"}
               </button>
@@ -298,49 +329,30 @@ export default function InterviewPage() {
 
           {/* RIGHT SIDE */}
           <div className="flex flex-col items-center gap-6">
-            <p className="font-semibold text-[20px] text-[#09407F]">
-              Student video
-            </p>
+            <p className="font-semibold text-[20px] text-[#09407F]">Student video</p>
             <div className="rounded-[12px] overflow-hidden shadow bg-black w-[359px] h-[231px]">
-              <video
-                ref={videoRef}
-                autoPlay
-                muted
-                playsInline
-                className="w-full h-full object-cover"
-              />
+              <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
             </div>
 
             <p className="text-[#09407F] font-semibold text-[15px]">
-              Domain:{" "}
-              <span className="text-[#09407F] font-semibold">
-                {domain || "Artificial Intelligence & Machine Learning"}
-              </span>
+              Domain: <span className="text-[#09407F] font-semibold">{domain || "Artificial Intelligence & Machine Learning"}</span>
             </p>
 
             <div className="bg-white rounded-xl shadow p-4 w-full max-w-[359px]">
-              <h3 className="text-[#09407F] font-semibold text-[20px] mb-3">
-                AI Video Score
-              </h3>
+              <h3 className="text-[#09407F] font-semibold text-[20px] mb-3">AI Video Score</h3>
               <ResponsiveContainer width="100%" height={250}>
                 <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
                   <PolarGrid />
                   <PolarAngleAxis dataKey="subject" />
                   <PolarRadiusAxis angle={30} domain={[0, 100]} />
-                  <Radar
-                    name="Score"
-                    dataKey="A"
-                    stroke="#2B81D0"
-                    fill="#2DC5DB"
-                    fillOpacity={0.6}
-                  />
+                  <Radar name="Score" dataKey="A" stroke="#2B81D0" fill="#2DC5DB" fillOpacity={0.6} />
                 </RadarChart>
               </ResponsiveContainer>
             </div>
           </div>
         </div>
 
-        {/* 🔹 Exit Confirmation Popup */}
+        {/* Exit Confirmation Popup */}
         {showExitPopup && (
           <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
             <div className="bg-white rounded-[20px] shadow-lg w-[450px] p-8 text-center border-2 border-[#2B81D0]">
@@ -356,7 +368,7 @@ export default function InterviewPage() {
                   <button
                     onClick={() => setShowExitPopup(false)}
                     className="w-[130px] h-[47px] rounded-[12px] font-[Poppins] font-semibold text-[16px] 
-                              text-white bg-gradient-to-r from-[#2DC5DA] to-[#2B84D0] shadow hover:opacity-90 transition-all"
+                      text-white bg-gradient-to-r from-[#2DC5DA] to-[#2B84D0] shadow hover:opacity-90 transition-all"
                   >
                     Return
                   </button>
@@ -364,7 +376,7 @@ export default function InterviewPage() {
                     onClick={handleConfirmExit}
                     disabled={isExiting}
                     className="w-[130px] h-[47px] rounded-[12px] font-[Poppins] font-semibold text-[16px] 
-                              text-[#000000] border border-[#2B84D0] hover:bg-[#E9F6FF] transition-all"
+                      text-[#000000] border border-[#2B84D0] hover:bg-[#E9F6FF] transition-all"
                   >
                     {isExiting ? "Exiting..." : "Exit"}
                   </button>

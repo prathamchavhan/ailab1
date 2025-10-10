@@ -1,8 +1,0 @@
-Q1: What programming languages are you comfortable with?
-A1: Um, I mostly use Java. I can do some Python too, but not that much. I tried C++ in school, but I kinda forgot most of it.
-
-Q2: How do you debug code?
-A2: Uh, I usually just put print statements. I know IDEs have debuggers, but I don’t really use them much. Sometimes it takes a while.
-
-Q3: What’s your experience with version control?
-A3: Um, just basic Git commands. Like add, commit, push. I don’t really know about branching strategies or stuff like that.

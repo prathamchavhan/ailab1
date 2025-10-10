@@ -1,8 +1,0 @@
-Q1: What’s your experience with machine learning?
-A1: So I’ve done a couple of Kaggle competitions. I usually use scikit-learn for models like random forests and logistic regression. More recently, I tried TensorFlow for a CNN image project.
-
-Q2: How do you deal with imbalanced datasets?
-A2: Uh, yeah, that’s tricky. I usually oversample the minority class, sometimes with SMOTE. Also adjusting class weights in the model helps.
-
-Q3: Can you explain precision vs recall?
-A3: Sure, so precision is about how many of the predicted positives were actually right. Recall is how many actual positives we caught. So like in fraud detection, recall might be more important.

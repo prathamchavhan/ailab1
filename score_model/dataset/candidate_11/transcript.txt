@@ -1,0 +1,1 @@
+I worked on a simple HTML and CSS project for my college. It was a personal portfolio website. I learned about responsive design and layout grids.

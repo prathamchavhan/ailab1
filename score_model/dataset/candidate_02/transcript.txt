@@ -1,0 +1,1 @@
+I was part of a team developing an e-commerce web application using React and Node.js. I worked on implementing the product catalog and integrating Stripe for payments. I also handled basic testing and deployment.

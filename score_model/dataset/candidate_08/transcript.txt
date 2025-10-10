@@ -1,0 +1,1 @@
+My final year project was a recommendation engine for online learning platforms. I implemented collaborative filtering using Python and Pandas. The system suggested relevant courses based on user history and ratings.

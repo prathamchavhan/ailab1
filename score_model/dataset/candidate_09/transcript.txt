@@ -1,0 +1,1 @@
+I worked on an automated attendance system using face recognition. It used OpenCV and a pre-trained CNN model. The system could mark attendance and send reports to teachers via email automatically.

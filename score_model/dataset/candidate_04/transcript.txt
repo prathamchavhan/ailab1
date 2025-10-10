@@ -1,0 +1,1 @@
+I worked on a finance analytics dashboard for visualizing stock trends using Power BI and Python. My task was to preprocess data and build KPIs that would help investors identify growth potential. It was used by multiple internal teams.

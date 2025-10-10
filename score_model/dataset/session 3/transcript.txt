@@ -1,8 +1,0 @@
-Q1: Tell me about a challenging project you worked on.
-A1: Yeah, so I worked on this e-commerce site with like thousands of products. The challenge was keeping the filters fast. We used server-side rendering with Next.js, and caching with Redis, which actually helped a lot.
-
-Q2: How do you collaborate with teammates?
-A2: Um, I usually try to write everything down in our Jira tickets so nobody’s confused. I also, like, over-communicate on Slack because I’d rather be clear. Sometimes we even do pair programming.
-
-Q3: What do you do if you don’t know the answer to something?
-A3: Uh, I just admit it, honestly. Then I’ll either Google it or check docs. If it’s urgent, I ask a teammate who knows. I think it’s better to be open.

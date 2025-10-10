@@ -1,8 +1,0 @@
-Q1: Tell me about yourself.
-A1: Uh, yeah, so I’m basically a front-end developer. I’ve been working with React for like, two years now. I also play around with Next.js and, um, Tailwind CSS. I kinda like making things smooth for users.
-
-Q2: What’s your experience with state management?
-A2: Uh, so mostly I’ve used Redux Toolkit. Honestly, at first it felt complicated, but once I set up slices, it became easier. I also sometimes just use React Context for simpler stuff.
-
-Q3: How do you handle performance in a React app?
-A3: Uh, like, I use React.memo sometimes, and then I split code using dynamic imports. I also check the dev tools for re-renders. Honestly, I think I still need to learn more about optimization.
