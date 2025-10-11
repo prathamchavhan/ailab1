@@ -4,7 +4,7 @@ import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { model } from "@/lib/geminiClient";
 import { openai } from "@/lib/openaiClient";
 
-export async function POST(req: Request) {
+export async function POST(req) {
   try {
     const { level, round, domain, company } = await req.json();
 
@@ -30,8 +30,8 @@ export async function POST(req: Request) {
 
     // ⚙️ Supabase admin client (service role)
     const supabaseAdmin = createAdminClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
     // 🔗 Get user profile using user_id
@@ -43,7 +43,10 @@ export async function POST(req: Request) {
 
     if (profileError || !userProfile) {
       console.error("❌ No user profile found for user_id:", user.id);
-      return NextResponse.json({ error: "User profile not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "User profile not found" },
+        { status: 404 }
+      );
     }
 
     // 🟢 Create interview session linked to the user's profile
@@ -63,12 +66,15 @@ export async function POST(req: Request) {
 
     if (sessionError) {
       console.error("❌ Error creating session:", sessionError);
-      return NextResponse.json({ error: "Failed to create session" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Failed to create session" },
+        { status: 500 }
+      );
     }
 
     // 🔢 Determine number of questions for the selected round
     const roundQuestions = { R1: 5, R2: 7, R3: 10 };
-    const numQuestions = roundQuestions[round as keyof typeof roundQuestions] ?? 5;
+    const numQuestions = roundQuestions[round] ?? 5;
 
     // 🧠 Step 1: Company + Domain Interview Context
     const contextPrompt = `
@@ -122,7 +128,7 @@ Guidelines:
 Generate ${numQuestions} technical, spoken-response interview questions.
 `;
 
-    let text: string | null = null;
+    let text = null;
 
     // ⚙️ Try Gemini → fallback to OpenAI
     try {
@@ -151,21 +157,20 @@ Generate ${numQuestions} technical, spoken-response interview questions.
     // 🧹 Step 3: Clean and structure questions
     let rawText = text || "";
 
-    // 🧽 Clean AI intro and markdown junk
     rawText = rawText
-      .replace(/^.*?(?=1[.)\s-]|[-•]\s|Q\d+)/is, "") // remove any pre-text before numbered/bulleted lines
-      .replace(/(^|\n)\s*(Okay|Sure|Here|Alright|Let's|Below).*?:/gi, "") // remove phrases like "Okay, here are..."
-      .replace(/(\*\*|\#|\*)/g, "") // remove markdown artifacts
+      .replace(/^.*?(?=1[.)\s-]|[-•]\s|Q\d+)/is, "")
+      .replace(/(^|\n)\s*(Okay|Sure|Here|Alright|Let's|Below).*?:/gi, "")
+      .replace(/(\*\*|\#|\*)/g, "")
       .trim();
 
     const questions = rawText
       .split(/\n+/)
       .map((q) =>
         q
-          .replace(/^(\d+[\).\s-]*|Q\d+[:\s-]*|[-•]\s*)/, "") // remove numbers/bullets
+          .replace(/^(\d+[\).\s-]*|Q\d+[:\s-]*|[-•]\s*)/, "")
           .trim()
       )
-      .filter((q) => q.length > 10 && /[a-zA-Z?]/.test(q)); // only keep meaningful text
+      .filter((q) => q.length > 10 && /[a-zA-Z?]/.test(q));
 
     if (questions.length === 0 && text) {
       questions.push(text.trim());
@@ -190,7 +195,9 @@ Generate ${numQuestions} technical, spoken-response interview questions.
       );
     }
 
-    console.log(`✅ ${formatted.length} questions generated for ${company} (${domain})`);
+    console.log(
+      `✅ ${formatted.length} questions generated for ${company} (${domain})`
+    );
 
     // 🎯 Step 5: Return session ID
     return NextResponse.json({ sessionId: session.id });

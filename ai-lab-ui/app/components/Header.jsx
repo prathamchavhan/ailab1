@@ -5,7 +5,7 @@ import { createClient } from "@/lib/utils/supabase/client";
 import { Bell } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-// --- Embedded CSS (unchanged) ---
+// --- Embedded CSS ---
 const embeddedCSS = `
 .progress-circle {
     --circle-diameter: 58px;
@@ -51,10 +51,10 @@ const embeddedCSS = `
 `;
 
 export default function Header() {
-  const [user, setUser] = useState<any>(null);
-  const [latestResult, setLatestResult] = useState<any>(null);
-  const [averageScore, setAverageScore] = useState<number | null>(null);
-  const [userName, setUserName] = useState<string>("Guest");
+  const [user, setUser] = useState(null);
+  const [latestResult, setLatestResult] = useState(null);
+  const [averageScore, setAverageScore] = useState(null);
+  const [userName, setUserName] = useState("Guest");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const router = useRouter();
   const supabase = createClient();
@@ -70,7 +70,7 @@ export default function Header() {
       const currentUser = data.user;
       setUser(currentUser);
 
-      // Name Fetching
+      // 🧍‍♂️ Fetch profile name
       const { data: profile } = await supabase
         .from("profiles")
         .select("name")
@@ -82,7 +82,7 @@ export default function Header() {
         setUserName(currentUser.user_metadata.full_name);
       else setUserName(currentUser.email?.split("@")[0] || "User");
 
-      // Score Fetching
+      // 🧠 Latest score
       const { data: latestResults } = await supabase
         .from("interview_results")
         .select(`final_score, created_at, interview_sessions!inner(user_id)`)
@@ -94,6 +94,7 @@ export default function Header() {
         setLatestResult(latestResults[0]);
       }
 
+      // 📊 Average score
       const { data: allResults } = await supabase
         .from("interview_results")
         .select(`final_score, interview_sessions!inner(user_id)`)
@@ -115,6 +116,7 @@ export default function Header() {
     router.push("/login");
   };
 
+  // Default values if not fetched
   const interviewScore = latestResult?.final_score ?? 76;
   const profileScore = averageScore ?? 55;
 
@@ -132,7 +134,7 @@ export default function Header() {
       <div className="flex justify-between items-center bg-[#1D3540] text-white px-8 py-4 rounded-[20px] shadow-lg">
         {/* ✅ Left Section — Avatar + Name + Logout */}
         <div className="flex items-center gap-4 relative">
-          {/* 🟢 Clickable avatar for logout dropdown */}
+          {/* 🟢 Clickable avatar */}
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className="flex items-center justify-center w-10 h-10 rounded-full bg-[#2DC7DB] text-white font-bold shadow-md text-lg hover:brightness-110 transition"
@@ -182,7 +184,7 @@ export default function Header() {
                   "--progress-fill-gradient":
                     "linear-gradient(45deg, #51e6dd, #c02ffc)",
                   "--score-percentage": interviewScore,
-                } as React.CSSProperties}
+                }}
                 data-content={interviewContent}
               ></div>
               <span className="ml-auto text-sm font-medium text-white whitespace-nowrap">
@@ -205,7 +207,7 @@ export default function Header() {
                   "--progress-fill-gradient":
                     "linear-gradient(45deg, #07C8A1, #33386C)",
                   "--score-percentage": profileScore,
-                } as React.CSSProperties}
+                }}
                 data-content={profileContent}
               ></div>
               <span className="ml-auto text-sm font-medium text-white whitespace-nowrap">

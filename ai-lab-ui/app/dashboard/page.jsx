@@ -10,14 +10,22 @@ import Announcement from "../components/Announcement";
 export default function DashboardPage() {
   return (
     <div className="flex min-h-screen bg-[#F5F7FA]">
+      {/* Sidebar */}
       <Sidebar />
+
+      {/* Main Content */}
       <div className="flex-1">
         <Header />
+
+        {/* Dashboard Layout */}
         <div className="p-6 grid grid-cols-3 gap-6">
+          {/* Left Section */}
           <div className="col-span-2 space-y-6">
             <AIInterviewForm />
             <PerformanceChart />
           </div>
+
+          {/* Right Section */}
           <div className="space-y-6">
             <Announcement />
             <Dashboard />

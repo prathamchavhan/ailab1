@@ -390,14 +390,6 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-interface OverallSummaryData {
-  current_rank: number;
-  confidence: number;
-  communication: number;
-  interview: number;
-  [key: string]: number;
-}
-
 const embeddedCSS = `
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
 
@@ -489,7 +481,7 @@ const embeddedCSS = `
 }
 `;
 
-const CustomHoverTooltip = ({ active, payload }: any) => {
+const CustomHoverTooltip = ({ active, payload }) => {
   if (active && payload && payload.length > 0) {
     const p = payload[0];
     const dataKey = p.dataKey;
@@ -512,15 +504,7 @@ const CustomHoverTooltip = ({ active, payload }: any) => {
   return null;
 };
 
-const SummaryCard = ({
-  score,
-  label,
-  border,
-}: {
-  score: number;
-  label: string;
-  border: string;
-}) => (
+const SummaryCard = ({ score, label, border }) => (
   <div
     className="performance-card"
     style={{ background: "linear-gradient(to right, #F8F8F8, #BAF2FF)" }}
@@ -533,12 +517,9 @@ const SummaryCard = ({
 );
 
 export default function PerformanceChart() {
-  const [chartData, setChartData] = useState<any[]>([]);
-  const [summaryData, setSummaryData] = useState<OverallSummaryData | null>(
-    null
-  );
-  const [selectedAttempt, setSelectedAttempt] = useState<any | null>(null);
-
+  const [chartData, setChartData] = useState([]);
+  const [summaryData, setSummaryData] = useState(null);
+  const [selectedAttempt, setSelectedAttempt] = useState(null);
   const supabase = createClient();
 
   useEffect(() => {
@@ -589,7 +570,7 @@ export default function PerformanceChart() {
       setChartData(groupedRounds);
 
       const latest = results[0];
-      let radar: any[] = [];
+      let radar = [];
       try {
         radar =
           typeof latest.radar_scores === "string"
@@ -599,9 +580,9 @@ export default function PerformanceChart() {
         radar = [];
       }
 
-      const getMetric = (name: string) =>
-        radar.find((r: any) => r.subject?.toLowerCase() === name.toLowerCase())
-          ?.A || 0;
+      const getMetric = (name) =>
+        radar.find((r) => r.subject?.toLowerCase() === name.toLowerCase())?.A ||
+        0;
 
       setSummaryData({
         current_rank: 1,
@@ -614,7 +595,7 @@ export default function PerformanceChart() {
     fetchAndFormatResults();
   }, []);
 
-  const handleBarClick = (data: any, dataKey: string) => {
+  const handleBarClick = (data, dataKey) => {
     const idx = dataKey.slice(-1);
     const score = data[`score${idx}`];
     const date = data[`date${idx}`];
@@ -750,7 +731,7 @@ export default function PerformanceChart() {
             summaryCardMapping.map(({ key, label, border }) => (
               <SummaryCard
                 key={key}
-                score={summaryData[key as keyof OverallSummaryData]}
+                score={summaryData[key]}
                 label={label}
                 border={border}
               />

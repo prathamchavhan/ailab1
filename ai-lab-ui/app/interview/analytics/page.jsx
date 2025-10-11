@@ -22,12 +22,12 @@ export default function AnalyticsPage() {
   const supabase = createClient();
 
   const [loading, setLoading] = useState(true);
-  const [score, setScore] = useState<number | null>(null);
-  const [domain, setDomain] = useState<string>("Not available");
-  const [radarData, setRadarData] = useState<any[]>([]);
-  const [feedbackStrengths, setFeedbackStrengths] = useState<string[]>([]);
-  const [feedbackImprovements, setFeedbackImprovements] = useState<string[]>([]);
-  const [rank, setRank] = useState<number | null>(null);
+  const [score, setScore] = useState(null);
+  const [domain, setDomain] = useState("Not available");
+  const [radarData, setRadarData] = useState([]);
+  const [feedbackStrengths, setFeedbackStrengths] = useState([]);
+  const [feedbackImprovements, setFeedbackImprovements] = useState([]);
+  const [rank, setRank] = useState(null);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -36,14 +36,12 @@ export default function AnalyticsPage() {
       try {
         const { data: result, error } = await supabase
           .from("interview_results")
-          .select(
-            `
+          .select(`
             final_score,
             radar_scores,
             feedback,
             interview_sessions ( domain, user_id )
-          `
-          )
+          `)
           .eq("session_id", sessionId)
           .single();
 
@@ -57,7 +55,7 @@ export default function AnalyticsPage() {
         setScore(currentScore);
         setDomain(result.interview_sessions?.domain || "Not available");
 
-        // 🧮 Calculate Rank
+        // 🧮 Rank calculation
         const { data: allResults } = await supabase
           .from("interview_results")
           .select("final_score, user_id")
@@ -79,7 +77,7 @@ export default function AnalyticsPage() {
           }
         }
 
-        const formattedRadar = scores.map((s: any) => ({
+        const formattedRadar = scores.map((s) => ({
           subject: s.subject,
           A: Number(s.A) || 0,
         }));
@@ -126,8 +124,8 @@ export default function AnalyticsPage() {
     );
   }
 
-  // 🧩 Helper for metric extraction
-  const getMetric = (name: string): number => {
+  // 🧩 Helper for radar metric extraction
+  const getMetric = (name) => {
     const metric = radarData.find(
       (r) => r.subject?.toLowerCase() === name.toLowerCase()
     );
@@ -144,6 +142,7 @@ export default function AnalyticsPage() {
   return (
     <div className="flex min-h-screen bg-[#F5F7FA]">
       <Sidebar />
+
       <div className="flex-1 flex flex-col">
         <Header />
 
@@ -166,16 +165,15 @@ export default function AnalyticsPage() {
               <p className="mt-1 text-sm text-gray-300">Domain: {domain}</p>
             </div>
 
-            {/* ✅ Radar Chart + Overall Summary (Aligned & Balanced Layout) */}
+            {/* ✅ Radar Chart + Overall Summary */}
             <div className="flex flex-row items-start justify-center mt-4 gap-28">
-              {/* Left: Radar Chart Section */}
+              {/* Radar Chart Section */}
               <div className="flex flex-col w-[500px]">
                 <h3
                   className="font-[Poppins] font-semibold mb-2 ml-1"
                   style={{
                     fontSize: "20px",
                     lineHeight: "100%",
-                    letterSpacing: "0%",
                     color: "#0029A3",
                   }}
                 >
@@ -212,15 +210,14 @@ export default function AnalyticsPage() {
                   <button
                     onClick={() => (window.location.href = "/")}
                     className="w-[282px] h-[47px] rounded-[12px] bg-gradient-to-r from-[#2DC5DA] to-[#2B84D0] 
-                               text-white font-[Inter] font-semibold text-[20px] leading-[100%] tracking-[0px] 
-                               shadow hover:opacity-90 transition-all"
+                               text-white font-[Inter] font-semibold text-[20px] shadow hover:opacity-90 transition-all"
                   >
                     Practice Again
                   </button>
                 </div>
               </div>
 
-              {/* Right: Overall Summary Section */}
+              {/* Overall Summary */}
               <div className="flex flex-col items-center">
                 <h3 className="text-[#09407F] font-bold text-2xl mb-4 font-[Poppins] text-center">
                   Overall Summary
@@ -237,17 +234,15 @@ export default function AnalyticsPage() {
                         style={{
                           border: `3px solid ${item.color}`,
                           lineHeight: "1",
-                          textAlign: "center",
                         }}
                       >
                         {item.score}
                       </div>
                       <span
-                        className="font-[Poppins] font-semibold leading-[100%]"
+                        className="font-[Poppins] font-semibold"
                         style={{
                           fontSize: "12px",
                           color: "#09407F",
-                          letterSpacing: "0%",
                         }}
                       >
                         {item.label}
@@ -269,8 +264,6 @@ export default function AnalyticsPage() {
                 className="font-[Poppins] font-semibold mb-6 text-[#09407F]"
                 style={{
                   fontSize: "20px",
-                  lineHeight: "100%",
-                  letterSpacing: "0%",
                 }}
               >
                 Key Feedback & Next Steps

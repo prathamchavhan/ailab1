@@ -15,9 +15,17 @@ const menuItems = [
 export default function Sidebar() {
   return (
     <div className="w-64 bg-white shadow-md flex flex-col p-4">
+      {/* Logo Section */}
       <div className="flex justify-center mb-6">
-        <Image src="/ai-lab-logo.png" alt="AI Lab Logo" width={140} height={50} />
+        <Image
+          src="/ai-lab-logo.png"
+          alt="AI Lab Logo"
+          width={140}
+          height={50}
+        />
       </div>
+
+      {/* Navigation Menu */}
       <nav className="space-y-2">
         {menuItems.map((item) => (
           <a

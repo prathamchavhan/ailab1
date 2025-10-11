@@ -12,21 +12,20 @@ export default function CompletedPage() {
   const router = useRouter();
 
   const sessionId = searchParams.get("sessionId");
-  const [userName, setUserName] = useState<string>("User");
-  const [score, setScore] = useState<number | null>(null);
+  const [userName, setUserName] = useState("User");
+  const [score, setScore] = useState(null);
 
   // ✅ Fetch logged-in user name
   useEffect(() => {
     const fetchUser = async () => {
-      const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser();
+      const { data, error } = await supabase.auth.getUser();
 
-      if (error || !user) {
+      if (error || !data?.user) {
         console.error("Error fetching user:", error);
         return;
       }
+
+      const user = data.user;
 
       const { data: profile } = await supabase
         .from("profiles")
@@ -83,7 +82,7 @@ export default function CompletedPage() {
             className="font-[Poppins] font-semibold text-[36px] leading-[100%] text-[#0029A3]"
             style={{ letterSpacing: "0px" }}
           >
-            Thank you {userName}! 
+            Thank you {userName}!
           </h2>
 
           {/* Completed */}

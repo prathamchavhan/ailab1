@@ -16,14 +16,14 @@ import {
 import { FiMic, FiLogOut } from "react-icons/fi";
 
 export default function InterviewPage() {
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRef = useRef(null);
   const searchParams = useSearchParams();
   const router = useRouter();
   const supabase = createClient();
 
   const sessionId = searchParams.get("sessionId");
 
-  const [questions, setQuestions] = useState<any[]>([]);
+  const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(60);
   const [listening, setListening] = useState(false);
@@ -31,20 +31,18 @@ export default function InterviewPage() {
   const [domain, setDomain] = useState("");
   const [level, setLevel] = useState("");
   const [round, setRound] = useState("");
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [answers, setAnswers] = useState({});
   const [showExitPopup, setShowExitPopup] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
 
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunks = useRef<Blob[]>([]);
+  const mediaRecorderRef = useRef(null);
+  const audioChunks = useRef([]);
 
   // ✅ Check for user authentication
   useEffect(() => {
     const checkUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) router.push("/login");
+      const { data } = await supabase.auth.getUser();
+      if (!data?.user) router.push("/login");
     };
     checkUser();
   }, [router]);
@@ -126,7 +124,6 @@ export default function InterviewPage() {
           if (data.text) {
             setTranscript(data.text);
 
-            // 💾 Save to Supabase immediately
             if (questions[currentIndex]) {
               const qId = questions[currentIndex].id;
               await supabase.from("interview_answers").upsert([
@@ -335,7 +332,10 @@ export default function InterviewPage() {
             </div>
 
             <p className="text-[#09407F] font-semibold text-[15px]">
-              Domain: <span className="text-[#09407F] font-semibold">{domain || "Artificial Intelligence & Machine Learning"}</span>
+              Domain:{" "}
+              <span className="text-[#09407F] font-semibold">
+                {domain || "Artificial Intelligence & Machine Learning"}
+              </span>
             </p>
 
             <div className="bg-white rounded-xl shadow p-4 w-full max-w-[359px]">
@@ -345,7 +345,13 @@ export default function InterviewPage() {
                   <PolarGrid />
                   <PolarAngleAxis dataKey="subject" />
                   <PolarRadiusAxis angle={30} domain={[0, 100]} />
-                  <Radar name="Score" dataKey="A" stroke="#2B81D0" fill="#2DC5DB" fillOpacity={0.6} />
+                  <Radar
+                    name="Score"
+                    dataKey="A"
+                    stroke="#2B81D0"
+                    fill="#2DC5DB"
+                    fillOpacity={0.6}
+                  />
                 </RadarChart>
               </ResponsiveContainer>
             </div>
@@ -354,7 +360,7 @@ export default function InterviewPage() {
 
         {/* Exit Confirmation Popup */}
         {showExitPopup && (
-          <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+          <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50">
             <div className="bg-white rounded-[20px] shadow-lg w-[450px] p-8 text-center border-2 border-[#2B81D0]">
               <div className="flex flex-col items-center">
                 <div className="text-[40px] mb-4">😢</div>

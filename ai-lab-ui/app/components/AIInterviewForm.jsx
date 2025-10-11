@@ -26,7 +26,7 @@ export default function AIInterviewForm() {
     "Cloud Computing",
   ];
 
-  const handleSelectDomain = (selectedDomain: string) => {
+  const handleSelectDomain = (selectedDomain) => {
     setDomain(selectedDomain);
     setIsDomainDropdownOpen(false);
   };
@@ -41,7 +41,6 @@ export default function AIInterviewForm() {
     setLoading(true);
 
     try {
-      // ✅ Check Supabase auth (user must be logged in)
       const {
         data: { user },
         error: authError,
@@ -53,7 +52,6 @@ export default function AIInterviewForm() {
         return;
       }
 
-      // ✅ Call backend route to generate questions
       const res = await fetch("/api/generate-questions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -73,7 +71,6 @@ export default function AIInterviewForm() {
         return;
       }
 
-      // ✅ Redirect to interview page
       router.push(`/interview?sessionId=${sessionId}`);
     } catch (err) {
       console.error("❌ Unexpected error:", err);
@@ -367,6 +364,7 @@ export default function AIInterviewForm() {
     </div>
   );
 }
+
 
 // "use client";
 

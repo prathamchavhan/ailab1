@@ -212,7 +212,7 @@ import { NextResponse } from "next/server";
 import { createClientForRoute } from "@/lib/utils/supabase/server";
 import { model as geminiModel } from "@/lib/geminiClient";
 
-export async function POST(req: Request) {
+export async function POST(req) {
   try {
     const { sessionId } = await req.json();
     if (!sessionId)
@@ -229,7 +229,7 @@ export async function POST(req: Request) {
     if (answersError || !answers?.length)
       return NextResponse.json({ error: "No answers found" }, { status: 404 });
 
-    const qas = answers.map((a: any, i: number) => ({
+    const qas = answers.map((a, i) => ({
       question: a.interview_question?.question || `Question ${i + 1}`,
       answer: a.response || "",
     }));
@@ -256,7 +256,11 @@ Evaluate each spoken answer for:
 Rate each answer from 1–10 and give one short feedback line.
 
 Input:
-${qas.map((q, i) => `Q${i + 1}: ${q.question}\nA${i + 1}: ${q.answer}\n`).join("\n")}
+${qas
+  .map(
+    (q, i) => `Q${i + 1}: ${q.question}\nA${i + 1}: ${q.answer}\n`
+  )
+  .join("\n")}
 
 Return valid JSON:
 [
@@ -278,7 +282,7 @@ Return valid JSON:
     ]);
 
     // 5️⃣ Parse Gemini output safely
-    let geminiEvaluation: any[] = [];
+    let geminiEvaluation = [];
     if (geminiResult.status === "fulfilled") {
       try {
         const rawText = geminiResult.value.response.text();
@@ -314,7 +318,7 @@ Return valid JSON:
     }
 
     // 7️⃣ Compute hybrid score
-    const technicalScore10 = average(geminiEvaluation.map((x: any) => x.score));
+    const technicalScore10 = average(geminiEvaluation.map((x) => x.score));
     const technicalScore100 = Math.min(100, (technicalScore10 / 10) * 100);
     const behavioralScore100 = Math.min(100, mlEvaluation.final_score || 0);
     const finalScore = Math.round(
@@ -352,7 +356,7 @@ Return valid JSON:
 `;
 
     // 🔟 Generate unified feedback
-    let finalFeedback: any = {};
+    let finalFeedback = {};
     try {
       const feedbackRes = await geminiModel.generateContent(feedbackPrompt);
       const feedbackText = feedbackRes.response.text()
@@ -407,7 +411,7 @@ Return valid JSON:
       radar_scores: radarScores,
       feedback: finalFeedback,
     });
-  } catch (err: any) {
+  } catch (err) {
     console.error("🔥 Hybrid Evaluation Error:", err);
     return NextResponse.json(
       { error: err?.message || "Internal Server Error" },
@@ -417,7 +421,7 @@ Return valid JSON:
 }
 
 // Utility
-function average(arr: number[]) {
+function average(arr) {
   const valid = arr.filter((n) => typeof n === "number" && !isNaN(n));
   return valid.length ? valid.reduce((a, b) => a + b, 0) / valid.length : 0;
 }

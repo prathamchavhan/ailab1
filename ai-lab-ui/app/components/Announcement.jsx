@@ -4,9 +4,7 @@ export default function Announcement() {
   return (
     <div className="bg-white rounded-2xl shadow-md p-5">
       {/* Title */}
-      <h3
-        className="font-[Poppins] font-semibold text-[20px] leading-[100%] tracking-[0px] text-[#09407F] mb-4"
-      >
+      <h3 className="font-[Poppins] font-semibold text-[20px] leading-[100%] tracking-[0px] text-[#09407F] mb-4">
         Announcement
       </h3>
 

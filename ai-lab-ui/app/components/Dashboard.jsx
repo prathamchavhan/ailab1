@@ -3,24 +3,10 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/utils/supabase/client";
 
-interface InterviewResult {
-  id: string;
-  final_score: number;
-  user_id: string;
-  interview_sessions: { company: string };
-  profile: { user_id: string; name: string; clg_id?: number } | null;
-}
-
 // -------------------------------------------------------------------
 // Table Component — with Inter/Intra toggle and top 10 limit
 // -------------------------------------------------------------------
-function InterviewDashboardTable({
-  results,
-  currentUserCollegeId,
-}: {
-  results: InterviewResult[];
-  currentUserCollegeId: number | null;
-}) {
+function InterviewDashboardTable({ results, currentUserCollegeId }) {
   const [view, setView] = useState("Inter"); // Default mode
 
   // ✅ Filter results for intra vs inter
@@ -119,9 +105,7 @@ function InterviewDashboardTable({
             {/* Profile */}
             <div className="flex items-center gap-3" style={rowTextStyleMedium}>
               <div className="w-9 h-9 rounded-full bg-gray-300 flex items-center justify-center text-sm font-medium text-gray-600">
-                {result.profile?.name
-                  ? result.profile.name.charAt(0)
-                  : "U"}
+                {result.profile?.name ? result.profile.name.charAt(0) : "U"}
               </div>
               <span>{result.profile?.name || "Unknown User"}</span>
             </div>
@@ -146,8 +130,8 @@ function InterviewDashboardTable({
 // Main Dashboard (Fetches data, college ID, and passes to table)
 // -------------------------------------------------------------------
 export default function Dashboard() {
-  const [results, setResults] = useState<InterviewResult[]>([]);
-  const [currentUserCollegeId, setCurrentUserCollegeId] = useState<number | null>(null);
+  const [results, setResults] = useState([]);
+  const [currentUserCollegeId, setCurrentUserCollegeId] = useState(null);
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
@@ -193,7 +177,7 @@ export default function Dashboard() {
         const profilesMap = (profiles || []).reduce((acc, p) => {
           acc[p.user_id] = p;
           return acc;
-        }, {} as Record<string, any>);
+        }, {});
 
         // ✅ Merge user profile info into results
         const merged = (results || []).map((r) => ({
@@ -241,7 +225,7 @@ export default function Dashboard() {
             letterSpacing: "0",
           }}
         >
-          Interview dashboard
+          Interview Dashboard
         </h2>
         <InterviewDashboardTable
           results={results}
