@@ -16,7 +16,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // 🔐 Get the authenticated Supabase user
+    // 🔐 Get authenticated Supabase user
     const supabaseUserClient = await createClientForRoute();
     const {
       data: { user },
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    // 🔗 Get user profile using user_id (not id)
+    // 🔗 Get user profile using user_id
     const { data: userProfile, error: profileError } = await supabaseAdmin
       .from("profiles")
       .select("user_id")
@@ -42,7 +42,7 @@ export async function POST(req: Request) {
       .single();
 
     if (profileError || !userProfile) {
-      console.error("❌ No user profile found in 'profiles' for user_id:", user.id);
+      console.error("❌ No user profile found for user_id:", user.id);
       return NextResponse.json({ error: "User profile not found" }, { status: 404 });
     }
 
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
       .from("interview_sessions")
       .insert([
         {
-          user_id: userProfile.user_id, // ✅ correct FK reference
+          user_id: userProfile.user_id,
           type: level,
           domain,
           round,
@@ -69,8 +69,9 @@ export async function POST(req: Request) {
     // 🔢 Determine number of questions for the selected round
     const roundQuestions = { R1: 5, R2: 7, R3: 10 };
     const numQuestions = roundQuestions[round as keyof typeof roundQuestions] ?? 5;
-// 🧠 Step 1: Company + Domain Interview Context
-const contextPrompt = `
+
+    // 🧠 Step 1: Company + Domain Interview Context
+    const contextPrompt = `
 You are an expert summarizing how ${company} typically conducts technical interviews 
 for candidates applying in the ${domain} domain.
 
@@ -83,7 +84,6 @@ Keep the tone factual, professional, and specific to ${company}.
 Avoid generic descriptions or HR commentary.
 `;
 
-
     let companyContext = "";
     try {
       const contextResult = await model.generateContent(contextPrompt);
@@ -93,8 +93,8 @@ Avoid generic descriptions or HR commentary.
       companyContext = `Focus on ${domain}-related conceptual and scenario-based interview questions relevant to ${company}.`;
     }
 
-   // 💬 Step 2: Generate Technical, Spoken Interview Questions
-const prompt = `
+    // 💬 Step 2: Generate Technical, Spoken Interview Questions
+    const prompt = `
 You are an expert technical interviewer generating realistic interview questions 
 that are designed to be answered verbally (spoken).
 
@@ -117,10 +117,10 @@ Guidelines:
 7. Avoid HR, behavioral, or purely theoretical questions.
 8. Each question should be concise and clear, easy to answer verbally.
 9. Do not include numbering or any additional commentary.
+10. Start directly with the questions — do NOT include phrases like "Here are your questions" or "Okay, let's begin."
 
 Generate ${numQuestions} technical, spoken-response interview questions.
 `;
-
 
     let text: string | null = null;
 
@@ -149,10 +149,27 @@ Generate ${numQuestions} technical, spoken-response interview questions.
     }
 
     // 🧹 Step 3: Clean and structure questions
-    const questions = text
-      .split("\n")
-      .map((q) => q.replace(/^(\d+[\).\s-]*|[-•]\s*)/, "").trim())
-      .filter(Boolean);
+    let rawText = text || "";
+
+    // 🧽 Clean AI intro and markdown junk
+    rawText = rawText
+      .replace(/^.*?(?=1[.)\s-]|[-•]\s|Q\d+)/is, "") // remove any pre-text before numbered/bulleted lines
+      .replace(/(^|\n)\s*(Okay|Sure|Here|Alright|Let's|Below).*?:/gi, "") // remove phrases like "Okay, here are..."
+      .replace(/(\*\*|\#|\*)/g, "") // remove markdown artifacts
+      .trim();
+
+    const questions = rawText
+      .split(/\n+/)
+      .map((q) =>
+        q
+          .replace(/^(\d+[\).\s-]*|Q\d+[:\s-]*|[-•]\s*)/, "") // remove numbers/bullets
+          .trim()
+      )
+      .filter((q) => q.length > 10 && /[a-zA-Z?]/.test(q)); // only keep meaningful text
+
+    if (questions.length === 0 && text) {
+      questions.push(text.trim());
+    }
 
     // 💾 Step 4: Store generated questions
     const formatted = questions.map((q) => ({
@@ -175,7 +192,7 @@ Generate ${numQuestions} technical, spoken-response interview questions.
 
     console.log(`✅ ${formatted.length} questions generated for ${company} (${domain})`);
 
-    // 🎯 Step 5: Return session ID to frontend
+    // 🎯 Step 5: Return session ID
     return NextResponse.json({ sessionId: session.id });
   } catch (err) {
     console.error("🔥 Unexpected error:", err);
