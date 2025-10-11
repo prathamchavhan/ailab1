@@ -1,36 +1,76 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+⚙️ Installation Guide
+1️⃣ Clone the repository
+git clone https://github.com/your-username/ai-interview-platform.git
+cd ai-interview-platform
 
-## Getting Started
+2️⃣ Install dependencies
+npm install
 
-First, run the development server:
+3️⃣ Setup Supabase
 
-```bash
+Create a project on https://supabase.com
+
+Then in your .env.local file, add:
+
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+
+4️⃣ Setup AI APIs
+
+Get your API keys:
+
+OpenAI Whisper + GPT-4 → https://platform.openai.com
+
+Gemini → https://makersuite.google.com/app/apikey
+
+Then add to your .env.local:
+
+NEXT_PUBLIC_OPENAI_API_KEY=your_openai_api_key
+NEXT_PUBLIC_GEMINI_API_KEY=your_gemini_api_key
+
+5️⃣ Run the project
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Then visit:
+👉 http://localhost:3000
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+📊 Folder Structure
+app/
+ ├── api/
+ │   ├── generate-questions/
+ │   ├── transcribe/
+ │   ├── evaluate/
+ │
+ ├── dashboard/
+ ├── interview/
+ │   ├── analytics/
+ │   ├── completed/
+ │
+ ├── profile/
+ │   └── create/
+ │
+ ├── components/
+ │   ├── Header.jsx
+ │   ├── Sidebar.jsx
+ │   ├── Dashboard.jsx
+ │   ├── PerformanceChart.jsx
+ │   ├── AIInterviewForm.jsx
+ │   └── Announcement.jsx
+ │
+ ├── layout.jsx
+ └── page.jsx
 
-## Learn More
+🧠 Optional: Run ML Model (Python Backend)
 
-To learn more about Next.js, take a look at the following resources:
+If you want to run your own ML evaluation locally:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+cd score-model
+pip install -r requirements.txt
+uvicorn main:app --reload
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
+Then configure your frontend to send evaluation requests to:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+http://localhost:5000/evaluate

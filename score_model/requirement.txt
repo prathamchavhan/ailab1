@@ -1,0 +1,25 @@
+# === Core ML / AI Stack ===
+numpy
+pandas
+scikit-learn
+tensorflow
+torch
+transformers
+sentence-transformers
+openai
+google-generativeai
+python-dotenv
+
+# === Audio / Speech Processing ===
+whisper
+pydub
+SpeechRecognition
+librosa
+soundfile
+
+# === Utils / Server Helpers ===
+flask
+flask-cors
+gunicorn
+requests
+tqdm
