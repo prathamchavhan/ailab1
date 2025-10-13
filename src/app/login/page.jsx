@@ -1,8 +1,19 @@
 "use client";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect } from "react";
 
-export default function LoginPage() {
+function LoginPageContent() {
   const supabase = createClientComponentClient();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    // Store redirect parameter in sessionStorage if present
+    const redirectTo = searchParams.get("redirect");
+    if (redirectTo) {
+      sessionStorage.setItem("loginRedirect", redirectTo);
+    }
+  }, [searchParams]);
 
   const handleGoogleLogin = async () => {
     await supabase.auth.signInWithOAuth({
@@ -19,26 +30,32 @@ export default function LoginPage() {
   return (
     <div className="flex h-screen w-full bg-blue-50">
       {/* Left Side: Full-height image */}
-      <div 
-        className="hidden lg:flex w-1/2 bg-cover bg-center" 
+      <div
+        className="hidden lg:flex w-1/2 bg-cover bg-center"
         style={{ backgroundImage: 'url("/images/login-background.jpg")' }}
       >
-        <div 
-          className="flex items-center justify-center w-full h-full bg-opacity-40 p-12" 
-          style={{ backgroundColor: '#21292E' }}
+        <div
+          className="flex items-center justify-center w-full h-full bg-opacity-40 p-12"
+          style={{ backgroundColor: "#21292E" }}
         >
           <div className="text-white text-center">
-            <h1 
-              className="text-4xl font-bold mb-4 font-sans" 
-              style={{ textShadow: '0 0 5px rgba(30, 227, 255, 0.4), 0 0 10px rgba(30, 227, 255, 0.2)' }}
+            <h1
+              className="text-4xl font-bold mb-4 font-sans"
+              style={{
+                textShadow:
+                  "0 0 5px rgba(30, 227, 255, 0.4), 0 0 10px rgba(30, 227, 255, 0.2)",
+              }}
             >
-               Welcome to the AI Lab.
+              Welcome to the AI Lab.
             </h1>
-            <p 
+            <p
               className="text-xl font-sans"
-              style={{ textShadow: '0 0 5px rgba(30, 227, 255, 0.4), 0 0 10px rgba(30, 227, 255, 0.2)' }}
+              style={{
+                textShadow:
+                  "0 0 5px rgba(30, 227, 255, 0.4), 0 0 10px rgba(30, 227, 255, 0.2)",
+              }}
             >
-             Log in to explore the future of AI and shape what's next.
+              Log in to explore the future of AI and shape what's next.
             </p>
             <div className="mt-8">
               <img
@@ -54,7 +71,9 @@ export default function LoginPage() {
       {/* Right Side: Authentication Form */}
       <div className="flex w-full lg:w-1/2 items-center justify-center p-8 bg-white overflow-y-auto">
         <div className="w-full max-w-sm">
-          <h2 className="text-3xl font-bold text-center mb-2 text-black">Welcome to the </h2>
+          <h2 className="text-3xl font-bold text-center mb-2 text-black">
+            Welcome to the{" "}
+          </h2>
           <p className="text-gray-500 text-center mb-8">Ai Lab</p>
           <button
             onClick={handleGoogleLogin}
@@ -73,7 +92,10 @@ export default function LoginPage() {
             <hr className="flex-grow border-t border-gray-300" />
           </div>
           <div className="w-full">
-            <label htmlFor="email" className="mb-1 block text-sm font-medium text-gray-700">
+            <label
+              htmlFor="email"
+              className="mb-1 block text-sm font-medium text-gray-700"
+            >
               Email address
             </label>
             <input
@@ -99,5 +121,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LoginPageContent />
+    </Suspense>
   );
 }

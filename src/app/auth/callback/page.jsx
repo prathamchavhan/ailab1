@@ -1,7 +1,7 @@
 "use client";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function CallbackPage() {
   const router = useRouter();
@@ -9,7 +9,10 @@ export default function CallbackPage() {
 
   useEffect(() => {
     const handleAuth = async () => {
-      const { data: { user }, error } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
 
       if (error || !user) {
         router.push("/login");
@@ -26,7 +29,14 @@ export default function CallbackPage() {
       if (!profile) {
         router.push("/profile/create");
       } else {
-        router.push("/dashboard");
+        // Check for redirect parameter in sessionStorage (set during login)
+        const redirectTo = sessionStorage.getItem("loginRedirect");
+        if (redirectTo) {
+          sessionStorage.removeItem("loginRedirect");
+          router.push(redirectTo);
+        } else {
+          router.push("/dashboard");
+        }
       }
     };
 
