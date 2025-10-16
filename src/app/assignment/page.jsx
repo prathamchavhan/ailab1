@@ -2,7 +2,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import React, { useState, useEffect } from 'react';
-
+import Header from "../../components/Header";
 // Access environment variables securely
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -60,8 +60,11 @@ const AssignmentDashboard = () => {
   }
 
   return (
-    <div className="p-8 bg-gray-100 min-h-screen">
-    <h2 className="text-sm font-bold mb-2 truncate text-[#001668]">Assignment</h2>
+    <div className="p-8 bg-[#f9f9fb] min-h-screen ">
+      <div className='mb-9'>
+      <Header/>
+      </div>
+    <p className="text-xl font-bold mb-6 truncate text-[#001668]">Assignment</p>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-65">
         {assignments.map((assignment) => (
           
@@ -94,9 +97,9 @@ const AssignmentDashboard = () => {
                            {formatDate(assignment.created_at)}
                         </p>
                     )}
-                <h7 className="text-sm font-bold mb-2 truncate">
+                <p className="text-sm font-bold mb-2 truncate">
                     Assignment {assignment.subject_id}: {assignment.subject_name || 'title'}
-                </h7>
+                </p>
                 
                 {/* Description - Clamped to 3 lines */}
                 {assignment.description && (

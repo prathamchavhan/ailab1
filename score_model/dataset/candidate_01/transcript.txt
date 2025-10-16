@@ -1,0 +1,1 @@
+In my final year, I built a deep learning model for detecting brain tumors from MRI scans. I used TensorFlow and trained a CNN model that achieved around 94% accuracy. My main role was model optimization and performance analysis.

@@ -6,46 +6,39 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import styles from "./Sidebar.module.css";
 
+
 import {
-  BrainCircuit,
+  CardSim,
+  CloudSunRain,
+  LayoutDashboard,
   Briefcase,
+  Newspaper,
   CalendarDays,
-  ChevronDown, // Icon for dropdown arrow
+  MessagesSquare,
   ClipboardCheck,
   CreditCard,
-  LayoutDashboard,
-  MessagesSquare,
-  Newspaper,
-  Settings,
   User,
-} from "lucide-react";
+  Settings,
+  BrainCircuit,
+  ChevronDown // Icon for dropdown arrow
+} from 'lucide-react';
 
 // ✅ STEP 1: Update the data structure to include sub-links
 const navLinks = [
-  { href: "/ai-dashboard", label: "AI Interview", icon: BrainCircuit },
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/jobs", label: "Jobs", icon: Briefcase },
-  { href: "/news", label: "News", icon: Newspaper },
-  { href: "/challenges", label: "Challenges", icon: CalendarDays },
-  {
-    href: "/career-counselling",
-    label: "Career Counselling",
-    icon: MessagesSquare,
-  },
-  {
-    href: "/assessments",
-    label: "Assessments (Quiz,Test)",
-    icon: ClipboardCheck,
+  { href: '/ai-dashboard', label: 'AI Interview', icon: BrainCircuit },
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/aptitude', label: 'Aptitude', icon: CloudSunRain},
+      { href: '/assignment', label: 'Question bank', icon: CardSim},
+  { href: '/jobs', label: 'Jobs', icon: Briefcase },
+  { href: '/news', label: 'News', icon: Newspaper },
+  { href: '/challenges', label: 'Challenges', icon: CalendarDays },
+  { href: '/carrer', label: 'Career Counselling', icon: MessagesSquare },
+  
+  { href: '/billing', label: 'Billing', icon: CreditCard },
+  { href: '/profilemain', label: 'Profile', icon: User },
 
-    subLinks: [
-      { href: "/aptitude", label: "Aptitude" },
-      { href: "/assignment", label: "Assignment" },
-    ],
-  },
-  { href: "/billing", label: "Billing", icon: CreditCard },
-  { href: "/profile", label: "Profile", icon: User },
-  { href: "/settings", label: "App Settings", icon: Settings },
 ];
+
 
 const Sidebar = () => {
   const pathname = usePathname();

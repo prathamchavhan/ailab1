@@ -1,0 +1,1 @@
+I developed a mobile app that tracks workout routines using Flutter. It allowed users to log exercises, set goals, and view progress over time. I handled the Firebase integration and UI design aspects.

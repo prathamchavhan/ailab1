@@ -1,6 +1,46 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import AptitudeScoreDashboard from "@/components/AptitudeScoreDashboard";
+import Header from "../../components/Header";
+// --- FALLBACK QUESTIONS CONSTANT (NEW) ---
+const FALLBACK_QUESTIONS = [
+  // Quantitative Aptitude (10 Questions)
+  { question: "If a car travels at 60 km/h, how long does it take to cover 180 km?", options: ["2 hours", "3 hours", "4 hours", "5 hours"], answer: "3 hours", category: 'quantitative' },
+  { question: "What is 15% of 200?", options: ["20", "30", "40", "50"], answer: "30", category: 'quantitative' },
+  { question: "A sum of money doubles in 5 years at simple interest. What is the rate of interest per annum?", options: ["10%", "15%", "20%", "25%"], answer: "20%", category: 'quantitative' },
+  { question: "The average age of 5 boys is 12 years. If a new boy joins, the average age becomes 13 years. What is the age of the new boy?", options: ["15 years", "18 years", "20 years", "16 years"], answer: "18 years", category: 'quantitative' },
+  { question: "What is the next number in the series: 2, 4, 8, 16, ...", options: ["24", "30", "32", "36"], answer: "32", category: 'quantitative' },
+  { question: "If the length and width of a rectangle are doubled, how does its area change?", options: ["Doubles", "Triples", "Quadruples", "Remains the same"], answer: "Quadruples", category: 'quantitative' },
+  { question: "Solve for x: 3x - 5 = 10", options: ["x=5", "x=3", "x=15", "x=7"], answer: "x=5", category: 'quantitative' },
+  { question: "The ratio of two numbers is 3:4. If their sum is 21, what is the larger number?", options: ["9", "12", "15", "18"], answer: "12", category: 'quantitative' },
+  { question: "How many liters of pure acid are in 10 liters of 30% acid solution?", options: ["2 Liters", "3 Liters", "5 Liters", "7 Liters"], answer: "3 Liters", category: 'quantitative' },
+  { question: "A man buys an item for $50 and sells it for $60. What is his profit percentage?", options: ["10%", "20%", "15%", "25%"], answer: "20%", category: 'quantitative' },
+
+  // Logical Reasoning (10 Questions)
+  { question: "Find the odd one out: Apple, Banana, Carrot, Grape.", options: ["Apple", "Banana", "Carrot", "Grape"], answer: "Carrot", category: 'logical' },
+  { question: "If 'A' is coded as 1, 'B' as 2, and so on, how is 'CAT' coded?", options: ["3120", "31T", "24", "312"], answer: "3120", category: 'logical' },
+  { question: "Syllogism: All dogs are animals. All animals are mammals. Therefore, all dogs are mammals.", options: ["True", "False", "Cannot be determined", "Only partially true"], answer: "True", category: 'logical' },
+  { question: "Pointing to a man, a woman said, 'His mother is the only daughter of my mother.' How is the woman related to the man?", options: ["Sister", "Mother", "Aunt", "Daughter"], answer: "Mother", category: 'logical' },
+  { question: "What comes next in the sequence: A, C, E, G, ...", options: ["H", "I", "J", "K"], answer: "I", category: 'logical' },
+  { question: "In a certain code, 'COME' is coded as 'EMOC'. How is 'DARK' coded?", options: ["KRDA", "RADK", "RAKD", "KRAD"], answer: "KRAD", category: 'logical' },
+  { question: "If yesterday was Sunday, what is the day after tomorrow?", options: ["Tuesday", "Wednesday", "Thursday", "Monday"], answer: "Wednesday", category: 'logical' },
+  { question: "Two statements are followed by two conclusions. Statement 1: Some pens are pencils. Statement 2: All pencils are erasers. Conclusion I: Some pens are erasers. Conclusion II: Some erasers are pens.", options: ["Only I follows", "Only II follows", "Both I and II follow", "Neither I nor II follows"], answer: "Both I and II follow", category: 'logical' },
+  { question: "Which diagram best represents the relationship between: 'Continent, Country, State'?", options: ["Three separate circles", "One circle inside another, inside a third", "Two overlapping circles inside a third", "Three overlapping circles"], answer: "One circle inside another, inside a third", category: 'logical' },
+  { question: "If P means 'add', Q means 'subtract', R means 'multiply', and S means 'divide', then 18 R 12 S 4 Q 5 P 6 = ?", options: ["50", "55", "53", "60"], answer: "55", category: 'logical' },
+
+  // Verbal Ability (10 Questions)
+  { question: "Choose the synonym for 'EAGER':", options: ["Indifferent", "Reluctant", "Keen", "Lazy"], answer: "Keen", category: 'verbal' },
+  { question: "Choose the antonym for 'PLIABLE':", options: ["Flexible", "Rigid", "Soft", "Bending"], answer: "Rigid", category: 'verbal' },
+  { question: "Complete the sentence: She is __ than her brother.", options: ["tall", "taller", "tallest", "more tall"], answer: "taller", category: 'verbal' },
+  { question: "Identify the error: He has been working (A) / in this office (B) / since three years (C) / No Error (D).", options: ["A", "B", "C", "D"], answer: "C", category: 'verbal' },
+  { question: "Choose the word with the correct spelling:", options: ["Seperate", "Separate", "Seprate", "Seperate"], answer: "Separate", category: 'verbal' },
+  { question: "Meaning of the idiom 'To bite the bullet':", options: ["To complain loudly", "To face a difficult situation with courage", "To run away from danger", "To make a quick decision"], answer: "To face a difficult situation with courage", category: 'verbal' },
+  { question: "Which sentence is grammatically correct?", options: ["The committee are discussing the matter.", "The committee is discussing the matter.", "The committee discussing the matter.", "The committee was discussing the matter."], answer: "The committee is discussing the matter.", category: 'verbal' },
+  { question: "Fill in the blank: I look forward __ you soon.", options: ["to seeing", "to see", "seeing", "for seeing"], answer: "to seeing", category: 'verbal' },
+  { question: "What is the noun form of 'decide'?", options: ["decisive", "decision", "decided", "deciding"], answer: "decision", category: 'verbal' },
+  { question: "Passive voice of: 'She wrote a letter.'", options: ["A letter was written by her.", "A letter is written by her.", "A letter is being written by her.", "She is written a letter."], answer: "A letter was written by her.", category: 'verbal' },
+];
 
 // --- API FUNCTIONS ---
 
@@ -72,6 +112,7 @@ export default function AptitudeTestPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [activeQuestion, setActiveQuestion] = useState(0); 
   const [error, setError] = useState(null);
+  const [performanceData, setPerformanceData] = useState({});
 
   // --- EFFECTS ---
 
@@ -87,17 +128,34 @@ export default function AptitudeTestPage() {
       }
   }, [timer, testState]);
 
-  useEffect(() => {
-      if (testState === "finished") {
-          const finalScore = questions.reduce((acc, q, index) => 
-              q.answer === userAnswers[index] ? acc + 1 : acc, 0);
-          setScore(finalScore);
-          saveScore(level, finalScore, questions.length).catch(err => {
-              setError('Could not save your score. Please try again.');
-          });
-      }
-  }, [testState, questions, userAnswers, level]);
+ useEffect(() => {
+    if (testState === "finished") {
+      const finalScore = questions.reduce(
+        (acc, q, index) => (q.answer === userAnswers[index] ? acc + 1 : acc),
+        0
+      );
+      setScore(finalScore);
+       const performance = {
+        quantitative: { total: 0, correct: 0 },
+        logical: { total: 0, correct: 0 },
+        verbal: { total: 0, correct: 0 },
+      };
 
+      questions.forEach((q, index) => {
+        performance[q.category].total += 1;
+        if (q.answer === userAnswers[index]) {
+          performance[q.category].correct += 1;
+        }
+      });
+
+
+  setPerformanceData(performance);
+
+      saveScore(level, finalScore, questions.length).catch((err) => {
+        setError("Could not save your score. Please try again.");
+      });
+    }
+  }, [testState, questions, userAnswers, level]);
   // --- DATA Memos ---
 
   const questionsByCategory = useMemo(() => {
@@ -116,17 +174,30 @@ export default function AptitudeTestPage() {
   const handleStartTest = async () => {
     setIsLoading(true);
     setError(null);
+    let fetchedQuestions = [];
+
     try {
-      const fetchedQuestions = await generateQuestions(level);
-      setQuestions(fetchedQuestions);
-      setUserAnswers(Array(fetchedQuestions.length).fill(null));
-      setScore(0);
-      setTimer(900);
-      setTestState("active");
-      setActiveQuestion(0);
+      // 1. Attempt to fetch questions from the API
+      fetchedQuestions = await generateQuestions(level);
     } catch (err) {
-      setError(err.message || "Failed to start the test. Please try again.");
+      // 2. Fallback if API fails
+      console.warn("API question generation failed. Using fallback questions.");
+      setError("Failed to fetch custom questions from the server. Loading **pre-built fallback questions** instead.");
+      // Use the static fallback questions
+      fetchedQuestions = FALLBACK_QUESTIONS;
     } finally {
+      // 3. Continue with the test setup using whichever questions were loaded
+      if (fetchedQuestions && fetchedQuestions.length > 0) {
+        setQuestions(fetchedQuestions);
+        setUserAnswers(Array(fetchedQuestions.length).fill(null));
+        setScore(0);
+        setTimer(900);
+        setTestState("active");
+        setActiveQuestion(0);
+      } else {
+        // If even fallback is empty (though it shouldn't be), show a general error
+         setError("Could not load any questions for the test. Please check your connection.");
+      }
       setIsLoading(false);
     }
   };
@@ -145,8 +216,12 @@ export default function AptitudeTestPage() {
   // --- RENDER FUNCTIONS ---
 
   const renderSetup = () => (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+    <>
+     <Header/>
+    <div className="flex items-center justify-center min-h-screen bg-transparent">
+     
       <div className="p-8 bg-white rounded-lg shadow-xl text-center max-w-md w-full">
+
         <h1 className="text-xl font-bold mb-6 text-gray-800">Aptitude Test Setup</h1>
         <div className="space-y-4">
             <p className="text-sm text-gray-600">Select your desired difficulty level to begin.</p>
@@ -159,32 +234,31 @@ export default function AptitudeTestPage() {
         <button onClick={handleStartTest} disabled={isLoading} className="w-full mt-6 bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300 disabled:bg-gray-400 text-xs">
           {isLoading ? "Generating Questions..." : "Start Test"}
         </button>
-        {error && <p className="text-red-500 mt-4 text-xs">{error}</p>}
+        {error && <p className="text-red-500 mt-4 text-xs" dangerouslySetInnerHTML={{ __html: error }}></p>}
       </div>
     </div>
+    </>
   );
 
-  const renderFinished = () => (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-        <div className="p-8 bg-white rounded-lg shadow-xl text-center max-w-md w-full">
-            <h2 className="text-xl font-bold text-gray-800">Test Complete!</h2>
-            <p className="text-sm text-gray-600 mt-4">Your final score is:</p>
-            <p className="text-4xl font-bold text-blue-600 my-4">{score} <span className="text-2xl text-gray-500">/ {questions.length}</span></p>
-            <p className="text-xs text-gray-500">Your results have been saved.</p>
-            {error && <p className="text-red-500 mt-2 text-xs">{error}</p>}
-            <button onClick={resetTest} className="w-full mt-6 bg-gray-800 text-white font-bold py-2 px-4 rounded-lg hover:bg-black transition duration-300 text-xs">
-                Take Another Test
-            </button>
-        </div>
-    </div>
+   const renderFinished = () => (
+    <AptitudeScoreDashboard
+      score={score}
+      totalQuestions={questions.length}
+      performanceData={performanceData}
+      onPracticeAgain={resetTest}
+    />
   );
+
 
   const renderActiveTest = () => {
     if (questions.length === 0) return null;
     const progressPercentage = (userAnswers.filter(ans => ans !== null).length / questions.length) * 100;
 
     return (
-      <div className="min-h-screen bg-gray-50 p-4 sm:p-8 font-sans">
+      <div className="min-h-screen bg-gray-50 p-4 sm:p-8 font-sans"> 
+        <div className="mb-9">
+          <Header/>
+          </div>
         <div className="max-w-5xl mx-auto">
           {/* Top Header */}
           <div className="bg-white p-4 rounded-xl shadow-md flex items-center flex-wrap gap-x-6 gap-y-4">
@@ -228,7 +302,7 @@ export default function AptitudeTestPage() {
                 <div key={category} className="flex items-center gap-4">
                   <div className="flex items-center gap-2 w-48 shrink-0">
                      <span className="w-1 h-6 bg-graident-200 rounded-full"></span>
-                     <h7 className="font-medium text-xs text-black whitespace-nowrap">{APTITUDE_TYPE_MAP[category]}</h7>
+                     <p className="font-medium text-xs text-black whitespace-nowrap">{APTITUDE_TYPE_MAP[category]}</p>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {questionsByCategory[category]?.map((q, index) => (
@@ -313,7 +387,7 @@ export default function AptitudeTestPage() {
         </div>
       </div>
     );
-  };
+  }
   
   if (testState === "setup") return renderSetup();
   if (testState === "finished") return renderFinished();

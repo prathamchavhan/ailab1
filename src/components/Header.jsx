@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 // --- Embedded CSS ---
 const embeddedCSS = `
 .progress-circle {
-    --circle-diameter: 58px;
+    --circle-diameter: 44px;
     --inner-circle-diameter: 50px;
     --border-width: 3px;
     --progress-ring-width: 4px;
@@ -150,15 +150,15 @@ export default function Header() {
   }%`;
 
   return (
-    <header className="px-6 pt-4">
+    <header className="px-4 pt-2">
       <style dangerouslySetInnerHTML={{ __html: embeddedCSS }} />
-      <div className="flex justify-between items-center bg-[#1D3540] text-white px-8 py-4 rounded-[20px] shadow-lg">
+      <div className="mt-2 flex justify-between items-center bg-[#1D3540] text-white px-4 py-7 rounded-[20px] ">
         {/* ✅ Left Section — Avatar + Name + Logout */}
         <div className="flex items-center gap-4 relative">
           {/* 🟢 Clickable avatar */}
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-[#2DC7DB] text-white font-bold shadow-md text-lg hover:brightness-110 transition"
+            className="flex items-center justify-center w-9 h-9 rounded-full bg-[#2DC7DB] text-white font-bold shadow-md text-lg hover:brightness-110 transition"
           >
             {userName.charAt(0).toUpperCase()}
           </button>
@@ -185,9 +185,9 @@ export default function Header() {
           )}
 
           {/* Greeting */}
-          <h2 className="text-xl font-semibold whitespace-nowrap">
-            Hi, <span className="font-bold">{userName}</span> 👋
-          </h2>
+          <p className="text-xl font-semibold whitespace-nowrap">
+            Hi, <span className="font-bold ">{userName}</span> 👋
+          </p>
         </div>
 
         {/* ✅ Right Section */}
@@ -201,48 +201,38 @@ export default function Header() {
           <div className="flex items-center gap-8">
             {/* Interview Score */}
             <div
-              className="relative flex items-center h-[50px] w-[169px] rounded-xl pr-3 pl-14 shadow-md"
-              style={{
-                background: "linear-gradient(90deg, #404478, #9041AA)",
-              }}
-            >
-              <div
-                className="progress-circle"
-                style={{
-                  "--outer-border-gradient":
-                    "linear-gradient(45deg, #a4e6ff, #6dd5ed)",
-                  "--progress-fill-gradient":
-                    "linear-gradient(45deg, #51e6dd, #c02ffc)",
-                  "--score-percentage": interviewScore,
-                }}
-                data-content={interviewContent}
-              ></div>
-              <span className="ml-auto text-sm font-medium text-white whitespace-nowrap">
-                Interview Score
-              </span>
-            </div>
+                className="relative flex items-center h-[40px] w-[119px] rounded-lg pr-2 pl-10 shadow-md"
+                style={{ background: "linear-gradient(90deg, #404478, #9041AA)" }}
+              >
+                <div
+                  className="progress-circle"
+                  style={{
+                    "--outer-border-gradient": "linear-gradient(45deg, #ffffffff, #ffffffff)", // Light blue outer ring
+                    "--progress-fill-gradient": "linear-gradient(45deg, #51e6dd, #c02ffc)", // Pink-blue inner progress
+                  }}
+                  data-content={interviewContent}
+                ></div>
+                <span className="ml-auto text-[10px] font-medium text-white whitespace-nowrap">
+                  Interview Score
+                </span>
+              </div>
 
             {/* Profile Score */}
             <div
-              className="relative flex items-center h-[50px] w-[169px] rounded-xl pr-3 pl-14 shadow-md"
-              style={{
-                background: "linear-gradient(90deg, #33386C, #07C8A1)",
-              }}
-            >
-              <div
-                className="progress-circle"
-                style={{
-                  "--outer-border-gradient":
-                    "linear-gradient(45deg, #07C8A1, #33386C)",
-                  "--progress-fill-gradient":
-                    "linear-gradient(45deg, #07C8A1, #33386C)",
-                  "--score-percentage": profileScore,
-                }}
-                data-content={profileContent}
-              ></div>
-              <span className="ml-auto text-sm font-medium text-white whitespace-nowrap">
-                Profile Score
-              </span>
+                className="relative flex items-center h-[40px] w-[119px] rounded-lg pr-2 pl-10 shadow-md"
+                style={{ background: "linear-gradient(90deg, #1B9E8C, #4B62E5)" }}
+              >
+                <div
+                  className="progress-circle"
+                  style={{
+                    "--outer-border-gradient": "linear-gradient(45deg, #FFFFFF, #E0E0E0)",
+                    "--progress-fill-gradient": "linear-gradient(45deg, #07C8A1, #33386C)",
+                  }}
+                  data-content={profileContent}
+                ></div>
+                <span className="ml-auto text-[10px] font-medium text-white whitespace-nowrap">
+                  Profile Score
+                </span>
             </div>
           </div>
         </div>

@@ -151,6 +151,13 @@ function InterviewPageContent() {
     }
     enableCamera();
   }, []);
+   useEffect(() => {
+    if (questions.length > 0 && questions[currentIndex]?.question) {
+      const utterance = new window.SpeechSynthesisUtterance(questions[currentIndex].question);
+      window.speechSynthesis.cancel(); // Stop any previous speech
+      window.speechSynthesis.speak(utterance);
+    }
+  }, [questions, currentIndex]);
 
   // 🎤 Start recording + send to Whisper for transcription
   const startListening = async () => {

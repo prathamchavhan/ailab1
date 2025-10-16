@@ -8,7 +8,7 @@ import PerformanceChart from "../../components/PerformanceChart";
 
 export default function DashboardPage() {
   return (
-    <div className="min-h-screen bg-[#F5F7FA]">
+    <div className="min-h-screen bg-[#f9f9fb] mt-4">
       {/* Header */}
       <Header />
 

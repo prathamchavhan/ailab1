@@ -1,0 +1,33 @@
+import { NextResponse } from "next/server";
+import OpenAI from "openai";
+
+const openai = new OpenAI({
+  apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
+});
+
+export async function POST(req) {
+  try {
+    const formData = await req.formData();
+    const file = formData.get("file");
+
+    if (!file) {
+      return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
+    }
+
+    const transcription = await openai.audio.transcriptions.create({
+      file,
+      model: "whisper-1",
+      response_format: "json",
+      temperature: 0,
+      language: "en",
+    });
+
+    return NextResponse.json({ text: transcription.text });
+  } catch (err) {
+    console.error("Transcription error:", err);
+    return NextResponse.json(
+      { error: "Transcription failed" },
+      { status: 500 }
+    );
+  }
+}

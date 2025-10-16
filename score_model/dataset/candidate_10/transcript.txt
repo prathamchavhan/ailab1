@@ -1,0 +1,1 @@
+I built a real-time traffic prediction model using time series analysis. It collected live traffic data and predicted congestion in certain areas. I implemented the backend using Flask and deployed it on AWS EC2.

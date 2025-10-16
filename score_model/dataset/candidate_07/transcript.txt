@@ -1,0 +1,1 @@
+I developed an IoT-based air quality monitoring system using Arduino and NodeMCU. It collected data from sensors and displayed readings on a web dashboard. I learned about MQTT protocols and data transmission efficiency.

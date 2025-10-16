@@ -1,144 +1,194 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { SlCalender } from "react-icons/sl";
+import { useState, useEffect, useMemo } from 'react'
+import Announcement  from "../../components/Announcement";
 import { supabase } from '../../lib/supabaseClient'
+import Header from "../../components/Header";
+// --- All sub-components (CategoryTabButton, etc.) are included and are unchanged ---
 
-import { FaPlus, FaUpload, FaSortAmountDown, FaFilter } from 'react-icons/fa'
+const CategoryTabButton = ({ label, isActive, onClick }) => {
+    const baseClasses = "px-3 py-1 text-sm rounded-xl transition font-medium cursor-pointer";
+    const activeClasses = "bg-[#d0f6fa] text-[#09407F]"; 
+    const inactiveClasses = "bg-gray-100 text-[#09407F] rounded-xl";
+    return <button onClick={onClick} className={`${baseClasses} ${isActive ? activeClasses : inactiveClasses}`}>{label}</button>;
+};
 
-export default function NewsDashboard() {
-  const router = useRouter()
-
-  const [newsList, setNewsList] = useState([])
-  const [search, setSearch] = useState('')
-  const [sortOrder, setSortOrder] = useState('newest')
-  const [showSortOptions, setShowSortOptions] = useState(false)
-
-  useEffect(() => {
-    const fetchNews = async () => {
-      const { data, error } = await supabase
-        .from('news')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (!error) setNewsList(data)
-    }
-
-    fetchNews()
-  }, [])
-
-  const filteredNews = newsList
-    .filter(
-      (item) =>
-        item.title?.toLowerCase().includes(search.toLowerCase()) ||
-        item.description?.toLowerCase().includes(search.toLowerCase())
-    )
-    .sort((a, b) => {
-      if (sortOrder === 'newest') return new Date(b.created_at) - new Date(a.created_at)
-      if (sortOrder === 'oldest') return new Date(a.created_at) - new Date(b.created_at)
-      if (sortOrder === 'title') return a.title.localeCompare(b.title)
-    })
-
-  return (
-    
-    <div className="p-6 space-y-6 bg-[#f9f9fb] min-h-screen">
-
-      {/* Top Section */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-semibold text-black">Latest News</h1>
-        <div className="flex gap-2">
-          
-         
+const LatestNewsCard = ({ news, onReadMore }) => (
+    <div className="bg-gradient-to-r from-[#91E4F9] to-[#096285] p-4 rounded-xl shadow-lg flex overflow-hidden h-[200px] gap-6">
+        <div className="w-1/3 flex-shrink-0 pr-4">
+            <img src={news.image_url} alt={news.title} className="w-full h-[150px] object-cover rounded-lg" />
         </div>
-      </div>
-
-      {/* Search + Filters */}
-      <div className="flex flex-wrap justify-between items-center gap-4">
-        <input
-          type="text"
-          placeholder="Search news by title, content or author..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-300 text-gray-600 focus:outline-none "
-        />
-
-        <div className="flex items-center gap-2 relative">
-          <button
-            onClick={() => alert('Filter clicked')}
-            className="border border-blue-600 px-4 py-2 text-blue-800  bg-gray-200 rounded-lg hover:bg-gray-100 flex items-center gap-2"
-          >
-            <FaFilter /> Filters
-          </button>
-
-          <div className="relative">
-            <button
-              onClick={() => setShowSortOptions(!showSortOptions)}
-              className="border border-blue-600 text-blue-800 px-4 py-2 rounded-lg  bg-gray-200 hover:bg-gray-300 flex items-center gap-2"
-            >
-              <FaSortAmountDown />
-              Sort: {sortOrder === 'newest' ? 'Newest' : sortOrder === 'oldest' ? 'Oldest' : 'Title (A-Z)'}
-            </button>
-
-            {showSortOptions && (
-              <div className="absolute right-0 top-12 bg-white shadow-md rounded-lg text-black border border-gray-200 z-10">
-                <ul>
-                  {['newest', 'oldest', 'title'].map((item) => (
-                    <li
-                      key={item}
-                      onClick={() => {
-                        setSortOrder(item)
-                        setShowSortOptions(false)
-                      }}
-                      className="px-4 py-2 cursor-pointer hover:bg-gray-100"
-                    >
-                      {item === 'newest'
-                        ? 'Newest First'
-                        : item === 'oldest'
-                        ? 'Oldest First'
-                        : 'Title (A-Z)'}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
+        <div className="w-2/3 flex flex-col justify-center text-white">
+            <p className="text-[15px] font-bold mb-1">{news.title}</p>
+            <p className="text-[12px] mb-2 opacity-95 line-clamp-3">{news.description}</p>
+            <div className='border-t w-60 mt-2 mb-0'></div>
+            <div className="flex justify-between items-center mt-2">
+                <div className="flex items-center text-xs text-white/80 mb-6 mt-0 pt-1">
+                    <span>{news.source} | {new Date(news.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                </div>
+                <button
+                    onClick={() => onReadMore(news)}
+                    className="self-end px-6 py-2 !text-[11px] text-black font-semibold bg-white hover:bg-gray-100 transition shadow-md"
+                    style={{ borderRadius: '9px' }}
+                >
+                    Read More
+                </button>
+            </div>
         </div>
-      </div>
-
-      {/* Showing Count */}
-      <p className="text-gray-600 text-sm">
-        Showing {filteredNews.length} of {newsList.length} news items
-      </p>
-
-      {/* News Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {filteredNews.map((news) => (
-          <div
-            key={news.id}
-            className="bg-white p-4 rounded-xl border border-gray-200 shadow hover:shadow-md transition"
-          >
-           <div className="relative group mb-3">
-  <img
-    src={news.image_url}
-    alt={news.title}
-    className="w-full h-[160px] object-cover rounded-t-lg"
-  />
-  <div className="absolute inset-0 bg-white/10 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 flex items-end p-3 rounded-t-lg transition duration-300">
-    <p className="text-white font-bold text-sm">
-      Published by: {news.author || 'Unknown'}
-    </p>
-  </div>
-</div>
-
-
-            
-            <p className="text-xs text-black mb-1"><SlCalender />{new Date(news.created_at).toLocaleDateString()}</p>
-            <h2 className="font-semibold text-gray-900 truncate">{news.title}</h2>
-            <p className="text-sm text-gray-600 truncate">{news.description}</p>
-          </div>
-        ))}
-      </div>
     </div>
-  )
+);
+
+const AnnouncementCard = () => (
+    <div className="bg-gradient-to-br from-[#7719a9] to-[#9b2ab4] p-6 rounded-xl shadow-lg text-white h-[190px] flex flex-col justify-center items-center text-center relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full transform translate-x-1/2 -translate-y-1/2"></div>
+        <div className="z-10">
+            <h2 className="text-3xl font-extrabold mb-2 leading-tight">Something <br/> New is Coming!</h2>
+            <p className="text-xs opacity-80 mt-4">Big improvements are on the way. Stay tuned!</p>
+        </div>
+    </div>
+);
+
+const RecentNewsCard = ({ news, onReadMore }) => (
+    <div onClick={() => onReadMore(news)} className="flex bg-[#DBF0F3] p-4 rounded-xl shadow-sm hover:shadow-md transition cursor-pointer h-full">
+        <div className="w-1/3 flex-shrink-0 mr-4">
+            <img src={news.image_url} alt={news.title} className="w-full h-[80px] object-cover rounded-lg shadow-sm" />
+        </div>
+        <div className="w-2/3 flex flex-col justify-between">
+            <p className="text-[10px] font-medium text-gray-900 line-clamp-2">{news.title}</p>
+            <div className="flex justify-between items-center mt-2">
+                <span className="text-xs text-gray-600">{new Date(news.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                <span className="text-[10px] font-semibold text-[#0494b5] hover:text-[#037c95] transition">Read More</span>
+            </div>
+        </div>
+    </div>
+);
+
+const NewsPopup = ({ news, onClose }) => {
+    return (
+        // The transparent backdrop to show the blur
+        <div 
+            className="fixed inset-0 bg-transparent z-50 flex justify-center items-center p-4"
+            onClick={onClose}
+        >
+            {/* The popup content itself */}
+            <div 
+                className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col"
+                onClick={(e) => e.stopPropagation()} // Prevents closing when clicking inside
+            >
+                {/* 1. Header with Title and Close Button */}
+                <div className="flex justify-between items-center p-1 border-b">
+                    <p className="text-sm font-bold text-gray-800">{news.title}</p>
+
+                </div>
+
+                {/* 2. Scrollable Content Area */}
+                <div className="p-6 overflow-y-auto">
+                    <img 
+                        src={news.image_url} 
+                        alt={news.title}
+                        className="w-full h-56 object-cover rounded-md mb-4"
+                    />
+                    <div className="flex items-center text-[10px] text-gray-500 mb-4">
+                    
+                        <span>{news.source} | {new Date(news.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                    </div>
+                    <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-wrap">
+                        {news.content}
+                    </p>
+                </div>
+
+                {/* 3. Footer with a Clear "Go Back" Button */}
+                <div className="p-4 bg-gray-50 border-t text-right rounded-b-lg">
+                                       <button onClick={onClose} className="text-gray-400 hover:text-gray-800 text-2xl">&times;</button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
+
+// --- Main Dashboard Component ---
+export default function NewsDashboard() {
+    const [newsList, setNewsList] = useState([])
+    const [activeTab, setActiveTab] = useState('All')
+    const [popupNews, setPopupNews] = useState(null);
+
+    useEffect(() => {
+        const fetchNews = async () => {
+            const { data, error } = await supabase.from('news').select('*').order('created_at', { ascending: false });
+            if (!error && data) {
+                const processedData = data.map((item, index) => ({
+                    ...item,
+                    image_url: item.image_url || `/mock-images/image-${(index % 7) + 1}.jpg`,
+                    title: item.title || `News Title ${item.id}`,
+                    description: item.description || `This is the full description for news item ${item.id}.`,
+                    source: item.source || 'TechSource',
+                    category: item.category || ['AI', 'Jobs', 'Start up', 'Founders'][index % 4]
+                }));
+                setNewsList(processedData);
+            }
+        }
+        fetchNews()
+    }, [])
+
+    const filteredNews = useMemo(() => {
+        let items = newsList;
+        if (activeTab !== 'All') {
+            items = items.filter(item => item.category?.toLowerCase() === activeTab.toLowerCase());
+        }
+        return items;
+    }, [newsList, activeTab]);
+
+    const latestNewsItem = filteredNews.length > 0 ? filteredNews[0] : null
+    const recentNewsItems = filteredNews.slice(latestNewsItem ? 1 : 0)
+
+    const handleShowPopup = (newsItem) => setPopupNews(newsItem);
+    const handleClosePopup = () => setPopupNews(null);
+
+    return (
+      <div className='bg-[#f9f9fb]'> 
+        <div className='mt-4 mb-3'>
+      <Header />
+</div>
+        <div className="bg-[#f9f9fb] min-h-screen">
+            
+            {/* --- 1. Main Page Content --- */}
+            {/* We apply blur and pointer-events-none here when the popup is active */}
+            <div className={`p-6 space-y-6 transition-all duration-300 ${popupNews ? 'blur-sm pointer-events-none' : ''}`}>
+                <div className="flex space-x-6 gap-9 text-[13px]"> 
+                    <CategoryTabButton label="All" isActive={activeTab === 'All'} onClick={() => setActiveTab('All')} />
+                    <CategoryTabButton label="Start up" isActive={activeTab === 'Start up'} onClick={() => setActiveTab('Start up')} />
+                    <CategoryTabButton label="Founders" isActive={activeTab === 'Founders'} onClick={() => setActiveTab('Founders')} />
+                    <CategoryTabButton label="Jobs" isActive={activeTab === 'Jobs'} onClick={() => setActiveTab('Jobs')} />
+                    <CategoryTabButton label="AI" isActive={activeTab === 'AI'} onClick={() => setActiveTab('AI')} />
+                </div>
+                
+                <div className="flex gap-6">
+                    <div className="w-2/3 space-y-4">
+                        <p className="text-xl font-semibold text-[#09407F] ml-1">Latest tech news</p>
+                        {latestNewsItem && <LatestNewsCard news={latestNewsItem} onReadMore={handleShowPopup} />}
+                    </div>
+                  
+                       
+                        <Announcement />
+                  
+                </div>
+
+                <div className="space-y-4 pt-4">
+                    <p className="text-xl font-semibold text-[#09407F] ml-1">Recent Tech News</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {recentNewsItems.map((news) => (
+                            <RecentNewsCard key={news.id} news={news} onReadMore={handleShowPopup} />
+                        ))}
+                    </div>
+                    {filteredNews.length === 0 && <div className="text-center py-10 text-gray-500">No news found.</div>}
+                </div>
+            </div>
+
+            {/* --- 2. Popup (Rendered on top of the blurred content) --- */}
+            {popupNews && <NewsPopup news={popupNews} onClose={handleClosePopup} />}
+        </div>
+        </div>
+    )
 }

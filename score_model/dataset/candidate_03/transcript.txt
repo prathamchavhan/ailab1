@@ -1,0 +1,1 @@
+I created a chatbot using natural language processing that could answer customer support queries. It used a transformer model and was trained on historical chat data to learn context. The accuracy was around 85% and helped reduce support load.
