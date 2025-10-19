@@ -212,21 +212,28 @@ import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabaseServer";
 import { model as geminiModel } from "@/lib/geminiClient";
 
+// Utility
+function average(arr) {
+  const valid = arr.filter((n) => typeof n === "number" && !isNaN(n));
+  return valid.length ? valid.reduce((a, b) => a + b, 0) / valid.length : 0;
+}
+
 export async function POST(req) {
   try {
     const { sessionId } = await req.json();
-    if (!sessionId)
+    if (!sessionId) {
       return NextResponse.json({ error: "Missing sessionId" }, { status: 400 });
+    }
 
-
-    // 1️⃣ Fetch answers and questions
+    // 1️⃣ Fetch answers
     const { data: answers, error: answersError } = await supabase
       .from("interview_answers")
       .select(`response, interview_question ( question )`)
       .eq("session_id", sessionId);
 
-    if (answersError || !answers?.length)
+    if (answersError || !answers?.length) {
       return NextResponse.json({ error: "No answers found" }, { status: 404 });
+    }
 
     const qas = answers.map((a, i) => ({
       question: a.interview_question?.question || `Question ${i + 1}`,
@@ -240,8 +247,9 @@ export async function POST(req) {
       .eq("id", sessionId)
       .single();
 
-    if (sessionError || !sessionData?.user_id)
+    if (sessionError || !sessionData?.user_id) {
       return NextResponse.json({ error: "Invalid session" }, { status: 500 });
+    }
 
     // 3️⃣ Gemini evaluation prompt
     const geminiPrompt = `
@@ -255,11 +263,7 @@ Evaluate each spoken answer for:
 Rate each answer from 1–10 and give one short feedback line.
 
 Input:
-${qas
-  .map(
-    (q, i) => `Q${i + 1}: ${q.question}\nA${i + 1}: ${q.answer}\n`
-  )
-  .join("\n")}
+${qas.map((q, i) => `Q${i + 1}: ${q.question}\nA${i + 1}: ${q.answer}\n`).join("\n")}
 
 Return valid JSON:
 [
@@ -270,7 +274,7 @@ Return valid JSON:
     const FASTAPI_URL =
       process.env.NEXT_PUBLIC_ML_API_URL || "http://127.0.0.1:8000/evaluate";
 
-    // 4️⃣ Run both Gemini + ML model in parallel
+    // 4️⃣ Run Gemini + ML in parallel
     const [geminiResult, mlResponse] = await Promise.allSettled([
       geminiModel.generateContent(geminiPrompt),
       fetch(FASTAPI_URL, {
@@ -284,11 +288,8 @@ Return valid JSON:
     let geminiEvaluation = [];
     if (geminiResult.status === "fulfilled") {
       try {
-        const rawText = geminiResult.value.response.text();
-        const cleanText = rawText
-          .replace(/```json/gi, "")
-          .replace(/```/g, "")
-          .trim();
+        const rawText = await geminiResult.value.response.text();
+        const cleanText = rawText.replace(/```json/gi, "").replace(/```/g, "").trim();
         geminiEvaluation = JSON.parse(cleanText);
       } catch (err) {
         console.warn("⚠️ Gemini JSON parse failed:", err);
@@ -298,7 +299,7 @@ Return valid JSON:
       console.error("❌ Gemini evaluation failed:", geminiResult.reason);
     }
 
-    // 6️⃣ Parse ML model result
+    // 6️⃣ Parse ML model result safely
     let mlEvaluation = {
       radar_scores: [],
       final_score: 0,
@@ -307,7 +308,7 @@ Return valid JSON:
 
     if (mlResponse.status === "fulfilled") {
       try {
-        const data = await mlResponse.value.json();
+        const data = await mlResponse.value.json().catch(() => ({}));
         mlEvaluation = data || mlEvaluation;
       } catch (err) {
         console.error("⚠️ ML response parse failed:", err);
@@ -320,9 +321,7 @@ Return valid JSON:
     const technicalScore10 = average(geminiEvaluation.map((x) => x.score));
     const technicalScore100 = Math.min(100, (technicalScore10 / 10) * 100);
     const behavioralScore100 = Math.min(100, mlEvaluation.final_score || 0);
-    const finalScore = Math.round(
-      0.6 * technicalScore100 + 0.4 * behavioralScore100
-    );
+    const finalScore = Math.round(0.6 * technicalScore100 + 0.4 * behavioralScore100);
 
     // 8️⃣ Merge radar chart data
     const radarScores = [
@@ -354,15 +353,13 @@ Return valid JSON:
 }
 `;
 
-    // 🔟 Generate unified feedback
+    // 🔟 Generate unified feedback safely
     let finalFeedback = {};
     try {
       const feedbackRes = await geminiModel.generateContent(feedbackPrompt);
-      const feedbackText = feedbackRes.response.text()
-        .replace(/```json/gi, "")
-        .replace(/```/g, "")
-        .trim();
-      finalFeedback = JSON.parse(feedbackText);
+      const feedbackText = await feedbackRes.response.text();
+      const cleanText = feedbackText.replace(/```json/gi, "").replace(/```/g, "").trim();
+      finalFeedback = JSON.parse(cleanText);
     } catch (err) {
       console.warn("⚠️ Feedback generation failed:", err);
       finalFeedback = {
@@ -377,7 +374,7 @@ Return valid JSON:
       };
     }
 
-    // 11️⃣ Store final result
+    // 11️⃣ Store final result in Supabase
     const { error: insertError } = await supabase
       .from("interview_results")
       .upsert([
@@ -417,10 +414,4 @@ Return valid JSON:
       { status: 500 }
     );
   }
-}
-
-// Utility
-function average(arr) {
-  const valid = arr.filter((n) => typeof n === "number" && !isNaN(n));
-  return valid.length ? valid.reduce((a, b) => a + b, 0) / valid.length : 0;
 }

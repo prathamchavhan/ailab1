@@ -18,7 +18,6 @@ export default function AIInterviewForm() {
   const router = useRouter();
   const supabase = createClientComponentClient();
 
-  // Check authentication status and listen for auth changes
   useEffect(() => {
     const checkUser = async () => {
       const { data, error } = await supabase.auth.getUser();
@@ -344,7 +343,7 @@ export default function AIInterviewForm() {
       )}
 
       {/* Form */}
-      <div className="bg-white p-0">
+      <div className="bg-transparent p-0">
         <div className="space-y-6">
           {/* Level */}
           <div className="flex items-center gap-6">
@@ -352,16 +351,19 @@ export default function AIInterviewForm() {
               <p className="label-text">Level</p>
             </div>
             <div className="flex-grow gradient-border-wrap w-full">
-              <div className="segmented-control-inner flex justify-between w-full p-1 bg-white rounded-lg">
+              <div className="segmented-control-inner flex justify-between w-full p-1 bg-white " >
                 {["Easy", "Medium", "Hard"].map((l) => (
-                  <button
+                <button
                     key={l}
                     onClick={() => setLevel(l)}
-                    className={`rounded-md text-sm font-medium transition duration-150 ${
+                    className={`rounded-lg text-sm font-medium transition duration-150 ${
                       level === l
                         ? activeGradientButtonClass
                         : inactiveSegmentButtonClass
                     }`}
+                   
+                    style={{ borderRadius: '8px' }} 
+                  
                   >
                     {l}
                   </button>
@@ -386,8 +388,11 @@ export default function AIInterviewForm() {
                         ? activeGradientButtonClass
                         : inactiveSegmentButtonClass
                     }`}
+                    style={{ borderRadius: '8px' }}
                   >
+                    
                     {r}
+                    
                   </button>
                 ))}
               </div>
@@ -487,10 +492,10 @@ export default function AIInterviewForm() {
         <button
           onClick={handleStart}
           disabled={loading}
-          className="mt-8 w-full py-3 rounded-xl shadow-lg 
+          className="mt-8 w-full mt-8 py-3 shadow-lg 
                      bg-gradient-to-r from-[#2DC7DB] to-[#2B7ECF] 
                      text-white text-lg font-semibold transition hover:opacity-90 disabled:opacity-50"
-        >
+      style={{ borderRadius: '8px' }}   >
           {loading ? "Generating..." : "Start Interview"}
         </button>
       </div>

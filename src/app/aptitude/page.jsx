@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import AptitudeScoreDashboard from "@/components/AptitudeScoreDashboard";
-import Header from "../../components/Header";
-// --- FALLBACK QUESTIONS CONSTANT (NEW) ---
+import AptitudeScoreDashboard from "@/components/Apptitude/AptitudeScoreDashboard";
+import Apptitude_header from '@/components/Header/Apptitude_header';
+import AptitudeLandingPage from "@/components/Apptitude/AptitudeLandingPage"; 
+
 const FALLBACK_QUESTIONS = [
   // Quantitative Aptitude (10 Questions)
   { question: "If a car travels at 60 km/h, how long does it take to cover 180 km?", options: ["2 hours", "3 hours", "4 hours", "5 hours"], answer: "3 hours", category: 'quantitative' },
@@ -42,7 +43,7 @@ const FALLBACK_QUESTIONS = [
   { question: "Passive voice of: 'She wrote a letter.'", options: ["A letter was written by her.", "A letter is written by her.", "A letter is being written by her.", "She is written a letter."], answer: "A letter was written by her.", category: 'verbal' },
 ];
 
-// --- API FUNCTIONS ---
+
 
 async function saveScore(level, score, total) {
   console.log("Saving score:", { level, score, total });
@@ -216,27 +217,15 @@ export default function AptitudeTestPage() {
   // --- RENDER FUNCTIONS ---
 
   const renderSetup = () => (
-    <>
-     <Header/>
-    <div className="flex items-center justify-center min-h-screen bg-transparent">
-     
-      <div className="p-8 bg-white rounded-lg shadow-xl text-center max-w-md w-full">
-
-        <h1 className="text-xl font-bold mb-6 text-gray-800">Aptitude Test Setup</h1>
-        <div className="space-y-4">
-            <p className="text-sm text-gray-600">Select your desired difficulty level to begin.</p>
-            <select className="w-full p-2 border rounded-lg text-xs" value={level} onChange={(e) => setLevel(e.target.value)}>
-                <option value="easy">Easy Level</option>
-                <option value="medium">Moderate Level</option>
-                <option value="hard">Hard Level</option>
-            </select>
-        </div>
-        <button onClick={handleStartTest} disabled={isLoading} className="w-full mt-6 bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300 disabled:bg-gray-400 text-xs">
-          {isLoading ? "Generating Questions..." : "Start Test"}
-        </button>
-        {error && <p className="text-red-500 mt-4 text-xs" dangerouslySetInnerHTML={{ __html: error }}></p>}
-      </div>
-    </div>
+  <>
+      <Apptitude_header />
+      <AptitudeLandingPage
+        level={level}
+        setLevel={setLevel}
+        onStartTest={handleStartTest}
+        isLoading={isLoading}
+        error={error}
+      />
     </>
   );
 
@@ -247,6 +236,7 @@ export default function AptitudeTestPage() {
       performanceData={performanceData}
       onPracticeAgain={resetTest}
     />
+
   );
 
 
@@ -257,7 +247,7 @@ export default function AptitudeTestPage() {
     return (
       <div className="min-h-screen bg-gray-50 p-4 sm:p-8 font-sans"> 
         <div className="mb-9">
-          <Header/>
+          <Apptitude_header/>
           </div>
         <div className="max-w-5xl mx-auto">
           {/* Top Header */}

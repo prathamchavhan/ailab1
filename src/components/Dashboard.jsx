@@ -56,6 +56,7 @@ function InterviewDashboardTable({ results, currentUserCollegeId }) {
   const inactiveBgColor = "#D4F6FA";
 
   return (
+    
     <div className="w-full">
       {/* 🟢 Toggle Section */}
       <div

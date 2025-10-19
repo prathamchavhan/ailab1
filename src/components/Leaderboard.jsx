@@ -30,7 +30,7 @@ export default function LeaderboardPage() {
         <CardContent className="">
           {/* Increased min-width here to expand the table */}
            <table 
-            className=""
+            className="shadow-md"
             style={{ 
               background: 'linear-gradient(to bottom, #EAFFFD, #F3FFFE, #FDFFFF)'
             }}

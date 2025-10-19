@@ -50,10 +50,19 @@ const embeddedCSS = `
 }
 `;
 
+// Helper function to calculate average score from a list of results
+const calculateAverageScore = (results) => {
+    if (!results || results.length === 0) return 0;
+    const total = results.reduce((sum, r) => sum + r.score, 0);
+    return Math.round(total / results.length);
+};
+
 export default function Header() {
   const [user, setUser] = useState(null);
-  const [latestResult, setLatestResult] = useState(null);
-  const [averageScore, setAverageScore] = useState(null);
+  // Renamed state variables for clarity and new requirements
+  const [interviewAvgScore, setInterviewAvgScore] = useState(null); 
+  const [overallAvgScore, setOverallAvgScore] = useState(null); 
+  
   const [userName, setUserName] = useState("Guest");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const router = useRouter();
@@ -64,7 +73,6 @@ export default function Header() {
       if (!currentUser) {
         const { data, error } = await supabase.auth.getUser();
         if (error || !data?.user) {
-          // Don't redirect automatically - let user stay on page but show login prompt
           setUser(null);
           setUserName("Guest");
           return;
@@ -86,30 +94,29 @@ export default function Header() {
         setUserName(currentUser.user_metadata.full_name);
       else setUserName(currentUser.email?.split("@")[0] || "User");
 
-      // 🧠 Latest score
-      const { data: latestResults } = await supabase
-        .from("interview_results")
-        .select(`final_score, created_at, interview_sessions!inner(user_id)`)
-        .eq("interview_sessions.user_id", currentUser.id)
-        .order("created_at", { ascending: false })
-        .limit(1);
-
-      if (latestResults && latestResults.length > 0) {
-        setLatestResult(latestResults[0]);
-      }
-
-      // 📊 Average score
-      const { data: allResults } = await supabase
+      // 1. 🧠 Fetch ALL Interview Scores (for average)
+      const { data: interviewResults } = await supabase
         .from("interview_results")
         .select(`final_score, interview_sessions!inner(user_id)`)
         .eq("interview_sessions.user_id", currentUser.id);
+        
+      const interviewScores = interviewResults?.map(r => ({ score: r.final_score })) || [];
+      const avgInterview = calculateAverageScore(interviewScores);
+      setInterviewAvgScore(avgInterview);
 
-      if (allResults?.length > 0) {
-        const avg =
-          allResults.reduce((sum, r) => sum + r.final_score, 0) /
-          allResults.length;
-        setAverageScore(Math.round(avg));
-      }
+      // 2. 🧠 Fetch ALL Aptitude Scores
+      const { data: aptitudeResults } = await supabase
+        .from("aptitude")
+        .select(`score`)
+        .eq("user_id", currentUser.id);
+
+      const aptitudeScores = aptitudeResults?.map(r => ({ score: r.score })) || [];
+
+      // 3. 📊 Calculate Overall Total Average
+      const allScores = [...interviewScores, ...aptitudeScores];
+      const avgOverall = calculateAverageScore(allScores);
+      setOverallAvgScore(avgOverall);
+      
     };
 
     // Initial fetch
@@ -124,8 +131,8 @@ export default function Header() {
       } else {
         setUser(null);
         setUserName("Guest");
-        setLatestResult(null);
-        setAverageScore(null);
+        setInterviewAvgScore(null);
+        setOverallAvgScore(null);
       }
     });
 
@@ -138,15 +145,15 @@ export default function Header() {
   };
 
   // Default values if not fetched
-  const interviewScore = latestResult?.final_score ?? 76;
-  const profileScore = averageScore ?? 55;
+  const interviewAvg = interviewAvgScore ?? 76; // Use a default if null
+  const overallAvg = overallAvgScore ?? 55;   // Use a default if null
 
-  const interviewContent = Number.isInteger(interviewScore)
-    ? interviewScore.toString()
-    : interviewScore.toFixed(2);
-
-  const profileContent = `${
-    Number.isInteger(profileScore) ? profileScore : profileScore.toFixed(0)
+  const interviewContent = `${
+    Number.isInteger(interviewAvg) ? interviewAvg : interviewAvg.toFixed(0)
+  }%`;
+  
+  const overallContent = `${
+    Number.isInteger(overallAvg) ? overallAvg : overallAvg.toFixed(0)
   }%`;
 
   return (
@@ -199,7 +206,8 @@ export default function Header() {
 
           {/* Score Cards */}
           <div className="flex items-center gap-8">
-            {/* Interview Score */}
+            
+            {/* 1. Interview Total Avg Score */}
             <div
                 className="relative flex items-center h-[40px] w-[119px] rounded-lg pr-2 pl-10 shadow-md"
                 style={{ background: "linear-gradient(90deg, #404478, #9041AA)" }}
@@ -207,8 +215,10 @@ export default function Header() {
                 <div
                   className="progress-circle"
                   style={{
-                    "--outer-border-gradient": "linear-gradient(45deg, #ffffffff, #ffffffff)", // Light blue outer ring
-                    "--progress-fill-gradient": "linear-gradient(45deg, #51e6dd, #c02ffc)", // Pink-blue inner progress
+                    // Use interviewAvg for the progress fill degree
+                    "--score-percentage": interviewAvg,
+                    "--outer-border-gradient": "linear-gradient(45deg, #ffffffff, #ffffffff)", 
+                    "--progress-fill-gradient": "linear-gradient(45deg, #51e6dd, #c02ffc)",
                   }}
                   data-content={interviewContent}
                 ></div>
@@ -217,7 +227,7 @@ export default function Header() {
                 </span>
               </div>
 
-            {/* Profile Score */}
+            {/* 2. Overall Total Avg Score (Replaced Profile Score) */}
             <div
                 className="relative flex items-center h-[40px] w-[119px] rounded-lg pr-2 pl-10 shadow-md"
                 style={{ background: "linear-gradient(90deg, #1B9E8C, #4B62E5)" }}
@@ -225,13 +235,15 @@ export default function Header() {
                 <div
                   className="progress-circle"
                   style={{
+                    // Use overallAvg for the progress fill degree
+                    "--score-percentage": overallAvg,
                     "--outer-border-gradient": "linear-gradient(45deg, #FFFFFF, #E0E0E0)",
                     "--progress-fill-gradient": "linear-gradient(45deg, #07C8A1, #33386C)",
                   }}
-                  data-content={profileContent}
+                  data-content={overallContent}
                 ></div>
                 <span className="ml-auto text-[10px] font-medium text-white whitespace-nowrap">
-                  Profile Score
+                  Overall Score
                 </span>
             </div>
           </div>

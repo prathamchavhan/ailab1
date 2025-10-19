@@ -1,194 +1,532 @@
-'use client'
+// File: app/profilemain/page.js
 
-import { useState, useEffect, useMemo } from 'react'
-
-import { supabase } from '../../lib/supabaseClient'
+"use client";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { Calendar, CheckSquare, Clock, Edit, FileText, Briefcase, BarChart, HardHat, Save, Camera } from 'lucide-react';
+import Calender  from "../../components/calender";
 import Header from "../../components/Header";
-// --- All sub-components (CategoryTabButton, etc.) are included and are unchanged ---
 
-const CategoryTabButton = ({ label, isActive, onClick }) => {
-    const baseClasses = "px-3 py-1 text-sm rounded-xl transition font-medium cursor-pointer";
-    const activeClasses = "bg-[#d0f6fa] text-[#09407F]"; 
-    const inactiveClasses = "bg-gray-100 text-[#09407F] rounded-xl";
-    return <button onClick={onClick} className={`${baseClasses} ${isActive ? activeClasses : inactiveClasses}`}>{label}</button>;
-};
-
-const LatestNewsCard = ({ news, onReadMore }) => (
-    <div className="bg-gradient-to-r from-[#91E4F9] to-[#096285] p-4 rounded-xl shadow-lg flex overflow-hidden h-[200px] gap-6">
-        <div className="w-1/3 flex-shrink-0 pr-4">
-            <img src={news.image_url} alt={news.title} className="w-full h-[150px] object-cover rounded-lg" />
-        </div>
-        <div className="w-2/3 flex flex-col justify-center text-white">
-            <p className="text-[15px] font-bold mb-1">{news.title}</p>
-            <p className="text-[12px] mb-2 opacity-95 line-clamp-3">{news.description}</p>
-            <div className='border-t w-60 mt-2 mb-0'></div>
-            <div className="flex justify-between items-center mt-2">
-                <div className="flex items-center text-xs text-white/80 mb-6 mt-0 pt-1">
-                    <span>{news.source} | {new Date(news.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
-                </div>
-                <button
-                    onClick={() => onReadMore(news)}
-                    className="self-end px-6 py-2 !text-[11px] text-black font-semibold bg-white hover:bg-gray-100 transition shadow-md"
-                    style={{ borderRadius: '9px' }}
-                >
-                    Read More
-                </button>
-            </div>
-        </div>
+const ProfileDetail = ({ label, value, isLink = false }) => (
+  <div className="flex flex-col space-y-0.5">
+    <p className="text-[15px] text-[#265386] font-bold ">{label}</p>
+    <p className={`text-[15px] font-semibold ${isLink ? 'text-blue-600 hover:underline' : 'text-gray-800'}`}>
+      {value || 'N/A'}
+    </p>
+  </div>
+);
+const ActivityItem = ({ icon: Icon, title, time, type }) => (
+  <div className="flex items-start space-x-3 p-3 bg-white rounded-lg shadow-sm border border-gray-100 transition hover:shadow-md">
+    <div className={`p-2 rounded-full ${type === 'success' ? 'bg-green-100 text-green-700' : type === 'info' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>
+      <Icon size={18} />
     </div>
+    <div className="flex-grow">
+      <p className="text-sm font-medium text-gray-800">{title}</p>
+      <p className="text-xs text-gray-500">{time}</p>
+    </div>
+  </div>
 );
 
-const AnnouncementCard = () => (
-    <div className="bg-gradient-to-br from-[#7719a9] to-[#9b2ab4] p-6 rounded-xl shadow-lg text-white h-[190px] flex flex-col justify-center items-center text-center relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full transform translate-x-1/2 -translate-y-1/2"></div>
-        <div className="z-10">
-            <h2 className="text-3xl font-extrabold mb-2 leading-tight">Something <br/> New is Coming!</h2>
-            <p className="text-xs opacity-80 mt-4">Big improvements are on the way. Stay tuned!</p>
-        </div>
-    </div>
-);
+// --- Main Profile Page Component ---
 
-const RecentNewsCard = ({ news, onReadMore }) => (
-    <div onClick={() => onReadMore(news)} className="flex bg-[#DBF0F3] p-4 rounded-xl shadow-sm hover:shadow-md transition cursor-pointer h-full">
-        <div className="w-1/3 flex-shrink-0 mr-4">
-            <img src={news.image_url} alt={news.title} className="w-full h-[80px] object-cover rounded-lg shadow-sm" />
-        </div>
-        <div className="w-2/3 flex flex-col justify-between">
-            <p className="text-[10px] font-medium text-gray-900 line-clamp-2">{news.title}</p>
-            <div className="flex justify-between items-center mt-2">
-                <span className="text-xs text-gray-600">{new Date(news.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
-                <span className="text-[10px] font-semibold text-[#0494b5] hover:text-[#037c95] transition">Read More</span>
-            </div>
-        </div>
-    </div>
-);
-
-const NewsPopup = ({ news, onClose }) => {
-    return (
-        // The transparent backdrop to show the blur
-        <div 
-            className="fixed inset-0 bg-transparent z-50 flex justify-center items-center p-4"
-            onClick={onClose}
-        >
-            {/* The popup content itself */}
-            <div 
-                className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col"
-                onClick={(e) => e.stopPropagation()} // Prevents closing when clicking inside
-            >
-                {/* 1. Header with Title and Close Button */}
-                <div className="flex justify-between items-center p-1 border-b">
-                    <p className="text-sm font-bold text-gray-800">{news.title}</p>
-
-                </div>
-
-                {/* 2. Scrollable Content Area */}
-                <div className="p-6 overflow-y-auto">
-                    <img 
-                        src={news.image_url} 
-                        alt={news.title}
-                        className="w-full h-56 object-cover rounded-md mb-4"
-                    />
-                    <div className="flex items-center text-[10px] text-gray-500 mb-4">
-                    
-                        <span>{news.source} | {new Date(news.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
-                    </div>
-                    <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-wrap">
-                        {news.content}
-                    </p>
-                </div>
-
-                {/* 3. Footer with a Clear "Go Back" Button */}
-                <div className="p-4 bg-gray-50 border-t text-right rounded-b-lg">
-                                       <button onClick={onClose} className="text-gray-400 hover:text-gray-800 text-2xl">&times;</button>
-                </div>
-            </div>
-        </div>
-    );
-};
+export default function ProfilePage() {
+  const [profileData, setProfileData] = useState({});
+  const [recentActivity, setRecentActivity] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [collegeName, setCollegeName] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editFormData, setEditFormData] = useState({});
+  const [currentUserId, setCurrentUserId] = useState(null);
+  const [avatarUrl, setAvatarUrl] = useState(null); 
+  const fileInputRef = useRef(null); 
+  const supabase = createClientComponentClient();
 
 
 
-// --- Main Dashboard Component ---
-export default function NewsDashboard() {
-    const [newsList, setNewsList] = useState([])
-    const [activeTab, setActiveTab] = useState('All')
-    const [popupNews, setPopupNews] = useState(null);
+  const formatActivityTime = (timestamp) => {
+    if (!timestamp) return 'Just now';
+    const seconds = Math.floor((new Date() - new Date(timestamp)) / 1000);
+    let interval = seconds / 31536000;
+    if (interval > 1) return Math.floor(interval) + " years ago";
+    interval = seconds / 2592000;
+    if (interval > 1) return Math.floor(interval) + " months ago";
+    interval = seconds / 86400;
+    if (interval > 1) return Math.floor(interval) + " days ago";
+    interval = seconds / 3600;
+    if (interval > 1) return Math.floor(interval) + " hours ago";
+    interval = seconds / 60;
+    if (interval > 1) return Math.floor(interval) + " min ago";
+    return "just now";
+  };
 
-    useEffect(() => {
-        const fetchNews = async () => {
-            const { data, error } = await supabase.from('news').select('*').order('created_at', { ascending: false });
-            if (!error && data) {
-                const processedData = data.map((item, index) => ({
-                    ...item,
-                    image_url: item.image_url || `/mock-images/image-${(index % 7) + 1}.jpg`,
-                    title: item.title || `News Title ${item.id}`,
-                    description: item.description || `This is the full description for news item ${item.id}.`,
-                    source: item.source || 'TechSource',
-                    category: item.category || ['AI', 'Jobs', 'Start up', 'Founders'][index % 4]
-                }));
-                setNewsList(processedData);
+  // Helper function to satisfy dependencies (unused in fetchData due to direct URL storage)
+  const getAvatarSignedUrl = useCallback(() => {
+    return null;
+  }, []); 
+
+  const fetchData = useCallback(async (userId) => {
+    setLoading(true);
+    setCurrentUserId(userId);
+
+    // 1. Fetch main profile data
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select(`
+        *,
+        department:department_id (name, stream_id),
+        stream:stream_id (stream)
+      `)
+      .eq('user_id', userId)
+      .single();
+
+    if (profileError) {
+      console.error("Error fetching profile:", profileError.message);
+      setLoading(false);
+      return;
+    }
+    
+    // 2. Fetch College Name
+    if (profile.clg_id) {
+      const { data: college } = await supabase
+        .from('College')
+        .select('clg_name')
+        .eq('id', profile.clg_id)
+        .single();
+      
+      setCollegeName(college?.clg_name || "College not specified");
+    } else {
+       setCollegeName("College not specified");
+    }
+    
+    // --- Use the stored URL directly, adding cache-buster if it exists ---
+    let finalAvatarUrl = null;
+    if (profile.avatar_url) {
+        finalAvatarUrl = `${profile.avatar_url}&t=${new Date().getTime()}`;
+    }
+    
+    setAvatarUrl(finalAvatarUrl);
+    setProfileData(profile);
+    
+    // Initialize form data on initial fetch
+    setEditFormData({
+        name: profile.name || '',
+        stream: profile.stream?.stream || profile.branch || '',
+        branch: profile.branch || '', 
+        role: profile.role || 'Student',
+    });
+
+    // 3. Fetch Recent Activity 
+    const { data: interviewActivity } = await supabase
+      .from('avee_interview')
+      .select('domain, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(2);
+      
+    const { data: jobActivity } = await supabase
+      .from('jobs')
+      .select('job_role, created_at') 
+      .limit(1);
+
+    const activityList = [];
+    
+    interviewActivity?.forEach(item => {
+      activityList.push({
+        icon: FileText,
+        title: `Completed ${item.domain || 'Technical'} Interview`,
+        time: formatActivityTime(item.created_at),
+        createdAt: item.created_at,
+        type: 'success'
+      });
+    });
+    
+    activityList.push({
+      icon: Briefcase,
+      title: `Applied for "Software Developer" Job`,
+      time: '45 min ago', 
+      createdAt: new Date(),
+      type: 'info'
+    });
+    
+    activityList.push({
+        icon: Clock,
+        title: `New Announcement: AI Ethics Webinar`,
+        time: '60 min ago',
+        createdAt: new Date(),
+        type: 'info'
+    });
+
+    activityList.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    
+    setRecentActivity(activityList.slice(0, 4));
+    setLoading(false);
+  }, [supabase]); 
+
+  // useEffect hook remains the same (correctly using fetchData and supabase)
+  useEffect(() => {
+    let ignore = false;
+    
+    const fetchUserAndData = async () => {
+        setLoading(true); 
+        
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user?.id && !ignore) {
+            await fetchData(session.user.id);
+        } else {
+            if (!ignore) {
+                setLoading(false);
             }
         }
-        fetchNews()
-    }, [])
+    };
+    
+    fetchUserAndData();
+    
+    return () => {
+        ignore = true;
+    };
+  }, [fetchData, supabase]); 
+  
+  // Handlers for edit mode (unchanged)
+  const handleEdit = () => {
+      setIsEditing(true);
+      setEditFormData({
+          name: profileData.name || '',
+          stream: profileData.stream?.stream || profileData.branch || '',
+          branch: profileData.branch || '',
+      });
+  };
 
-    const filteredNews = useMemo(() => {
-        let items = newsList;
-        if (activeTab !== 'All') {
-            items = items.filter(item => item.category?.toLowerCase() === activeTab.toLowerCase());
-        }
-        return items;
-    }, [newsList, activeTab]);
+  const handleChange = (e) => {
+      const { name, value } = e.target;
+      setEditFormData(prev => ({ ...prev, [name]: value }));
+  };
 
-    const latestNewsItem = filteredNews.length > 0 ? filteredNews[0] : null
-    const recentNewsItems = filteredNews.slice(latestNewsItem ? 1 : 0)
+  const handleSave = async () => {
+      setLoading(true); 
 
-    const handleShowPopup = (newsItem) => setPopupNews(newsItem);
-    const handleClosePopup = () => setPopupNews(null);
+      const updatedFields = {
+          name: editFormData.name,
+          branch: editFormData.stream, 
+      };
 
-    return (
-      <div className='bg-[#f9f9fb]'> 
-        <div className='mt-4 mb-3'>
-      <Header />
-</div>
-        <div className="bg-[#f9f9fb] min-h-screen">
+      const { error } = await supabase
+          .from('profiles')
+          .update(updatedFields)
+          .eq('user_id', currentUserId);
+
+      if (error) {
+          console.error("Error saving profile:", error.message);
+          alert(`Failed to save changes: ${error.message}`);
+          setLoading(false); 
+      } else {
+          await fetchData(currentUserId);
+          setIsEditing(false); 
+          alert("Profile updated successfully!");
+      }
+  };
+  
+
+  const handleAvatarUpload = async (event) => {
+      try {
+          if (!currentUserId) throw new Error("User not authenticated.");
+
+          const file = event.target.files[0];
+          if (!file) return;
+
+          setLoading(true);
+
+          // 1. Define the relative path for upload
+          const fileExt = file.name.split('.').pop();
+          const filePath = `${currentUserId}/avatar.${fileExt}`; 
+          
+          
+          const { error: uploadError } = await supabase.storage
+              .from('avatars') 
+              .upload(filePath, file, { 
+                  cacheControl: '3600', 
+                  upsert: true
+              });
+
+          if (uploadError) {
+              throw uploadError;
+          }
+          
+          
+          const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+              .from('avatars')
+              .createSignedUrl(filePath, 604800); // Expires in 7 days (604800 seconds)
+
+          if (signedUrlError) {
+              throw signedUrlError;
+          }
+          
+          const fullSignedUrl = signedUrlData.signedUrl;
+
+       
+          const { error: updateError } = await supabase
+              .from('profiles')
+              .update({ avatar_url: fullSignedUrl }) 
+              .eq('user_id', currentUserId);
+
+          if (updateError) {
+              throw updateError;
+          }
+
+          // 5. Update local state by re-fetching data
+          await fetchData(currentUserId); 
+          alert("Profile image updated successfully!");
+
+      } catch (error) {
+          console.error(error);
+          alert(`Error: ${error.message}. Check your Supabase storage and RLS settings.`);
+      } finally {
+          setLoading(false);
+          if (fileInputRef.current) {
+              fileInputRef.current.value = null;
+          }
+      }
+  };
+  
+  // Function to trigger file input click
+  const triggerFileInput = () => {
+    if (fileInputRef.current) {
+        fileInputRef.current.click();
+    }
+  };
+
+
+  if (loading) {
+    return <div className="p-8 text-center">Loading profile data...</div>;
+  }
+  
+  const studentID = profileData.roll_no || profileData.user_id?.slice(0, 8);
+  const streamName = profileData.stream?.stream || profileData.branch || 'N/A';
+  const departmentName = profileData.department?.name || 'N/A';
+  const userName = profileData.name || 'Student';
+  
+
+  const [firstNameDisplay, lastNameDisplay] = userName.split(/\s+/, 2);
+
+
+  return (
+    <>
+     <div className="mb-3 mt-2">
+      <Header/>
+      </div>
+    <div className="px-4 py-8 md:pl-72 lg:pl-72 bg-gray-50 min-h-screen"  >
+     
+      <div className="relative mb-6 rounded-lg overflow-hidden shadow-xl">
+        
+     
+        <div className="w-full h-48 bg-cover bg-center bg-[#2166ac] relative overflow-hidden rounded-t-lg"> 
+           
+           <video 
+                autoPlay 
+                loop 
+                muted
+               
+                className="w-full h-full object-cover opacity-80 absolute top-0 left-0"
+                preload="auto"
+                playsInline 
+            >
+             
+                <source src="/bg_profile.mp4" type="video/mp4" />
             
-            {/* --- 1. Main Page Content --- */}
-            {/* We apply blur and pointer-events-none here when the popup is active */}
-            <div className={`p-6 space-y-6 transition-all duration-300 ${popupNews ? 'blur-sm pointer-events-none' : ''}`}>
-                <div className="flex space-x-6 gap-9 text-[13px]"> 
-                    <CategoryTabButton label="All" isActive={activeTab === 'All'} onClick={() => setActiveTab('All')} />
-                    <CategoryTabButton label="Start up" isActive={activeTab === 'Start up'} onClick={() => setActiveTab('Start up')} />
-                    <CategoryTabButton label="Founders" isActive={activeTab === 'Founders'} onClick={() => setActiveTab('Founders')} />
-                    <CategoryTabButton label="Jobs" isActive={activeTab === 'Jobs'} onClick={() => setActiveTab('Jobs')} />
-                    <CategoryTabButton label="AI" isActive={activeTab === 'AI'} onClick={() => setActiveTab('AI')} />
-                </div>
-                
-                <div className="flex gap-6">
-                    <div className="w-2/3 space-y-4">
-                        <p className="text-xl font-semibold text-[#09407F] ml-1">Latest tech news</p>
-                        {latestNewsItem && <LatestNewsCard news={latestNewsItem} onReadMore={handleShowPopup} />}
-                    </div>
-                    <div className="w-1/3 space-y-4">
-                        <p className="text-xl font-semibold text-[#09407F] ml-1">Announcement</p>
-                        <AnnouncementCard />
-                    </div>
-                </div>
+                <img src="/images/banner-default.png" alt="Profile Banner Fallback" className="w-full h-full object-cover opacity-70" />
+            </video>
+        </div>
 
-                <div className="space-y-4 pt-4">
-                    <p className="text-xl font-semibold text-[#09407F] ml-1">Recent Tech News</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {recentNewsItems.map((news) => (
-                            <RecentNewsCard key={news.id} news={news} onReadMore={handleShowPopup} />
-                        ))}
-                    </div>
-                    {filteredNews.length === 0 && <div className="text-center py-10 text-gray-500">No news found.</div>}
+       <div className="relative z-10  shadow-lg rounded-b-lg p-6 pt-0 -mt-16 md:p-8 md:pt-0" style={{
+                    background: 'linear-gradient(to right , #cfeef6ff, #f8f8f8ff',
+                   
+                  }}>
+
+          
+       
+         <div className="flex items-end space-x-6">
+            
+          
+            <div 
+
+        className="relative w-32 h-32 rounded-full border-4 border-white shadow-lg bg-gray-200 -mt-99 flex-shrink-0 group cursor-pointer"
+        onClick={triggerFileInput} 
+    >
+
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleAvatarUpload}
+                    accept="image/*"
+                    className="hidden"
+                    disabled={loading}
+                />
+            
+                {/* Standard <img> tag pointing to the stored URL or fallback */}
+                <img 
+        src={avatarUrl || `/avee.png`} 
+        alt="User Avatar" 
+        width={128} 
+        height={128} 
+        className="rounded-full object-cover object-center w-full h-full transition-opacity duration-300 group-hover:opacity-75 absolute inset-0"
+    />
+                {/* Active Status Badge (Positioned at the bottom of the image circle) */}
+                <span className="absolute bottom-0 right-0 px-2 py-0.5 bg-[#2DC5DB] text-white text-xs font-bold rounded-full shadow-lg border-2 border-white transform translate-x-1/4 translate-y-1/4">
+                    Active
+                </span>
+                
+                {/* Upload Overlay Icon */}
+                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40 rounded-full opacity-0 group-hover:opacity-100 transition duration-300">
+                    <Camera size={24} className="text-white"/>
                 </div>
             </div>
 
-            {/* --- 2. Popup (Rendered on top of the blurred content) --- */}
-            {popupNews && <NewsPopup news={popupNews} onClose={handleClosePopup} />}
+   <div className="flex-grow pt-1">
+    
+    {/* Line 1: User Name (Primary Header) */}
+    <p className="text-3xl text-[18px] font-bold text-[#09407F] mb-1">{userName}</p>
+    
+    <p className="text-base text-gray-600 mb-0.5">
+        <span className="font-semibold text-[13px] text-[#09407F]">Role: {profileData.role || 'Student'}</span> 
+        <span className="font-extrabold mx-2 text-[#09407F]">|</span> 
+        <span className="font-semibold text-[13px] text-[#09407F]">Student ID: {studentID}</span>
+    </p>
+    <p className="text-sm text-[#09407F] text-[13px] ">
+       College: {collegeName}
+    </p>
+
+</div>
+          </div>
         </div>
+      </div>
+
+     
+  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-4 px-4">
+         
+    {/* Left Column (Personal Information) */}
+    <div className="lg:col-span-2">
+         <p className="text-xl font-bold text-[#09407F] mb-6 pb-2">Personal Information</p>
+      <div className=" p-4 pr-3 rounded-lg shadow-md" style={{
+                background: 'linear-gradient(to left, #fafcfcff , #E1FBFF)',
+              }}>
+      
+        
+        {/* KEY CHANGE: grid-cols-3 for the 3-item first row */}
+        <div className="grid grid-cols-3 gap-y-5 gap-x-3 text-black" >
+          
+         
+          <div className="flex flex-col space-y-0.5">
+            <ProfileDetail label="First Name" value={isEditing ? null : userName.split(' ')[0] || ''} />
+            {isEditing && (
+                <input
+                    type="text"
+                    name="name"
+                    value={editFormData.name}
+                    onChange={handleChange}
+                    className="p-1 border border-blue-300 rounded text-sm text-black font-semibold"
+                />
+            )}
+          </div>
+
+          <div className="flex flex-col space-y-0.5">
+            <ProfileDetail 
+                label="Last Name" 
+                value={isEditing ? null : userName.split(' ').slice(1).join(' ') || profileData.roll_no || ''} 
+            />
+            {isEditing && (
+                <input
+                    type="text"
+                    name="lastName" 
+                    value={editFormData.lastName}
+                    onChange={handleChange}
+                    className="p-1 border border-blue-300 rounded text-sm text-black font-semibold"
+                />
+            )}
+          </div>
+          
+          <ProfileDetail label="User Role" value={profileData.role || 'Student'} />
+
+
+        
+           <ProfileDetail label="Student ID" value={studentID} />
+          
+          <div className="flex flex-col space-y-0.5">
+            <ProfileDetail label="Branch" value={isEditing ? null : profileData.branch || 'N/A'} />
+            {isEditing && (
+                <input
+                    type="text"
+                    name="branch"
+                    value={editFormData.branch}
+                    onChange={handleChange}
+                    className="p-1 border border-blue-300 rounded text-sm text-black font-semibold" 
+                />
+            )}
+          </div>
+          
+          <ProfileDetail label="semester" value={profileData.sem ? ` ${profileData.sem}` : '2025-26'} />
+
+
+
+          <div className="col-span-3"> 
+            <ProfileDetail label="College Name" value={collegeName} />
+          </div>
+          
+          
+        
+          <div className="flex flex-col space-y-0.5">
+            <ProfileDetail label="Stream" value={isEditing ? null : streamName} />
+            {isEditing && (
+                <input
+                    type="text"
+                    name="stream"
+                    value={editFormData.stream}
+                    onChange={handleChange}
+                    className="p-1 border border-blue-300 rounded text-sm text-black font-semibold"
+                />
+            )}
+          </div>
+          
+          <ProfileDetail label="Department" value={departmentName} />
+          
+          {/* Empty slot in the grid to maintain alignment */}
+          <div></div> 
+          
+          {/* Extra Detail (optional, placed after the main 4 rows) */}
+          <div className="col-span-3"> 
+              <ProfileDetail label="Email Address" value={profileData.email} isLink />
+         
+          </div>
         </div>
-    )
+       
+        <div className="mt-8 flex justify-end"> 
+          {isEditing ? (
+              <button onClick={handleSave} className="px-4 py-2 bg-green-600 text-white font-semibold  hover:bg-green-700 transition flex items-center gap-2" style={{ borderRadius: '8px',background: 'linear-gradient(to right, #2DC2DB , #2B87D0)' }}>
+                <Save size={18} />
+                Save Changes
+              </button>
+          ) : (
+              <button onClick={handleEdit} className="px-4 py-2 text-white font-semibold  hover:bg-blue-700 transition flex items-center gap-2" style={{ borderRadius: '8px', background: 'linear-gradient(to right, #2DC2DB , #2B87D0)', }}>
+                <Edit size={18} />
+                Edit Profile
+              </button>
+          )}
+        </div>
+      </div>
+    </div>
+ 
+        <div className="lg:col-span-1">
+          <div className="">
+            <p className="text-[18px] font-bold text-[#09407F] -mb-3">Recent Activity</p>
+            <div className="p-3 pl-2">
+      <Calender  />
+    </div>
+            
+            
+           
+          </div>
+        </div>
+      </div>
+    </div>
+    </>
+  );
 }

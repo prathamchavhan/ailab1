@@ -29,7 +29,7 @@ function LoginPageContent() {
 
   return (
      <div className="flex h-screen w-full font-sans">
-   
+
 <div className="hidden lg:flex flex-col w-1/2 bg-white p-12 ">
 
   {/* Top Text */}
