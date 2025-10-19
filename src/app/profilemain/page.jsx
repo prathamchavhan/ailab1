@@ -59,7 +59,6 @@ export default function ProfilePage() {
     return "just now";
   };
 
-  // Helper function to satisfy dependencies (unused in fetchData due to direct URL storage)
   const getAvatarSignedUrl = useCallback(() => {
     return null;
   }, []); 
@@ -68,7 +67,7 @@ export default function ProfilePage() {
     setLoading(true);
     setCurrentUserId(userId);
 
-    // 1. Fetch main profile data
+ 
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select(`
@@ -162,7 +161,7 @@ export default function ProfilePage() {
     setLoading(false);
   }, [supabase]); 
 
-  // useEffect hook remains the same (correctly using fetchData and supabase)
+
   useEffect(() => {
     let ignore = false;
     
@@ -187,7 +186,7 @@ export default function ProfilePage() {
     };
   }, [fetchData, supabase]); 
   
-  // Handlers for edit mode (unchanged)
+
   const handleEdit = () => {
       setIsEditing(true);
       setEditFormData({
@@ -236,7 +235,7 @@ export default function ProfilePage() {
 
           setLoading(true);
 
-          // 1. Define the relative path for upload
+       
           const fileExt = file.name.split('.').pop();
           const filePath = `${currentUserId}/avatar.${fileExt}`; 
           
@@ -255,7 +254,7 @@ export default function ProfilePage() {
           
           const { data: signedUrlData, error: signedUrlError } = await supabase.storage
               .from('avatars')
-              .createSignedUrl(filePath, 604800); // Expires in 7 days (604800 seconds)
+              .createSignedUrl(filePath, 604800); 
 
           if (signedUrlError) {
               throw signedUrlError;
@@ -273,7 +272,7 @@ export default function ProfilePage() {
               throw updateError;
           }
 
-          // 5. Update local state by re-fetching data
+        
           await fetchData(currentUserId); 
           alert("Profile image updated successfully!");
 
