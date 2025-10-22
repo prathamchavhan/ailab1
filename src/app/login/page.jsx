@@ -33,8 +33,9 @@ function LoginPageContent() {
 <div className="hidden lg:flex flex-col w-1/2 bg-white p-12 ">
 
   {/* Top Text */}
-  <div className="mt-10">
-   <p className="text-5xl font-bold mb-2 leading-tight bg-gradient-to-r from-[#2B7ECF] to-[#2DC7DB] bg-clip-text text-transparent [text-shadow:2px_2px_4px_rgba(0,0,0,0.2)]">
+  <div className="mt-22">
+  <div className="mt-13">
+   <p className="text-5xl  font-bold mb-2 leading-tight bg-gradient-to-r from-[#2B7ECF] to-[#2DC7DB] bg-clip-text text-transparent [text-shadow:2px_2px_4px_rgba(0,0,0,0.2)]">
   Welcome to the AI Lab
 </p>
     <p className="text-lg text-gray-700">
@@ -45,7 +46,7 @@ function LoginPageContent() {
   
   
   {/* Bottom Logo */}
-  <div className="mt-8"> {/* You can add a small margin-top like mt-8 for controlled spacing */}
+  <div className="mt-3">
     <img 
       src="/images/Ai LAB.gif" 
       alt="AI Lab Animated Logo" 
@@ -54,20 +55,21 @@ function LoginPageContent() {
   </div>
  
 </div>
+</div>
 
       {/* Right Side: Dark background with login form */}
       <div className="flex w-full lg:w-1/2 items-center justify-center p-8 bg-[#1B1C1E] overflow-y-auto">
         <div className="w-full max-w-sm text-center">
           <p className="text-xl text-gray-300 mb-8">
-            Step into the <span className="font-bold text-[#2DC7DB] underline ">Future</span> with AI Lab
+            Step into the <span className="font-bold text-[25px] text-[#2DC7DB] underline ">Future</span> with AI Lab
           </p>
           <p className="text-gray-400 mb-6">Sign in to continue</p>
    <button
   onClick={handleGoogleLogin}
   className="group mb-4 flex w-full items-center justify-center rounded-lg border border-gray-300 bg-white py-3 px-4 transition-colors duration-200 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-  style={{ borderRadius: '8px' }} // <-- This line adds the curve
+  style={{ borderRadius: '8px' }} 
 >
-  {/* Corrected Colorful Google Logo SVG */}
+  
   <svg
     className="mr-3 h-5 w-5"
     aria-hidden="true"

@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import Announcement  from "../../components/Announcement";
 import { supabase } from '../../lib/supabaseClient'
-import Header from "../../components/Header";
+import News_header from '@/components/Header/News_header';
 // --- All sub-components (CategoryTabButton, etc.) are included and are unchanged ---
 
 const CategoryTabButton = ({ label, isActive, onClick }) => {
@@ -149,7 +149,7 @@ export default function NewsDashboard() {
     return (
       <div className='bg-[#f9f9fb]'> 
         <div className='mt-4 mb-3'>
-      <Header />
+      <News_header />
 </div>
         <div className="bg-[#f9f9fb] min-h-screen">
             

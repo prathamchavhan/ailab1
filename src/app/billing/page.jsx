@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Check, Star } from 'lucide-react';
-
-// --- SubscriptionStatus Component (No changes) ---
+import Overall_header from '@/components/Header/Overall_header';
 const SubscriptionStatus = ({ subscription }) => {
     if (!subscription) {
         return (
@@ -31,24 +30,23 @@ const SubscriptionStatus = ({ subscription }) => {
               
                  <span className={`text-xs font-bold px-3 py-1 rounded-full ${remainingDays > 0 ? 'text-black' : 'text-red-700 bg-red-100'}`}>
                      {remainingDays > 0 ? `${remainingDays} Days Remaninig` : 'Expired'}
+                   <br /><span>Activated: {formatDate(start)}</span>
                  </span>
              </div>
              <div className="w-full bg-gray-200 rounded-full h-2 my-3">
-                 <div className="bg-green-500 h-2 rounded-full" style={{ width: `${progressPercentage}%` }}></div>
+               <div className="bg-green-500 h-2 rounded-full" style={{ width: `${progressPercentage}%`,  background: 'linear-gradient(to right, #2DC2DB, #2B87D0)' }}> </div>
              </div>
              <div className="flex justify-between text-xs text-gray-600 font-medium">
-                 <span>Activated: {formatDate(start)}</span>
-                 <span>Expires: {formatDate(end)}</span>
+             <span>Expires: {formatDate(end)}</span> 
              </div>
         </div>
     );
 };
 
-// --- PricingCard Component (MODIFIED) ---
+
 const PricingCard = ({ plan, isPopular }) => {
     
-    // This inner content logic remains the same.
-    // It correctly handles showing the badge and adding padding if 'isPopular' is true.
+
     const CardInnerContent = () => (
         <>
             {isPopular && (
@@ -57,7 +55,7 @@ const PricingCard = ({ plan, isPopular }) => {
                 </div>
             )}
             <div className="flex-grow">
-                {/* pt-4 is added only if it's the popular card to make space for the badge */}
+   
                 <h3 className={`text-xl font-bold text-center text-gray-800 ${isPopular ? 'pt-4' : ''}`}>{plan.name}</h3>
                 <div className="text-center my-4">
                     <span className="text-4xl font-extrabold text-gray-900">₹{plan.priceMonthly}</span>
@@ -81,10 +79,10 @@ const PricingCard = ({ plan, isPopular }) => {
 
   
     return (
-        // Gradient border wrapper (top-to-bottom)
+
         <div className="relative rounded-lg shadow-2xl p-0.5 bg-gradient-to-b from-cyan-400 to-blue-500">
-            {/* Inner white card creating the "border" effect */}
-            <div className="relative bg-white p-8 rounded-[7px] flex flex-col min-h-[460px]">
+ 
+            <div className="relative bg-white p-8 rounded-[7px] flex flex-col min-h-[460px]" style={{ background: "linear-gradient(90deg, #f7fcfcff, #ddeefcff)" }}>
                 <CardInnerContent />
             </div>
         </div>
@@ -136,7 +134,12 @@ export default function BillingPage() {
     };
 
     return (
+        <>  
+        <div className='mt-4'>
+        <Overall_header/>
+        </div>
         <div className="bg-gray-50 mb-3 min-h-screen">
+          
             <main className="flex-1 p-6 md:p-10">
                 <div className="max-w-5xl mx-auto">
                     
@@ -166,5 +169,6 @@ export default function BillingPage() {
                 </div>
             </main>
         </div>
+        </>
     );
 }

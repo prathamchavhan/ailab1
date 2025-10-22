@@ -348,7 +348,7 @@ export default function AIInterviewForm() {
           {/* Level */}
           <div className="flex items-center gap-6">
             <div className={labelCardClass} style={labelCardStyle}>
-              <p className="label-text">Level</p>
+              <p className="label-text mt-3">Level</p>
             </div>
             <div className="flex-grow gradient-border-wrap w-full">
               <div className="segmented-control-inner flex justify-between w-full p-1 bg-white " >
@@ -375,7 +375,7 @@ export default function AIInterviewForm() {
           {/* Round */}
           <div className="flex items-center gap-6">
             <div className={labelCardClass} style={labelCardStyle}>
-              <p className="label-text">Round</p>
+              <p className="label-text mt-3">Round</p>
             </div>
             <div className="flex-grow gradient-border-wrap w-full">
               <div className="segmented-control-inner flex justify-between w-full p-1 bg-white rounded-lg">
@@ -402,7 +402,7 @@ export default function AIInterviewForm() {
           {/* Domain */}
           <div className="flex items-center gap-6 relative">
             <div className={labelCardClass} style={labelCardStyle}>
-              <p className="label-text">Domain</p>
+              <p className="label-text mt-3">Job Role</p>
             </div>
             <div className="flex-grow w-full relative">
               <div className="gradient-border-wrap">
@@ -413,8 +413,8 @@ export default function AIInterviewForm() {
                 >
                   <div className="w-full rounded-lg px-5 py-2.5 flex justify-between items-center text-left">
                     <span
-                      className={`truncate domain-text ${
-                        domain === "Select industry domain"
+                      className={`truncate domain-text !font-semibold !text-gray-300 ${
+                        domain === "Select Job Role"
                           ? "placeholder-text"
                           : "font-semibold"
                       }`}
@@ -440,7 +440,7 @@ export default function AIInterviewForm() {
               </div>
 
               {isDomainDropdownOpen && (
-                <div className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-xl z-20 overflow-hidden">
+                <div className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200  shadow-xl z-20 overflow-hidden" >
                   {domainOptions.map((option) => (
                     <div
                       key={option}
@@ -460,7 +460,7 @@ export default function AIInterviewForm() {
           {/* Company */}
           <div className="flex items-center gap-6">
             <div className={labelCardClass} style={labelCardStyle}>
-              <p className="label-text">Company</p>
+              <p className="label-text mt-3">Company</p>
             </div>
 
             <div className="flex-grow w-full relative">
@@ -474,13 +474,13 @@ export default function AIInterviewForm() {
                     className="w-full rounded-lg px-5 py-2.5 outline-none text-gray-800 bg-transparent"
                   />
                   <span
-                    className="absolute left-5 top-1/2 -translate-y-1/2 pointer-events-none placeholder-text"
+                    className="absolute left-5 top-1/2 -translate-y-1/2 !text-gray-300 pointer-events-none placeholder-text"
                     style={{
                       opacity: company ? 0 : 1,
                       transition: "opacity 0.2s",
                     }}
                   >
-                    Search by company name
+                    ..........Search by company name
                   </span>
                 </div>
               </div>

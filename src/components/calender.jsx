@@ -203,7 +203,7 @@ export default function UserRecentActivityDashboard() {
         backgroundColor: '#def7f9ff'
     }}
 >
-    <Link href="/aptitude" passHref legacyBehavior>
+    <Link href="/aptitude">
     <button 
         style={{ 
             borderRadius: '6px', 
@@ -221,7 +221,7 @@ export default function UserRecentActivityDashboard() {
         Aptitude
     </button>
     </Link>
-    <Link href="/ai-dashboard" passHref legacyBehavior>
+    <Link href="/ai-dashboard" >
     <button 
         style={{ 
             borderRadius: '6px', 
@@ -239,7 +239,7 @@ export default function UserRecentActivityDashboard() {
         Interview
     </button>
     </Link>
-    <Link href="/challenges" passHref legacyBehavior>
+    <Link href="/event_challenge" >
     <button 
         style={{ 
             borderRadius: '6px', 

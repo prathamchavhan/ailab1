@@ -2,7 +2,7 @@
 import Hero from '@/components/Hero'; 
 import FiveStepProcess from '@/components/FiveStepProcess';
 import ServiceCards from '@/components/ServiceCards';
-import Header from "../../components/Header";
+import Overall_header from '@/components/Header/Overall_header';
 // ... rest of the code
 
 const CareerCounsellingPage = () => {
@@ -11,7 +11,7 @@ const CareerCounsellingPage = () => {
       {/* ... Head content */}
       <main className="min-h-screen  mt-4">
         {/* This line is now correct */}
-        <Header/>
+        <Overall_header/>
         <Hero /> 
         <FiveStepProcess />
         <ServiceCards />
