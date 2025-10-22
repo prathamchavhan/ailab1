@@ -1,4 +1,15 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {};
+const nextConfig = {
 
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'example.com', // This is from your error message
+        port: '',
+        pathname: '**',
+      },
+    ],
+  },
+};
 export default nextConfig;

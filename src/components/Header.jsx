@@ -5,7 +5,7 @@ import { Bell } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-// --- Embedded CSS ---
+// --- Embedded CSS (Unchanged) ---
 const embeddedCSS = `
 .progress-circle {
     --circle-diameter: 44px;
@@ -50,7 +50,7 @@ const embeddedCSS = `
 }
 `;
 
-// Helper function to calculate average score from a list of results
+// Helper function (Unchanged)
 const calculateAverageScore = (results) => {
     if (!results || results.length === 0) return 0;
     const total = results.reduce((sum, r) => sum + r.score, 0);
@@ -59,11 +59,14 @@ const calculateAverageScore = (results) => {
 
 export default function Header() {
   const [user, setUser] = useState(null);
-  // Renamed state variables for clarity and new requirements
   const [interviewAvgScore, setInterviewAvgScore] = useState(null); 
   const [overallAvgScore, setOverallAvgScore] = useState(null); 
   
   const [userName, setUserName] = useState("Guest");
+  const [avatarUrl, setAvatarUrl] = useState(null);
+  // ✅ 1. Added state for college name
+  const [collegeName, setCollegeName] = useState(null);
+  
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const router = useRouter();
   const supabase = createClientComponentClient();
@@ -75,6 +78,8 @@ export default function Header() {
         if (error || !data?.user) {
           setUser(null);
           setUserName("Guest");
+          setAvatarUrl(null);
+          setCollegeName(null); // Reset college
           return;
         }
         currentUser = data.user;
@@ -82,19 +87,31 @@ export default function Header() {
 
       setUser(currentUser);
 
-      // 🧍‍♂️ Fetch profile name
-      const { data: profile } = await supabase
+      // ✅ 2. CHANGED: Fetch 'avatar_url', name, AND college name
+      //    Also fixed .single() by using .limit(1) to prevent crash
+      const { data: profiles, error: profileError } = await supabase
         .from("profiles")
-        .select("name")
+        .select("name, avatar_url, College(clg_name)") // <-- Added college
         .eq("user_id", currentUser.id)
-        .single();
+        .limit(1); // <-- Safer than .single()
+
+      if (profileError) {
+        console.error("Error fetching profile:", profileError.message);
+      }
+      
+      const profile = profiles?.[0]; // Safely get the first profile
 
       if (profile?.name) setUserName(profile.name);
       else if (currentUser.user_metadata?.full_name)
         setUserName(currentUser.user_metadata.full_name);
       else setUserName(currentUser.email?.split("@")[0] || "User");
+      
+      setAvatarUrl(profile?.avatar_url || null);
+      // ✅ 3. Set college name state
+      setCollegeName(profile?.College?.clg_name || null);
 
-      // 1. 🧠 Fetch ALL Interview Scores (for average)
+
+      // --- Score logic is unchanged ---
       const { data: interviewResults } = await supabase
         .from("interview_results")
         .select(`final_score, interview_sessions!inner(user_id)`)
@@ -104,7 +121,6 @@ export default function Header() {
       const avgInterview = calculateAverageScore(interviewScores);
       setInterviewAvgScore(avgInterview);
 
-      // 2. 🧠 Fetch ALL Aptitude Scores
       const { data: aptitudeResults } = await supabase
         .from("aptitude")
         .select(`score`)
@@ -112,17 +128,14 @@ export default function Header() {
 
       const aptitudeScores = aptitudeResults?.map(r => ({ score: r.score })) || [];
 
-      // 3. 📊 Calculate Overall Total Average
       const allScores = [...interviewScores, ...aptitudeScores];
       const avgOverall = calculateAverageScore(allScores);
       setOverallAvgScore(avgOverall);
       
     };
 
-    // Initial fetch
     fetchUserAndScores();
 
-    // Listen for auth state changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
@@ -133,20 +146,24 @@ export default function Header() {
         setUserName("Guest");
         setInterviewAvgScore(null);
         setOverallAvgScore(null);
+        setAvatarUrl(null);
+        setCollegeName(null); // ✅ 4. Reset college name on logout
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [router]);
+  // ✅ 5. Changed dependency array to fix potential stale data issues
+  }, [supabase, router]);
 
+  // --- Logic for logout and score display is unchanged ---
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push("/login");
   };
 
-  // Default values if not fetched
-  const interviewAvg = interviewAvgScore ?? 76; // Use a default if null
-  const overallAvg = overallAvgScore ?? 55;   // Use a default if null
+  // Set defaults to 0 to prevent crash if scores are null
+  const interviewAvg = interviewAvgScore ?? 0;
+  const overallAvg = overallAvgScore ?? 0;
 
   const interviewContent = `${
     Number.isInteger(interviewAvg) ? interviewAvg : interviewAvg.toFixed(0)
@@ -159,18 +176,31 @@ export default function Header() {
   return (
     <header className="px-4 pt-2">
       <style dangerouslySetInnerHTML={{ __html: embeddedCSS }} />
-      <div className="mt-2 flex justify-between items-center bg-[#1D3540] text-white px-4 py-7 rounded-[20px] ">
-        {/* ✅ Left Section — Avatar + Name + Logout */}
+      <div className="mt-2 flex justify-between items-center bg-[#1D3540] text-white px-4 py-4 rounded-[20px] ">
         <div className="flex items-center gap-4 relative">
-          {/* 🟢 Clickable avatar */}
+          {/* Avatar Button (Unchanged) */}
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center justify-center w-9 h-9 rounded-full bg-[#2DC7DB] text-white font-bold shadow-md text-lg hover:brightness-110 transition"
+            className="flex items-center justify-center bg-[#2DC7DB] text-white font-bold shadow-md text-lg hover:brightness-110 transition"
+            style={{
+              width: '46px',
+              height: '46px',
+              borderRadius: '50%',
+              overflow: 'hidden',
+            }}
           >
-            {userName.charAt(0).toUpperCase()}
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt="Profile"
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            ) : (
+              userName.charAt(0).toUpperCase()
+            )}
           </button>
 
-          {/* Dropdown */}
+          {/* Dropdown (Unchanged) */}
           {isDropdownOpen && (
             <div className="absolute top-12 left-0 w-40 bg-white rounded-lg shadow-lg py-2 z-50">
               {user ? (
@@ -191,23 +221,32 @@ export default function Header() {
             </div>
           )}
 
-          {/* Greeting */}
-          <p className="text-xl font-semibold whitespace-nowrap">
-            Hi, <span className="font-bold ">{userName}</span> 👋
-          </p>
+          {/* ✅ 6. MODIFIED: Added div for Name + College Name */}
+         <div className="leading-tight">
+          <div style={{ lineHeight: '1' }}> 
+            <p 
+              className="text-xl font-semibold whitespace-nowrap" 
+              style={{ margin: 0 }} 
+            >
+              Hi, <span className="font-bold ">{userName}</span> 👋
+            </p>
+            
+            {collegeName && (
+        <p className="text-xs text-gray-300 font-medium whitespace-nowrap m-0 ml-3">
+                {collegeName}
+              </p>
+            )}
+          </div>
+          </div>
         </div>
 
-        {/* ✅ Right Section */}
+        {/* --- Right Section (Unchanged) --- */}
         <div className="flex items-center gap-10">
-          {/* Notification Icon */}
           <div className="relative">
             <Bell className="w-6 h-6 cursor-pointer hover:scale-110 transition-transform" />
           </div>
-
-          {/* Score Cards */}
           <div className="flex items-center gap-8">
-            
-            {/* 1. Interview Total Avg Score */}
+            {/* Interview Score */}
             <div
                 className="relative flex items-center h-[40px] w-[119px] rounded-lg pr-2 pl-10 shadow-md"
                 style={{ background: "linear-gradient(90deg, #404478, #9041AA)" }}
@@ -215,7 +254,6 @@ export default function Header() {
                 <div
                   className="progress-circle"
                   style={{
-                    // Use interviewAvg for the progress fill degree
                     "--score-percentage": interviewAvg,
                     "--outer-border-gradient": "linear-gradient(45deg, #ffffffff, #ffffffff)", 
                     "--progress-fill-gradient": "linear-gradient(45deg, #51e6dd, #c02ffc)",
@@ -226,8 +264,7 @@ export default function Header() {
                   Interview Score
                 </span>
               </div>
-
-            {/* 2. Overall Total Avg Score (Replaced Profile Score) */}
+            {/* Overall Score */}
             <div
                 className="relative flex items-center h-[40px] w-[119px] rounded-lg pr-2 pl-10 shadow-md"
                 style={{ background: "linear-gradient(90deg, #1B9E8C, #4B62E5)" }}
@@ -235,7 +272,6 @@ export default function Header() {
                 <div
                   className="progress-circle"
                   style={{
-                    // Use overallAvg for the progress fill degree
                     "--score-percentage": overallAvg,
                     "--outer-border-gradient": "linear-gradient(45deg, #FFFFFF, #E0E0E0)",
                     "--progress-fill-gradient": "linear-gradient(45deg, #07C8A1, #33386C)",
@@ -243,7 +279,7 @@ export default function Header() {
                   data-content={overallContent}
                 ></div>
                 <span className="ml-auto text-[10px] font-medium text-white whitespace-nowrap">
-                  Overall Score
+                  Student Score
                 </span>
             </div>
           </div>

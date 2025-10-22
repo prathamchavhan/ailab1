@@ -26,15 +26,14 @@ import {
 
 // Your navigation data remains the same
 const navLinks = [
+   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/ai-dashboard', label: 'AI Interview', icon: BrainCircuit },
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/aptitude', label: 'Aptitude', icon: CloudSunRain},
       { href: '/assignment', label: 'Question bank', icon: CardSim},
   { href: '/jobs', label: 'Jobs', icon: Briefcase },
   { href: '/news', label: 'News', icon: Newspaper },
-  { href: '/cardchallenges', label: 'Challenges', icon: CalendarDays },
+  { href: '/event_challenge', label: 'Challenges', icon: CalendarDays },
   { href: '/carrer', label: 'Career Counselling', icon: MessagesSquare },
-  
   { href: '/billing', label: 'Billing', icon: CreditCard },
   { href: '/profilemain', label: 'Profile', icon: User },
 

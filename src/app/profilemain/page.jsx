@@ -5,7 +5,8 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Calendar, CheckSquare, Clock, Edit, FileText, Briefcase, BarChart, HardHat, Save, Camera } from 'lucide-react';
 import Calender  from "../../components/calender";
-import Header from "../../components/Header";
+import Overall_header from "@/components/Header/Overall_header";
+import { toast} from 'sonner';
 
 const ProfileDetail = ({ label, value, isLink = false }) => (
   <div className="flex flex-col space-y-0.5">
@@ -80,6 +81,7 @@ export default function ProfilePage() {
 
     if (profileError) {
       console.error("Error fetching profile:", profileError.message);
+      toast.error("Error fetching profile. Please try refreshing.");
       setLoading(false);
       return;
     }
@@ -109,6 +111,7 @@ export default function ProfilePage() {
     // Initialize form data on initial fetch
     setEditFormData({
         name: profile.name || '',
+        surname: profile.surname || '', // <-- FIX 1: Added surname to form state
         stream: profile.stream?.stream || profile.branch || '',
         branch: profile.branch || '', 
         role: profile.role || 'Student',
@@ -186,13 +189,14 @@ export default function ProfilePage() {
     };
   }, [fetchData, supabase]); 
   
-
+  // Handlers for edit mode
   const handleEdit = () => {
       setIsEditing(true);
+      // Re-initialize form data from profileData to reset any unsaved changes
       setEditFormData({
           name: profileData.name || '',
+          surname: profileData.surname || '', // <-- FIX: Ensure surname is set on edit click
           stream: profileData.stream?.stream || profileData.branch || '',
-          branch: profileData.branch || '',
       });
   };
 
@@ -206,7 +210,8 @@ export default function ProfilePage() {
 
       const updatedFields = {
           name: editFormData.name,
-          branch: editFormData.stream, 
+          surname: editFormData.surname, // <-- FIX 2: Added surname to be saved
+          branch: editFormData.stream, // This saves the "stream" field to the "branch" column
       };
 
       const { error } = await supabase
@@ -216,12 +221,12 @@ export default function ProfilePage() {
 
       if (error) {
           console.error("Error saving profile:", error.message);
-          alert(`Failed to save changes: ${error.message}`);
+          toast.error(`Failed to save changes: ${error.message}`);
           setLoading(false); 
       } else {
           await fetchData(currentUserId);
           setIsEditing(false); 
-          alert("Profile updated successfully!");
+          toast.success("Profile updated successfully!");
       }
   };
   
@@ -274,11 +279,11 @@ export default function ProfilePage() {
 
         
           await fetchData(currentUserId); 
-          alert("Profile image updated successfully!");
+         toast.success("Profile image updated successfully!");
 
       } catch (error) {
           console.error(error);
-          alert(`Error: ${error.message}. Check your Supabase storage and RLS settings.`);
+          toast.error(`Error: ${error.message}. wait for update.`);
       } finally {
           setLoading(false);
           if (fileInputRef.current) {
@@ -302,7 +307,9 @@ export default function ProfilePage() {
   const studentID = profileData.roll_no || profileData.user_id?.slice(0, 8);
   const streamName = profileData.stream?.stream || profileData.branch || 'N/A';
   const departmentName = profileData.department?.name || 'N/A';
-  const userName = profileData.name || 'Student';
+  
+  // Use 'name' and 'surname' from profileData, then fall back
+  const userName = (profileData.name || 'Student') + ' ' + (profileData.surname || '');
   
 
   const [firstNameDisplay, lastNameDisplay] = userName.split(/\s+/, 2);
@@ -310,8 +317,8 @@ export default function ProfilePage() {
 
   return (
     <>
-     <div className="mb-3 mt-2">
-      <Header/>
+     <div className="mb-3 mt-4">
+      <Overall_header/>
       </div>
     <div className="px-4 py-8 md:pl-72 lg:pl-72 bg-gray-50 min-h-screen"  >
      
@@ -383,7 +390,7 @@ export default function ProfilePage() {
    <div className="flex-grow pt-1">
     
     {/* Line 1: User Name (Primary Header) */}
-    <p className="text-3xl text-[18px] font-bold text-[#09407F] mb-1">{userName}</p>
+    <p className="text-3xl text-[18px] font-bold text-[#09407F] mb-1">{userName.trim()}</p>
     
     <p className="text-base text-gray-600 mb-0.5">
         <span className="font-semibold text-[13px] text-[#09407F]">Role: {profileData.role || 'Student'}</span> 
@@ -415,7 +422,8 @@ export default function ProfilePage() {
           
          
           <div className="flex flex-col space-y-0.5">
-            <ProfileDetail label="First Name" value={isEditing ? null : userName.split(' ')[0] || ''} />
+            {/* FIX 3a: Display profileData.name */}
+            <ProfileDetail label="First Name" value={isEditing ? null : profileData.name || ''} />
             {isEditing && (
                 <input
                     type="text"
@@ -428,15 +436,17 @@ export default function ProfilePage() {
           </div>
 
           <div className="flex flex-col space-y-0.5">
+            {/* FIX 3b: Display profileData.surname */}
             <ProfileDetail 
                 label="Last Name" 
-                value={isEditing ? null : userName.split(' ').slice(1).join(' ') || profileData.roll_no || ''} 
+                value={isEditing ? null : profileData.surname || ''} 
             />
             {isEditing && (
+                // <-- FIX 4: Connected input to 'surname' state
                 <input
                     type="text"
-                    name="lastName" 
-                    value={editFormData.lastName}
+                    name="surname" 
+                    value={editFormData.surname}
                     onChange={handleChange}
                     className="p-1 border border-blue-300 rounded text-sm text-black font-semibold"
                 />
@@ -478,7 +488,7 @@ export default function ProfilePage() {
                 <input
                     type="text"
                     name="stream"
-                    value={editFormData.stream}
+                   value={editFormData.branch || ''}
                     onChange={handleChange}
                     className="p-1 border border-blue-300 rounded text-sm text-black font-semibold"
                 />

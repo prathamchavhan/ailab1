@@ -245,10 +245,12 @@ export default function AptitudeTestPage() {
     const progressPercentage = (userAnswers.filter(ans => ans !== null).length / questions.length) * 100;
 
     return (
-      <div className="min-h-screen bg-gray-50 p-4 sm:p-8 font-sans"> 
-        <div className="mb-9">
+      <>
+       <div className="mb-9 mt-4">
           <Apptitude_header/>
           </div>
+      <div className="min-h-screen bg-gray-50 p-4 sm:p-8 font-sans"> 
+       
         <div className="max-w-5xl mx-auto">
           {/* Top Header */}
           <div className="bg-white p-4 rounded-xl shadow-md flex items-center flex-wrap gap-x-6 gap-y-4">
@@ -376,6 +378,7 @@ export default function AptitudeTestPage() {
           </div>
         </div>
       </div>
+      </>
     );
   }
   

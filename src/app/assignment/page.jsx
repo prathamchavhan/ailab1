@@ -2,7 +2,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import React, { useState, useEffect } from 'react';
-import Header from "../../components/Header";
+import Overall_header from '@/components/Header/Overall_header';
 // Access environment variables securely
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -34,9 +34,8 @@ const AssignmentDashboard = () => {
       }
     };
     fetchAssignments();
-  }, []); // The empty dependency array ensures this runs once on mount
+  }, []); 
 
-  // Helper function to format the date (kept for consistency if needed elsewhere)
   const formatDate = (timestamp) => {
     if (!timestamp) return null;
     return new Date(timestamp).toLocaleDateString('en-US', {
@@ -60,30 +59,31 @@ const AssignmentDashboard = () => {
   }
 
   return (
-    <div className="p-8 bg-[#f9f9fb] min-h-screen ">
-      <div className='mb-9'>
-      <Header/>
+    <>
+     <div className='mb-9 mt-4'>
+      <Overall_header/>
       </div>
+    <div className="p-8 bg-[#f9f9fb] min-h-screen ">
+     
     <p className="text-xl font-bold mb-6 truncate text-[#001668]">Assignment</p>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-65">
         {assignments.map((assignment) => (
-          
-          /* START: Assignment Card container - Dark background, rounded corners */
+
           <div 
             key={assignment.id} 
             className="bg-[#05445E] text-white rounded-xl shadow-2xl  w-60  overflow-hidden 
                        flex flex-col transform transition-transform duration-300 hover:scale-[1.02]"
           >
             
-            {/* Image/Visual Container - Rounded top corners */}
+           
             {assignment.image_url && (
              <div className="relative h-30 w-full overflow-hidden bg-[#05445E] px-4 pt-4"> {/* Added px-4 pt-4 here */}
                 {/* Image itself */}
                 <img 
                     src={assignment.image_url} 
                     alt="Assignment Visual" 
-                    className="w-full h-full object-cover rounded-lg" // Added rounded-lg here
-                    style={{ transform: 'translateY(-10px)' }} // Slight upward nudge for the visual effect
+                    className="w-full h-full object-cover rounded-lg" 
+                    style={{ transform: 'translateY(-10px)' }} 
                 />
                 
                
@@ -107,10 +107,7 @@ const AssignmentDashboard = () => {
                      Description : {assignment.description}
                   </p>
                 )}
-                
-                {/* Footer section (Date and Download Button) - Stays at the bottom */}
-             {/* Footer section (Date and Download Button) - Stays at the bottom */}
-            {/* Footer section (Date and Download Button) - Stays at the bottom */}
+              
 <div className="mt-auto pt-3 rounded-xl flex justify-end items-center">
     
     {/* Download Button */}
@@ -142,13 +139,12 @@ const AssignmentDashboard = () => {
         ))}
       </div>
     </div>
+    </>
   );
 };
 
-
-// The file upload functions remain unchanged as they have good logic.
 async function createNewAssignment(assignmentData, imageFile, pdfFile) {
-// ... (Your createNewAssignment function remains here)
+
 }
 
 export default AssignmentDashboard;

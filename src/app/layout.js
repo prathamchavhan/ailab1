@@ -2,7 +2,7 @@ import { Geist, Geist_Mono ,Inter } from "next/font/google";
 import AppLayout from './AppLayout';
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./globals.css";
-import { Toaster } from 'react-hot-toast';
+import { Toaster } from 'sonner';
 import BootstrapClient from "@/components/BootstrapClient"; 
 
 const inter = Inter({ subsets: ['latin'] });
@@ -27,7 +27,15 @@ export default function RootLayout({ children }) {
    <html lang="en" data-scroll-behavior="smooth">
       <body className={inter.className}>
         <AppLayout>
-          <Toaster position="top-right" />
+       <Toaster
+  richColors
+  toastOptions={{
+    style: {
+      border: '1px solid #3b82f6',
+      background: '#e6f4fdff',
+      color: 'black', 
+    },
+  }}/>
           {children}
         </AppLayout>
         <BootstrapClient />
