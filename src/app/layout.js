@@ -31,7 +31,7 @@ export default function RootLayout({ children }) {
   richColors
   toastOptions={{
     style: {
-      border: '1px solid #3b82f6',
+      border: '1px solid #c5d7f5ff',
       background: '#e6f4fdff',
       color: 'black', 
     },

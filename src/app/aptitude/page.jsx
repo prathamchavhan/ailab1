@@ -6,7 +6,7 @@ import Apptitude_header from '@/components/Header/Apptitude_header';
 import AptitudeLandingPage from "@/components/Apptitude/AptitudeLandingPage"; 
 
 const FALLBACK_QUESTIONS = [
-  // Quantitative Aptitude (10 Questions)
+
   { question: "If a car travels at 60 km/h, how long does it take to cover 180 km?", options: ["2 hours", "3 hours", "4 hours", "5 hours"], answer: "3 hours", category: 'quantitative' },
   { question: "What is 15% of 200?", options: ["20", "30", "40", "50"], answer: "30", category: 'quantitative' },
   { question: "A sum of money doubles in 5 years at simple interest. What is the rate of interest per annum?", options: ["10%", "15%", "20%", "25%"], answer: "20%", category: 'quantitative' },
@@ -18,7 +18,7 @@ const FALLBACK_QUESTIONS = [
   { question: "How many liters of pure acid are in 10 liters of 30% acid solution?", options: ["2 Liters", "3 Liters", "5 Liters", "7 Liters"], answer: "3 Liters", category: 'quantitative' },
   { question: "A man buys an item for $50 and sells it for $60. What is his profit percentage?", options: ["10%", "20%", "15%", "25%"], answer: "20%", category: 'quantitative' },
 
-  // Logical Reasoning (10 Questions)
+
   { question: "Find the odd one out: Apple, Banana, Carrot, Grape.", options: ["Apple", "Banana", "Carrot", "Grape"], answer: "Carrot", category: 'logical' },
   { question: "If 'A' is coded as 1, 'B' as 2, and so on, how is 'CAT' coded?", options: ["3120", "31T", "24", "312"], answer: "3120", category: 'logical' },
   { question: "Syllogism: All dogs are animals. All animals are mammals. Therefore, all dogs are mammals.", options: ["True", "False", "Cannot be determined", "Only partially true"], answer: "True", category: 'logical' },
@@ -61,7 +61,7 @@ async function saveScore(level, score, total) {
   }
 }
 
-// --- UPDATED to make a single, efficient API call ---
+
 async function generateQuestions(level) {
   console.log("Generating all questions for level:", level);
   try {
@@ -76,9 +76,9 @@ async function generateQuestions(level) {
       throw new Error(`Failed to fetch questions. Server status: ${response.status}`);
     }
 
-    const data = await response.json(); // Expected format: { quantitative: [...], logical: [...], verbal: [...] }
+    const data = await response.json();
 
-    // Combine the arrays from the response and add the 'category' to each question object
+  
     const quantitativeQs = data.quantitative.map(q => ({ ...q, category: 'quantitative' }));
     const logicalQs = data.logical.map(q => ({ ...q, category: 'logical' }));
     const verbalQs = data.verbal.map(q => ({ ...q, category: 'verbal' }));
@@ -88,7 +88,7 @@ async function generateQuestions(level) {
 
   } catch (error) {
     console.error("Generate questions error:", error);
-    // Re-throw the error so the UI can catch it and display a message
+
     throw error;
   }
 }
@@ -108,7 +108,7 @@ export default function AptitudeTestPage() {
   const [questions, setQuestions] = useState([]);
   const [userAnswers, setUserAnswers] = useState([]);
   const [score, setScore] = useState(0);
-  const [testState, setTestState] = useState("setup"); // "setup", "active", "finished"
+  const [testState, setTestState] = useState("setup"); 
   const [timer, setTimer] = useState(900); // 15 minutes
   const [isLoading, setIsLoading] = useState(false);
   const [activeQuestion, setActiveQuestion] = useState(0); 
@@ -181,13 +181,13 @@ export default function AptitudeTestPage() {
       // 1. Attempt to fetch questions from the API
       fetchedQuestions = await generateQuestions(level);
     } catch (err) {
-      // 2. Fallback if API fails
-      console.warn("API question generation failed. Using fallback questions.");
-      setError("Failed to fetch custom questions from the server. Loading **pre-built fallback questions** instead.");
-      // Use the static fallback questions
+     
+      console.warn("API question generation failed..");
+      setError("Apptitude question");
+  
       fetchedQuestions = FALLBACK_QUESTIONS;
     } finally {
-      // 3. Continue with the test setup using whichever questions were loaded
+    
       if (fetchedQuestions && fetchedQuestions.length > 0) {
         setQuestions(fetchedQuestions);
         setUserAnswers(Array(fetchedQuestions.length).fill(null));
@@ -196,7 +196,7 @@ export default function AptitudeTestPage() {
         setTestState("active");
         setActiveQuestion(0);
       } else {
-        // If even fallback is empty (though it shouldn't be), show a general error
+      
          setError("Could not load any questions for the test. Please check your connection.");
       }
       setIsLoading(false);
@@ -257,9 +257,9 @@ export default function AptitudeTestPage() {
            <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-start">
     <span className="font-bold text-lg text-gray-700">Aptitude</span> 
     
-    {/* The Level Selector Container: Apply flex-wrap here */}
+   
     <div className="flex items-center flex-wrap gap-8 bg-white rounded-full p-1 sm:gap-10"> 
-      {/* 👆 ADDED: flex-wrap, changed default gap to 'gap-2', and kept 'sm:gap-10' for large screens */}
+   
       {["easy", "medium", "hard"].map((l) => (
         <button
           key={l}
@@ -351,7 +351,7 @@ export default function AptitudeTestPage() {
             : "bg-gray-100 border-gray-200 hover:border-[#BDF5FD] hover:bg-[#BDF5FD]"
     }`}
     style={{
-        borderRadius: '8px' // <-- INLINE CSS FIX: Applies moderate rounding (equivalent to rounded-lg)
+        borderRadius: '8px' 
     }}
 >
     <span className={`font-bold mr-3 ${userAnswers[question.originalIndex] === option ? 'text-black' : 'text-gray-700'}`}>
