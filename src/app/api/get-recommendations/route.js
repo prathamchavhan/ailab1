@@ -4,9 +4,9 @@ import { NextResponse } from "next/server";
 export async function POST(request) {
   console.log("API route '/api/get-recommendations' was hit.");
 
-  const apiKeys = (process.env.GEMINI_API_KEYS || "").split(',');
+  const apiKeys = (process.env.NEXT_PUBLIC_GEMINI_API_KEY || "").split(',');
   if (!apiKeys.length || !apiKeys[0]) {
-    console.error("GEMINI_API_KEYS environment variable is not set or empty.");
+    console.error("NEXT_PUBLIC_GEMINI_API_KEY environment variable is not set or empty.");
     return NextResponse.json(
       { error: "API keys are not configured on the server." },
       { status: 500 }
@@ -24,7 +24,7 @@ export async function POST(request) {
       'Logical Reasoning': logicalScore,
       'Verbal Ability': verbalScore
     };
-    
+
     // Find the highest and lowest scoring sections
     const sortedSections = Object.entries(scores).sort(([, a], [, b]) => b - a);
     const topSection = sortedSections[0][0];
@@ -33,15 +33,15 @@ export async function POST(request) {
     for (const key of apiKeys) {
       try {
         console.log(`Attempting to use API key ending with "...${key.slice(-4)}"`);
-        
+
         const genAI = new GoogleGenerativeAI(key.trim());
-        const model = genAI.getGenerativeModel({ 
+        const model = genAI.getGenerativeModel({
           model: "gemini-2.5-flash",
           generationConfig: {
             response_mime_type: "application/json",
           }
         });
-        
+
         const promptTemplate = `
           Based on the following aptitude test scores:
           Quantitative Aptitude: ${quantitativeScore}%
@@ -67,27 +67,27 @@ export async function POST(request) {
 
         const result = await model.generateContent(promptTemplate);
         const response = await result.response;
-        
+
         console.log(`API key "...${key.slice(-4)}" succeeded!`);
-        
+
         try {
-            let responseText = response.text().trim();
-            responseText = responseText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-            const jsonData = JSON.parse(responseText);
-            return NextResponse.json({ recommendations: jsonData });
-            
+          let responseText = response.text().trim();
+          responseText = responseText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+          const jsonData = JSON.parse(responseText);
+          return NextResponse.json({ recommendations: jsonData });
+
         } catch (parseError) {
-            console.error("JSON Parsing failed for LLM output:", parseError);
-            const originalRawText = response.text();
-            
-            return NextResponse.json(
-                { 
-                    error: "Failed to parse generated recommendations (invalid JSON format from LLM).",
-                    details: parseError.message,
-                    raw_response_snippet: originalRawText.substring(0, 500) + (originalRawText.length > 500 ? '...' : ''),
-                },
-                { status: 500 }
-            );
+          console.error("JSON Parsing failed for LLM output:", parseError);
+          const originalRawText = response.text();
+
+          return NextResponse.json(
+            {
+              error: "Failed to parse generated recommendations (invalid JSON format from LLM).",
+              details: parseError.message,
+              raw_response_snippet: originalRawText.substring(0, 500) + (originalRawText.length > 500 ? '...' : ''),
+            },
+            { status: 500 }
+          );
         }
       } catch (error) {
         if (error.message && error.message.includes('[429 Too Many Requests]')) {

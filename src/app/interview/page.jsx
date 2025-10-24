@@ -482,6 +482,8 @@
 //   );
 // }
 
+// ...existing code...
+
 
 
 
@@ -524,6 +526,25 @@ function InterviewPageContent() {
 
   const mediaRecorderRef = useRef(null);
   const audioChunks = useRef([]);
+
+  // Helper: upload audio blob to /api/transcribe and return JSON
+  const uploadRecording = async (fileBlob, sessionIdValue, questionId) => {
+    const formData = new FormData();
+    formData.append("file", fileBlob, "recording.webm");
+    if (sessionIdValue) formData.append("session_id", sessionIdValue);
+    if (questionId != null) formData.append("question_id", String(questionId));
+
+    const res = await fetch("/api/transcribe", {
+      method: "POST",
+      body: formData, // DO NOT set Content-Type
+    });
+
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`Transcribe failed: ${res.status} ${body}`);
+    }
+    return res.json();
+  };
 
   useEffect(() => {
     const checkUser = async () => {
@@ -722,39 +743,32 @@ function InterviewPageContent() {
         if (event.data.size > 0) audioChunks.current.push(event.data);
       };
 
+      // --- THIS IS THE MODIFIED SECTION ---
       mediaRecorder.onstop = async () => {
         const audioBlob = new Blob(audioChunks.current, { type: "audio/webm" });
-        const formData = new FormData();
-        formData.append("file", audioBlob, "recording.webm");
 
         try {
-          const res = await fetch("/api/transcribe", {
-            method: "POST",
-            body: formData,
-          });
+          // Call server route to transcribe
+          const qId = questions[currentIndex]?.id ?? null;
+          const data = await uploadRecording(audioBlob, sessionId, qId);
 
-          const data = await res.json();
-          if (data.text) {
+          if (data?.text) {
             setTranscript(data.text);
+            
+            // The redundant upsert call has been REMOVED from here.
+            // The data will now only be saved inside handleNext().
 
-            if (questions[currentIndex]) {
-              const qId = questions[currentIndex].id;
-              await supabase.from("interview_answers").upsert([
-                {
-                  session_id: sessionId,
-                  question_id: qId,
-                  response: data.text,
-                  created_at: new Date().toISOString(),
-                },
-              ]);
-            }
           } else {
             console.error("No transcription text found:", data);
           }
         } catch (err) {
           console.error("Transcription error:", err);
+        } finally {
+          // clear chunks for next recording
+          audioChunks.current = [];
         }
       };
+      // --- END OF MODIFIED SECTION ---
 
       mediaRecorder.start();
       setListening(true);
@@ -782,6 +796,7 @@ function InterviewPageContent() {
     const answerText = transcript.trim() || "(No response)";
 
     try {
+      // This is now the ONLY place the answer is saved.
       await supabase.from("interview_answers").upsert(
         [
           {
@@ -993,7 +1008,7 @@ function InterviewPageContent() {
                 </h2>
                 <p className="text-[#000000] font-[Poppins] text-[16px] mb-6">
                   may affect your interview score
-                </p>
+              </p>
                 <div className="flex justify-center gap-4">
                   <button
                     onClick={() => setShowExitPopup(false)}

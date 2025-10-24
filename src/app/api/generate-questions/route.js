@@ -29,9 +29,10 @@ async function generateAptitudeCategory(genAI, level, category) {
 export async function POST(request) {
   console.log("API route '/api/generate' was hit.");
 
+  // Get API keys from environment variables and split them
   const apiKeys = (process.env.GEMINI_API_KEYS || "").split(',');
   if (!apiKeys.length || !apiKeys[0]) {
-    console.error("GEMINI_API_KEYS environment variable is not set or empty.");
+    console.error("NEXT_PUBLIC_GEMINI_API_KEY environment variable is not set or empty.");
     return NextResponse.json(
       { error: "API keys are not configured on the server." },
       { status: 500 }

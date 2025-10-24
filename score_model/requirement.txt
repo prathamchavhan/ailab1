@@ -9,6 +9,11 @@ sentence-transformers
 openai
 google-generativeai
 python-dotenv
+fastapi
+xgboost
+supabase
+tf-keras
+uvicorn
 
 # === Audio / Speech Processing ===
 whisper
