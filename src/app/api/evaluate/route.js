@@ -271,8 +271,7 @@ Return valid JSON:
 ]
 `;
 
-    const FASTAPI_URL =
-      process.env.NEXT_PUBLIC_ML_API_URL || "http://127.0.0.1:8000/evaluate";
+  const FASTAPI_URL = process.env.NEXT_PUBLIC_ML_API_URL || "http://127.0.0.1:8000/evaluate";
 
     // 4️⃣ Run Gemini + ML in parallel
     const [geminiResult, mlResponse] = await Promise.allSettled([
