@@ -11,7 +11,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-
+import { toast} from 'sonner';
 // Your original, well-styled CSS is preserved
 const embeddedCSS = `
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
@@ -56,6 +56,7 @@ export default function AptitudePerformanceChart() {
 
       if (error || !results || results.length === 0) {
         console.error("Error fetching aptitude data:", error);
+        toast.error("No aptitude data found.")
         return;
       }
       

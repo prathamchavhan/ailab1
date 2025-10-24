@@ -241,15 +241,15 @@ export default function PerformanceChart() {
     <div className="w-full">
       <style dangerouslySetInnerHTML={{ __html: embeddedCSS }} />
       <div
-        className="flex bg-white p-8 rounded-2xl shadow-xl space-x-8"
+        className="flex e p-8  space-x-8"
         style={{ fontFamily: "Poppins, sans-serif" }}
       >
         {/* Left Chart Section */}
         <div className="flex-grow max-w-[70%]">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-semibold text-[#09407F]">
+            <p className="text-xl font-semibold text-[#09407F]">
               Performance Over Time
-            </h3>
+            </p>
             <span className="view-report-link">View Full Report</span>
           </div>
 
@@ -360,9 +360,9 @@ export default function PerformanceChart() {
 
         {/* Right Summary Section */}
         <div className="w-[30%] pt-14 flex flex-col items-center">
-          <h3 className="text-2xl font-bold text-[#09407F] mb-4 w-full">
+          <p className="text-[18px] font-bold text-[#09407F] mb-4 w-full">
             Overall Summary
-          </h3>
+          </p>
           {summaryData ? (
             summaryCardMapping.map(({ key, label, border }) => (
               <SummaryCard

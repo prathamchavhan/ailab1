@@ -6,7 +6,6 @@ import { FaSortAlphaUp, FaSortAmountUp, FaSortAmountDown, FaSearch, FaChevronDow
 import { supabase } from '../../lib/supabaseClient'; // Ensure this path is correct
 import Jobs_header from '@/components/Header/Jobs_header'; // Assuming Jobs_header.jsx is here
 
-// --- Constants ---
 const BLUE_COLOR = '#00A1F0';
 const GRADIENT_BG = 'linear-gradient(to right, #00C6FF, #0072FF)';
 const DARK_TEAL_COLOR = '#1B7192';
@@ -14,7 +13,7 @@ const HOVER_TEXT_COLOR = '#09407F';
 const TAG_BG_COLOR = '#1B7192';
 const TAG_TEXT_COLOR = 'white';
 
-// --- Filter & Sort Options ---
+
 const SORT_OPTIONS = [
     { label: 'Latest', value: 'latest', icon: FaSortAmountDown },
     { label: 'Oldest', value: 'oldest', icon: FaSortAmountUp },
@@ -226,7 +225,6 @@ const FilterButton = ({ label, keyName, isOpen, onClick, activeSelection, handle
     );
 };
 
-// --- MAIN JOBS PAGE COMPONENT ---
 export default function JobsPage() {
     const [jobs, setJobs] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -302,13 +300,13 @@ export default function JobsPage() {
             }
         };
         fetchJobs();
-    }, [supabase]); // ✅ FIXED: Added supabase dependency
+    }, [supabase]); 
 
     const sortedAndFilteredJobs = useMemo(() => {
         let currentJobs = [...jobs];
         const { sort, job_type, mode, experience, category } = activeFilterValues;
 
-        // Filtering
+       
         if (searchTerm) {
             const lowerCaseSearchTerm = searchTerm.toLowerCase();
             currentJobs = currentJobs.filter(job =>
@@ -332,7 +330,7 @@ export default function JobsPage() {
             currentJobs = currentJobs.filter(job => job.category === category.key);
         }
 
-        // Sorting
+   
         const selectedSort = sort.key;
         switch (selectedSort) {
             case 'oldest':

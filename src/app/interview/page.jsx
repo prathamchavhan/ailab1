@@ -483,11 +483,12 @@
 // }
 
 
+
+
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
-
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { FiLogOut, FiMic } from "react-icons/fi";
 import {
@@ -519,13 +520,11 @@ function InterviewPageContent() {
   const [answers, setAnswers] = useState({});
   const [showExitPopup, setShowExitPopup] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
-  
   const [availableVoices, setAvailableVoices] = useState([]);
 
   const mediaRecorderRef = useRef(null);
   const audioChunks = useRef([]);
 
-  
   useEffect(() => {
     const checkUser = async () => {
       const { data } = await supabase.auth.getUser();
@@ -534,7 +533,7 @@ function InterviewPageContent() {
     checkUser();
   }, [router]);
 
-  // ✅ Load interview configuration and questions from sessionStorage
+
   useEffect(() => {
     const loadInterviewData = () => {
       try {
@@ -551,14 +550,12 @@ function InterviewPageContent() {
           setLevel(config.experienceLevel || "");
           setRound("1");
 
- 
           const initialAnswers = {};
           questions.forEach((q, index) => {
             initialAnswers[index] = "";
           });
           setAnswers(initialAnswers);
         } else {
-
           console.error("No interview data found. Redirecting to dashboard...");
           router.push("/ai-dashboard");
         }
@@ -570,7 +567,6 @@ function InterviewPageContent() {
 
     loadInterviewData();
   }, [router]);
-  
 
   useEffect(() => {
     const synth = window.speechSynthesis;
@@ -579,23 +575,21 @@ function InterviewPageContent() {
       setAvailableVoices(synth.getVoices());
     };
 
-    if ('onvoiceschanged' in synth) {
+    if ("onvoiceschanged" in synth) {
       synth.onvoiceschanged = populateVoices;
     }
-    
-   
+
     populateVoices();
-    
 
     return () => {
-      if ('onvoiceschanged' in synth) {
+      if ("onvoiceschanged" in synth) {
         synth.onvoiceschanged = null;
       }
     };
   }, []);
 
   useEffect(() => {
-    if (!sessionId || questions.length > 0) return; 
+    if (!sessionId || questions.length > 0) return;
 
     const fetchData = async () => {
       try {
@@ -634,7 +628,6 @@ function InterviewPageContent() {
     fetchData();
   }, [sessionId, questions.length, router]);
 
-  
   useEffect(() => {
     if (timeLeft <= 0) {
       handleNext();
@@ -645,7 +638,6 @@ function InterviewPageContent() {
   }, [timeLeft]);
 
   useEffect(() => setTimeLeft(60), [currentIndex]);
-
 
   useEffect(() => {
     async function enableCamera() {
@@ -660,50 +652,64 @@ function InterviewPageContent() {
     }
     enableCamera();
   }, []);
-  
-  useEffect(() => {
-    if (questions.length > 0 && questions[currentIndex]?.question) {
-      const utterance = new window.SpeechSynthesisUtterance(questions[currentIndex].question);
-  
-      let preferredVoice = null;
-      
 
-      preferredVoice = availableVoices.find(voice => 
-        voice.lang.toLowerCase().includes('en-in') && 
-        (voice.name.toLowerCase().includes('female') || 
-         voice.name.toLowerCase().includes('sangeeta') || 
-         voice.name.toLowerCase().includes('heena'))
+  useEffect(() => {
+    // ✅ FIX: Wait until voices are loaded before trying to speak
+    if (availableVoices.length === 0) {
+      return;
+    }
+
+    if (questions.length > 0 && questions[currentIndex]?.question) {
+      const utterance = new window.SpeechSynthesisUtterance(
+        questions[currentIndex].question
       );
 
-    
+      let preferredVoice = null;
+
+      preferredVoice = availableVoices.find(
+        (voice) =>
+          voice.lang.toLowerCase().includes("en-in") &&
+          (voice.name.toLowerCase().includes("female") ||
+            voice.name.toLowerCase().includes("sangeeta") ||
+            voice.name.toLowerCase().includes("heena"))
+      );
+
       if (!preferredVoice) {
-        preferredVoice = availableVoices.find(voice => 
-          voice.lang.startsWith('en') && 
-          (voice.name.toLowerCase().includes('female') || 
-           voice.name.toLowerCase().includes('sandra') || 
-           voice.name.toLowerCase().includes('kate') ||
-           voice.name.toLowerCase().includes('ava'))
-        );
-      }
-      
-      if (!preferredVoice) {
-        preferredVoice = availableVoices.find(voice => 
-          voice.lang.startsWith('en') && !voice.name.toLowerCase().includes('male')
+        preferredVoice = availableVoices.find(
+          (voice) =>
+            voice.lang.startsWith("en") &&
+            (voice.name.toLowerCase().includes("female") ||
+              voice.name.toLowerCase().includes("sandra") ||
+              voice.name.toLowerCase().includes("kate") ||
+              voice.name.toLowerCase().includes("ava"))
         );
       }
 
- 
+      if (!preferredVoice) {
+        preferredVoice = availableVoices.find(
+          (voice) =>
+            voice.lang.startsWith("en") &&
+            !voice.name.toLowerCase().includes("male")
+        );
+      }
+
       if (preferredVoice) {
         utterance.voice = preferredVoice;
       } else if (availableVoices.length > 0) {
-        utterance.voice = availableVoices[0]; 
+        console.error(
+          "Preferred (IN/Female) voice not found. Using default available voice:",
+          availableVoices[0]?.name || "N/A"
+        );
+        utterance.voice = availableVoices[0];
+      } else {
+        // This part should no longer be reachable due to the guard clause above
+        console.error("No voices available for speech synthesis.");
       }
 
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(utterance);
     }
-  }, [questions, currentIndex, availableVoices]); 
-
+  }, [questions, currentIndex, availableVoices]);
 
   const startListening = async () => {
     try {
@@ -832,185 +838,185 @@ function InterviewPageContent() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA] text-[#1A1A1A]">
+    <>
       <Header />
+      <div className="min-h-screen bg-[#F5F7FA] text-[#1A1A1A]">
+        <div className="flex justify-between items-center px-8 mt-4">
+          <button
+            onClick={() => router.push("/ai-dashboard")}
+            className="flex items-center justify-center gap-2 bg-gray-500 hover:bg-gray-600 text-white font-semibold text-[16px] rounded-[12px] px-6 h-[54px] shadow transition-colors"
+          >
+            ← Back to Dashboard
+          </button>
+          <button
+            onClick={() => setShowExitPopup(true)}
+            className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#2DC5DB] to-[#2B81D0] text-white font-semibold text-[16px] rounded-[12px] w-[162px] h-[54px] shadow"
+          >
+            Exit <FiLogOut />
+          </button>
+        </div>
 
-
-      <div className="flex justify-between items-center px-8 mt-4">
-        <button
-          onClick={() => router.push("/ai-dashboard")}
-          className="flex items-center justify-center gap-2 bg-gray-500 hover:bg-gray-600 text-white font-semibold text-[16px] rounded-[12px] px-6 h-[54px] shadow transition-colors"
-        >
-          ← Back to Dashboard
-        </button>
-        <button
-          onClick={() => setShowExitPopup(true)}
-          className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#2DC5DB] to-[#2B81D0] text-white font-semibold text-[16px] rounded-[12px] w-[162px] h-[54px] shadow"
-        >
-          Exit <FiLogOut />
-        </button>
-      </div>
-
-      <div className="font-[Poppins] p-8 grid grid-cols-3 gap-8">
-        {/* LEFT SECTION */}
-        <div className="col-span-2 flex flex-col items-center mt-4">
-          <div className="w-full flex justify-between items-center mb-3 px-2">
-            <div className="flex gap-10 font-semibold text-[15px] text-[#09407F]">
-              <p>Round: {round || "1"}</p>
-              <p>Level: {level || "Easy"}</p>
+        <div className="font-[Poppins] p-8 grid grid-cols-3 gap-8">
+          {/* LEFT SECTION */}
+          <div className="col-span-2 flex flex-col items-center mt-4">
+            <div className="w-full flex justify-between items-center mb-3 px-2">
+              <div className="flex gap-10 font-semibold text-[15px] text-[#09407F]">
+                <p>Round: {round || "1"}</p>
+                <p>Level: {level || "Easy"}</p>
+              </div>
+              <p className="text-[#2B7ECF] font-semibold mr-6">{timeLeft}s</p>
             </div>
-            <p className="text-[#2B7ECF] font-semibold mr-6">{timeLeft}s</p>
-          </div>
 
-          {questions.length > 0 && (
-            <div className="flex justify-center gap-4 mb-3">
-              {questions.map((_, idx) => {
-                let bgColor = "#D9D9D9";
-                if (idx < currentIndex) bgColor = "#F7D8FF";
-                if (idx === currentIndex) bgColor = "#8BFFEC";
-                return (
-                  <div
-                    key={idx}
-                    className="w-[34px] h-[35px] rounded-full flex items-center justify-center font-[Poppins] font-semibold text-[15px] text-[#000000]"
-                    style={{
-                      backgroundColor: bgColor,
-                      boxShadow:
-                        idx === currentIndex
-                          ? "0 0 4px 2px rgba(43, 129, 208, 0.5)"
-                          : "none",
-                    }}
-                  >
-                    {idx + 1}
-                  </div>
-                );
-              })}
+            {questions.length > 0 && (
+              <div className="flex justify-center gap-4 mb-3">
+                {questions.map((_, idx) => {
+                  let bgColor = "#D9D9D9";
+                  if (idx < currentIndex) bgColor = "#F7D8FF";
+                  if (idx === currentIndex) bgColor = "#8BFFEC";
+                  return (
+                    <div
+                      key={idx}
+                      className="w-[34px] h-[35px] rounded-full flex items-center justify-center font-[Poppins] font-semibold text-[15px] text-[#000000]"
+                      style={{
+                        backgroundColor: bgColor,
+                        boxShadow:
+                          idx === currentIndex
+                            ? "0 0 4px 2px rgba(43, 129, 208, 0.5)"
+                            : "none",
+                      }}
+                    >
+                      {idx + 1}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <p className="font-semibold text-[18px] text-[#09407F] mb-2 text-center">
+              Interviewer Aavi
+            </p>
+            <div className="bg-white rounded-[10px] shadow-md px-6 py-4 text-center text-[#000000] font-medium mb-4 w-[780px]">
+              Q{currentIndex + 1}.{" "}
+              {questions[currentIndex]?.question || "Loading..."}
             </div>
-          )}
-
-          <p className="font-semibold text-[18px] text-[#09407F] mb-2 text-center">
-            Interviewer Aavi
-          </p>
-<div className="bg-white rounded-[10px] shadow-md px-6 py-4 text-center text-[#000000] font-medium mb-4 w-[780px]">
-            Q{currentIndex + 1}.{" "}
-            {questions[currentIndex]?.question || "Loading..."}
-          </div>
-          <div className="relative w-[730px] h-[490px] rounded-[12px] overflow-hidden shadow bg-black border-[2px] border-[#2B81D0] mb-5">
-            <video
-              src="/avee.mp4"
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2">
-              <button
-                onClick={listening ? stopListening : startListening}
-                className="flex items-center gap-2 bg-[#7CE5FF] text-[#000000] 
+            <div className="relative w-[730px] h-[490px] rounded-[12px] overflow-hidden shadow bg-black border-[2px] border-[#2B81D0] mb-5">
+              <video
+                src="/avee.mp4"
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2">
+                <button
+                  onClick={listening ? stopListening : startListening}
+                  className="flex items-center gap-2 bg-[#7CE5FF] text-[#000000] 
                     font-semibold text-[15px] w-[210px] h-[49px] rounded-[5px] 
                     justify-center shadow-sm hover:opacity-90 transition-all"
+                >
+                  <FiMic />
+                  {listening ? "Recording..." : "Start Answer"}
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-[#F0FAFF] border border-[#2DC5DB] rounded-[10px] shadow-sm px-6 py-4 text-[#000000] text-[15px] font-normal mb-5 w-[780px] text-left">
+              <p className="font-semibold text-[#09407F] mb-2">Your Answer:</p>
+              <p>{transcript || "Start speaking to record your answer..."}</p>
+            </div>
+
+            {/* Next Button */}
+            <div className="flex justify-center">
+              <button
+                onClick={handleNext}
+                className="w-[162px] h-[54px] rounded-[12px] bg-gradient-to-r 
+                  from-[#2DC5DB] to-[#2B81D0] text-[#000000] font-semibold shadow"
               >
-                <FiMic />
-                {listening ? "Recording..." : "Start Answer"}
+                {currentIndex < questions.length - 1 ? "Next →" : "Finish"}
               </button>
             </div>
           </div>
 
-          <div className="bg-[#F0FAFF] border border-[#2DC5DB] rounded-[10px] shadow-sm px-6 py-4 text-[#000000] text-[15px] font-normal mb-5 w-[780px] text-left">
-            <p className="font-semibold text-[#09407F] mb-2">Your Answer:</p>
-            <p>{transcript || "Start speaking to record your answer..."}</p>
-          </div>
-
-          {/* Next Button */}
-          <div className="flex justify-center">
-            <button
-              onClick={handleNext}
-              className="w-[162px] h-[54px] rounded-[12px] bg-gradient-to-r 
-                  from-[#2DC5DB] to-[#2B81D0] text-[#000000] font-semibold shadow"
-            >
-              {currentIndex < questions.length - 1 ? "Next →" : "Finish"}
-            </button>
-          </div>
-        </div>
-
-        {/* RIGHT SIDE */}
-        <div className="flex flex-col items-center gap-6">
-          <p className="font-semibold text-[20px] text-[#09407F]">
-            Student video
-          </p>
-          <div className="rounded-[12px] overflow-hidden shadow bg-black w-[359px] h-[231px]">
-            <video
-              ref={videoRef}
-              autoPlay
-              muted
-              playsInline
-              className="w-full h-full object-cover"
-            />
-          </div>
-
-          <p className="text-[#09407F] font-semibold text-[15px]">
-            Domain:{" "}
-            <span className="text-[#09407F] font-semibold">
-              {domain || "Artificial Intelligence & Machine Learning"}
-            </span>
-          </p>
-
-          <div className="bg-white rounded-xl shadow p-4 w-full max-w-[359px]">
-            <p className="text-[#09407F] font-semibold text-[20px] mb-1">
-              AI Video Score
+          {/* RIGHT SIDE */}
+          <div className="flex flex-col items-center gap-6">
+            <p className="font-semibold text-[20px] text-[#09407F]">
+              Student video
             </p>
-            <ResponsiveContainer width="90%" height={200}>
-              <RadarChart cx="60%" cy="60%" outerRadius="50%" data={radarData}>
-                <PolarGrid />
-                <PolarAngleAxis dataKey="subject" />
-                <PolarRadiusAxis angle={30} domain={[0, 100]} />
-                <Radar
-                  name="Score"
-                  dataKey="A"
-                  stroke="#2B81D0"
-                  fill="#2DC5DB"
-                  fillOpacity={0.6}
-                />
-              </RadarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
+            <div className="rounded-[12px] overflow-hidden shadow bg-black w-[359px] h-[231px]">
+              <video
+                ref={videoRef}
+                autoPlay
+                muted
+                playsInline
+                className="w-full h-full object-cover"
+              />
+            </div>
 
-      {/* Exit Confirmation Popup */}
-      {showExitPopup && (
-        <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-[20px] shadow-lg w-[450px] p-8 text-center border-2 border-[#2B81D0]">
-            <div className="flex flex-col items-center">
-              <div className="text-[40px] mb-4">😢</div>
-              <h2 className="text-[#000000] font-[Poppins] font-semibold text-[24px] mb-2">
-                Exiting now
-              </h2>
-              <p className="text-[#000000] font-[Poppins] text-[16px] mb-6">
-                may affect your interview score
+            <p className="text-[#09407F] font-semibold text-[15px]">
+              Domain:{" "}
+              <span className="text-[#09407F] font-semibold">
+                {domain || "Artificial Intelligence & Machine Learning"}
+              </span>
+            </p>
+
+            <div className="bg-white rounded-xl shadow p-4 w-full max-w-[359px]">
+              <p className="text-[#09407F] font-semibold text-[20px] mb-1">
+                AI Video Score
               </p>
-              <div className="flex justify-center gap-4">
-                <button
-                  onClick={() => setShowExitPopup(false)}
-                  className="w-[130px] h-[47px] rounded-[12px] font-[Poppins] font-semibold text-[16px] 
-                      text-white bg-gradient-to-r from-[#2DC5DA] to-[#2B84D0] shadow hover:opacity-90 transition-all"
-                >
-                  Return
-                </button>
-                <button
-                  onClick={handleConfirmExit}
-                  disabled={isExiting}
-                  className="w-[130px] h-[47px] rounded-[12px] font-[Poppins] font-semibold text-[16px] 
-                      text-[#000000] border border-[#2B84D0] hover:bg-[#E9F6FF] transition-all"
-                >
-                  {isExiting ? "Exiting..." : "Exit"}
-                </button>
-              </div>
+              <ResponsiveContainer width="90%" height={200}>
+                <RadarChart cx="60%" cy="60%" outerRadius="50%" data={radarData}>
+                  <PolarGrid />
+                  <PolarAngleAxis dataKey="subject" />
+                  <PolarRadiusAxis angle={30} domain={[0, 100]} />
+                  <Radar
+                    name="Score"
+                    dataKey="A"
+                    stroke="#2B81D0"
+                    fill="#2DC5DB"
+                    fillOpacity={0.6}
+                  />
+                </RadarChart>
+              </ResponsiveContainer>
             </div>
           </div>
         </div>
-      )}
-    </div>
+
+        {/* Exit Confirmation Popup */}
+        {showExitPopup && (
+          <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50">
+            <div className="bg-white rounded-[20px] shadow-lg w-[450px] p-8 text-center border-2 border-[#2B81D0]">
+              <div className="flex flex-col items-center">
+                <div className="text-[40px] mb-4">😢</div>
+                <h2 className="text-[#000000] font-[Poppins] font-semibold text-[24px] mb-2">
+                  Exiting now
+                </h2>
+                <p className="text-[#000000] font-[Poppins] text-[16px] mb-6">
+                  may affect your interview score
+                </p>
+                <div className="flex justify-center gap-4">
+                  <button
+                    onClick={() => setShowExitPopup(false)}
+                    className="w-[130px] h-[47px] rounded-[12px] font-[Poppins] font-semibold text-[16px] 
+                      text-white bg-gradient-to-r from-[#2DC5DA] to-[#2B84D0] shadow hover:opacity-90 transition-all"
+                  >
+                    Return
+                  </button>
+                  <button
+                    onClick={handleConfirmExit}
+                    disabled={isExiting}
+                    className="w-[130px] h-[47px] rounded-[12px] font-[Poppins] font-semibold text-[16px] 
+                      text-[#000000] border border-[#2B84D0] hover:bg-[#E9F6FF] transition-all"
+                  >
+                    {isExiting ? "Exiting..." : "Exit"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
   );
 }
 

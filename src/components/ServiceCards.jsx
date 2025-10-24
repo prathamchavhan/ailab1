@@ -1,5 +1,5 @@
 import React from 'react';
-import { Briefcase, ArrowRight, TrendingUp, Search as SearchIcon, CheckCircle } from 'lucide-react'; 
+import { Briefcase, ArrowRight, TrendingUp, Search as SearchIcon, CheckCircle ,PhoneCall } from 'lucide-react'; 
 
 
 const services = [
@@ -84,7 +84,7 @@ const ServiceCards = () => {
                       <span className="inline-block px-3 py-1 text-xs font-semibold rounded-full text-white"
                         style={{ 
                           // Duration Tag Gradient
-                          background: `linear-gradient(to right,#2DC1DB, #3E82D4)`
+                          background: `#e74f1cff`
                         }}>
                         {service.duration}
                       </span>
@@ -131,12 +131,12 @@ const ServiceCards = () => {
           ))}
         </div>
 
-        {/* --- New "Ready to Transform Your Career" CTA Section --- */}
+    
                <div className="rounded-xl p-8 lg:p-12 text-center text-white shadow-2xl"
              style={{ 
-                 // Inline CSS for top margin
+            
                  marginTop: '6rem', 
-                 // Using a dark, bold blue gradient for the CTA block
+          
                  background: `linear-gradient(to right, #2DC4DB, #2B82CF)`, 
              }}>
               
@@ -171,10 +171,10 @@ const ServiceCards = () => {
 
 
        <div className="flex flex-col sm:flex-row justify-center items-center gap-11 mb-8">
-    {/* Book Free Consultation Button (White Background, Blue Text) */}
+
     <a href="https://dvlearningz.com/career-counselling" target="_blank" rel="noopener noreferrer">
     <button
-  className="w-full sm:w-auto px-1 py-3 bg-white text-[#09407F] font-bold transition duration-300 shadow-xl hover:shadow-2xl text-md"
+  className="w-full sm:w-auto px-4 py-2 bg-white text-[#09407F] font-bold transition duration-300 shadow-xl hover:shadow-2xl text-md"
   style={{ borderRadius: '8px' }}
  
 >
@@ -182,12 +182,13 @@ const ServiceCards = () => {
 </button>
 </a>
     {/* Phone Number (Plain White Text) */}
-    <a 
-      href="tel:+919325545392"
-      className="w-full sm:w-auto text-white !no-underline  text-left font-bold text-md "
-    >
-      +91-9325545392
-    </a>
+  <a 
+  href="tel:+919325545392"
+  className="w-full sm:w-auto text-white !no-underline text-left font-bold text-md flex items-center gap-x-2"
+>
+    <PhoneCall className='w-4 h-4'/> 
+    <span>+91-9470482746</span>
+</a>
   </div>
             {/* Reassurance/Benefit Text */}
             <p className="text-sm font-medium opacity-90 mt-4 flex flex-wrap justify-center items-center gap-x-6 gap-y-2">

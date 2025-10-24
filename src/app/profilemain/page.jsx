@@ -192,10 +192,10 @@ export default function ProfilePage() {
   // Handlers for edit mode
   const handleEdit = () => {
       setIsEditing(true);
-      // Re-initialize form data from profileData to reset any unsaved changes
+   
       setEditFormData({
           name: profileData.name || '',
-          surname: profileData.surname || '', // <-- FIX: Ensure surname is set on edit click
+          surname: profileData.surname || '', 
           stream: profileData.stream?.stream || profileData.branch || '',
       });
   };
@@ -210,8 +210,8 @@ export default function ProfilePage() {
 
       const updatedFields = {
           name: editFormData.name,
-          surname: editFormData.surname, // <-- FIX 2: Added surname to be saved
-          branch: editFormData.stream, // This saves the "stream" field to the "branch" column
+          surname: editFormData.surname, 
+          branch: editFormData.stream, 
       };
 
       const { error } = await supabase

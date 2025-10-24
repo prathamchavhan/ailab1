@@ -16,10 +16,9 @@ const HeroSection = () => {
             Expert career Guidence
         </a>
         
-        
-        <h1 className="text-4xl md:text-5xl   text-[#09407F] font-extrabold mb-4 leading-tight">
-            Transform Your Career With <br className="hidden sm:inline font-bold " /> <span className="text-3xl font-bold">Expert Counselling</span>
-        </h1>
+       <h3 className="text-xl md:text-3xl text-[#09407F] font-extrabold mb-7  leading-tight ">
+    Transform Your Career With <br className="hidden sm:inline" /> <span className="text-2xl md:text-5xl font-bold mt-5">Expert Counselling</span>
+</h3>
         
         <p className="max-w-3xl mx-auto  text-lg text-[#09407F] opacity-90 mb-8">
             Get personalized guidance, review your goals, and unlock your potential. Our certified experts provide comprehensive, one-on-one sessions tailored to your needs.
@@ -34,7 +33,7 @@ const HeroSection = () => {
         style={{
             background: 'linear-gradient(to bottom right, #E7F9FF, #8DE4FF)'
         }}>
-        <span className="text-2xl md:text-3xl font-bold text-[#09407F]">5000+</span>
+        <span className="text-2xl md:text-3xl font-bold text-[#e74f1cff]">5000+</span>
         <span className="text-xs md:text-sm font-medium text-[#09407F] opacity-80 mt-1">Careers Transformed</span>
     </div>
 
@@ -43,7 +42,7 @@ const HeroSection = () => {
         style={{
             background: 'linear-gradient(to bottom right, #E7F9FF, #8DE4FF)'
         }}>
-        <span className="text-2xl md:text-3xl font-bold text-[#09407F]">95%</span>
+        <span className="text-2xl md:text-3xl font-bold text-[#e74f1cff]">95%</span>
         <span className="text-xs md:text-sm font-medium text-[#09407F] opacity-80 mt-1">Success Rate</span>
     </div>
 
@@ -52,7 +51,7 @@ const HeroSection = () => {
         style={{
             background: 'linear-gradient(to bottom right, #E7F9FF, #8DE4FF)'
         }}>
-        <span className="text-2xl md:text-3xl font-bold text-[#09407F]">50+</span>
+        <span className="text-2xl md:text-3xl font-bold text-[#e74f1cff]">50+</span>
         <span className="text-xs md:text-sm font-medium text-[#09407F] opacity-80 mt-1">Expert Counsellors</span>
     </div>
 
@@ -61,7 +60,7 @@ const HeroSection = () => {
         style={{
             background: 'linear-gradient(to bottom right, #E7F9FF, #8DE4FF)'
         }}>
-        <span className="text-2xl md:text-3xl font-bold text-[#09407F]">4.9/5</span>
+        <span className="text-2xl md:text-3xl font-bold text-[#e74f1cff]">4.9/5</span>
         <span className="text-xs md:text-sm font-medium text-[#09407F] opacity-80 mt-1">Client Satisfaction</span>
     </div>
 </div>

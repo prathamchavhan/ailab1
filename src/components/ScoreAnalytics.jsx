@@ -106,10 +106,14 @@ export default function ScoreAnalytics({
           </CardHeader>
           <CardContent className="relative flex justify-center items-center h-[90%]">
               <>
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-                  <p className="text-sm text-gray-500">Average</p>
-                  <p className="text-3xl font-bold">{totalAverage}%</p>
-                </div>
+               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
+    
+          
+     <div className="flex flex-col"> 
+  <p className="text-sm text-gray-500 m-0 p-0 leading-none">Average</p>
+  <p className="text-3xl font-bold m-0 p-0 leading-none">{totalAverage}%</p>
+</div>
+       </div>
                 <ChartWrapper>
                   <PieChart>
                     <Pie 

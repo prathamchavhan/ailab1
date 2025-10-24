@@ -4,9 +4,9 @@ import { useState, useEffect, useMemo } from "react";
 import AptitudeScoreDashboard from "@/components/Apptitude/AptitudeScoreDashboard";
 import Apptitude_header from '@/components/Header/Apptitude_header';
 import AptitudeLandingPage from "@/components/Apptitude/AptitudeLandingPage"; 
-
+import { toast} from 'sonner';
 const FALLBACK_QUESTIONS = [
-  // Quantitative Aptitude (10 Questions)
+  
   { question: "If a car travels at 60 km/h, how long does it take to cover 180 km?", options: ["2 hours", "3 hours", "4 hours", "5 hours"], answer: "3 hours", category: 'quantitative' },
   { question: "What is 15% of 200?", options: ["20", "30", "40", "50"], answer: "30", category: 'quantitative' },
   { question: "A sum of money doubles in 5 years at simple interest. What is the rate of interest per annum?", options: ["10%", "15%", "20%", "25%"], answer: "20%", category: 'quantitative' },
@@ -18,7 +18,7 @@ const FALLBACK_QUESTIONS = [
   { question: "How many liters of pure acid are in 10 liters of 30% acid solution?", options: ["2 Liters", "3 Liters", "5 Liters", "7 Liters"], answer: "3 Liters", category: 'quantitative' },
   { question: "A man buys an item for $50 and sells it for $60. What is his profit percentage?", options: ["10%", "20%", "15%", "25%"], answer: "20%", category: 'quantitative' },
 
-  // Logical Reasoning (10 Questions)
+  
   { question: "Find the odd one out: Apple, Banana, Carrot, Grape.", options: ["Apple", "Banana", "Carrot", "Grape"], answer: "Carrot", category: 'logical' },
   { question: "If 'A' is coded as 1, 'B' as 2, and so on, how is 'CAT' coded?", options: ["3120", "31T", "24", "312"], answer: "3120", category: 'logical' },
   { question: "Syllogism: All dogs are animals. All animals are mammals. Therefore, all dogs are mammals.", options: ["True", "False", "Cannot be determined", "Only partially true"], answer: "True", category: 'logical' },
@@ -30,7 +30,7 @@ const FALLBACK_QUESTIONS = [
   { question: "Which diagram best represents the relationship between: 'Continent, Country, State'?", options: ["Three separate circles", "One circle inside another, inside a third", "Two overlapping circles inside a third", "Three overlapping circles"], answer: "One circle inside another, inside a third", category: 'logical' },
   { question: "If P means 'add', Q means 'subtract', R means 'multiply', and S means 'divide', then 18 R 12 S 4 Q 5 P 6 = ?", options: ["50", "55", "53", "60"], answer: "55", category: 'logical' },
 
-  // Verbal Ability (10 Questions)
+
   { question: "Choose the synonym for 'EAGER':", options: ["Indifferent", "Reluctant", "Keen", "Lazy"], answer: "Keen", category: 'verbal' },
   { question: "Choose the antonym for 'PLIABLE':", options: ["Flexible", "Rigid", "Soft", "Bending"], answer: "Rigid", category: 'verbal' },
   { question: "Complete the sentence: She is __ than her brother.", options: ["tall", "taller", "tallest", "more tall"], answer: "taller", category: 'verbal' },
@@ -57,43 +57,44 @@ async function saveScore(level, score, total) {
   } catch (error)
   {
     console.error("Save score error:", error);
+    toast.error("Failed to save your score");
     throw error;
   }
 }
 
-// --- UPDATED to make a single, efficient API call ---
+
 async function generateQuestions(level) {
   console.log("Generating all questions for level:", level);
+  toast.success("wait for few minutes question are generating 🙏");
   try {
-    // Single API call to get all questions at once
+   
     const response = await fetch("/api/generate-questions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ level }), // We only need to send the level
+      body: JSON.stringify({ level }),
     });
 
     if (!response.ok) {
       throw new Error(`Failed to fetch questions. Server status: ${response.status}`);
     }
 
-    const data = await response.json(); // Expected format: { quantitative: [...], logical: [...], verbal: [...] }
+    const data = await response.json(); 
 
-    // Combine the arrays from the response and add the 'category' to each question object
+   
     const quantitativeQs = data.quantitative.map(q => ({ ...q, category: 'quantitative' }));
     const logicalQs = data.logical.map(q => ({ ...q, category: 'logical' }));
     const verbalQs = data.verbal.map(q => ({ ...q, category: 'verbal' }));
 
-    // Return a single flat array containing all questions
     return [...quantitativeQs, ...logicalQs, ...verbalQs];
 
   } catch (error) {
     console.error("Generate questions error:", error);
-    // Re-throw the error so the UI can catch it and display a message
+   toast.error("Failed to generate question set");
     throw error;
   }
 }
 
-// --- CONSTANTS ---
+
 
 const APTITUDE_TYPE_MAP = {
     quantitative: 'Quantitative Aptitude',
@@ -101,21 +102,20 @@ const APTITUDE_TYPE_MAP = {
     verbal: 'Verbal Ability'
 };
 
-// --- COMPONENT ---
+
 
 export default function AptitudeTestPage() {
   const [level, setLevel] = useState("hard");
   const [questions, setQuestions] = useState([]);
   const [userAnswers, setUserAnswers] = useState([]);
   const [score, setScore] = useState(0);
-  const [testState, setTestState] = useState("setup"); // "setup", "active", "finished"
-  const [timer, setTimer] = useState(900); // 15 minutes
+  const [testState, setTestState] = useState("setup"); 
+  const [timer, setTimer] = useState(900);
   const [isLoading, setIsLoading] = useState(false);
   const [activeQuestion, setActiveQuestion] = useState(0); 
   const [error, setError] = useState(null);
   const [performanceData, setPerformanceData] = useState({});
 
-  // --- EFFECTS ---
 
   useEffect(() => {
       if (testState !== "active" || timer === 0) return;
@@ -154,10 +154,11 @@ export default function AptitudeTestPage() {
 
       saveScore(level, finalScore, questions.length).catch((err) => {
         setError("Could not save your score. Please try again.");
+        toast.error("Failed to save your score");
       });
     }
   }, [testState, questions, userAnswers, level]);
-  // --- DATA Memos ---
+ 
 
   const questionsByCategory = useMemo(() => {
       return questions.reduce((acc, question, index) => {
@@ -170,7 +171,7 @@ export default function AptitudeTestPage() {
       }, {});
   }, [questions]);
 
-  // --- HANDLERS ---
+
 
   const handleStartTest = async () => {
     setIsLoading(true);
@@ -178,16 +179,16 @@ export default function AptitudeTestPage() {
     let fetchedQuestions = [];
 
     try {
-      // 1. Attempt to fetch questions from the API
+  
       fetchedQuestions = await generateQuestions(level);
     } catch (err) {
-      // 2. Fallback if API fails
+    
       console.warn("API question generation failed. Using fallback questions.");
-      setError("Failed to fetch custom questions from the server. Loading **pre-built fallback questions** instead.");
-      // Use the static fallback questions
+      setError("Failed to fetch custom questions from the server");
+     toast.error("Failed to fetch");
       fetchedQuestions = FALLBACK_QUESTIONS;
     } finally {
-      // 3. Continue with the test setup using whichever questions were loaded
+     
       if (fetchedQuestions && fetchedQuestions.length > 0) {
         setQuestions(fetchedQuestions);
         setUserAnswers(Array(fetchedQuestions.length).fill(null));
@@ -196,8 +197,9 @@ export default function AptitudeTestPage() {
         setTestState("active");
         setActiveQuestion(0);
       } else {
-        // If even fallback is empty (though it shouldn't be), show a general error
+   
          setError("Could not load any questions for the test. Please check your connection.");
+         toast.error("could not load questions");
       }
       setIsLoading(false);
     }
@@ -207,14 +209,14 @@ export default function AptitudeTestPage() {
     const newAnswers = [...userAnswers];
     newAnswers[originalIndex] = option;
     setUserAnswers(newAnswers);
-    // Set the current question as active for visual feedback
+
     setActiveQuestion(originalIndex); 
   };
   
   const formatTime = (seconds) => `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
   const resetTest = () => { setTestState("setup"); setLevel("hard"); setError(null); };
 
-  // --- RENDER FUNCTIONS ---
+  
 
   const renderSetup = () => (
   <>
@@ -252,14 +254,14 @@ export default function AptitudeTestPage() {
       <div className="min-h-screen bg-gray-50 p-4 sm:p-8 font-sans"> 
        
         <div className="max-w-5xl mx-auto">
-          {/* Top Header */}
+    
           <div className="bg-white p-4 rounded-xl shadow-md flex items-center flex-wrap gap-x-6 gap-y-4">
            <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-start">
-    <span className="font-bold text-lg text-gray-700">Aptitude</span> 
-    
-    {/* The Level Selector Container: Apply flex-wrap here */}
+    <span className="font-bold text-[22px] text-gray-700">Aptitude</span> 
+
+
     <div className="flex items-center flex-wrap gap-8 bg-white rounded-full p-1 sm:gap-10"> 
-      {/* 👆 ADDED: flex-wrap, changed default gap to 'gap-2', and kept 'sm:gap-10' for large screens */}
+      
       {["easy", "medium", "hard"].map((l) => (
         <button
           key={l}
@@ -271,7 +273,7 @@ export default function AptitudeTestPage() {
             borderRadius: '5px'
           }}
         >
-          <span style={{ fontSize: "10px" }}>
+          <span style={{ fontSize: "13px" }}>
             {l.charAt(0).toUpperCase() + l.slice(1)} Level
           </span>
         </button>
@@ -287,8 +289,8 @@ export default function AptitudeTestPage() {
             </div>
           </div>
 
-          {/* Sub-header with Category Navigators and Timer */}
-          <div className="my-8 flex flex-col md:flex-row gap-8">
+         
+          <div className="my-8 flex flex-col md:flex-row gap-8 sticky top-4 z-10 bg-gray-50 py-4 rounded-lg shadow-sm">
             <div className="flex-grow space-y-4">
               {Object.keys(APTITUDE_TYPE_MAP).map(category => (
                 <div key={category} className="flex items-center gap-4">
@@ -296,25 +298,25 @@ export default function AptitudeTestPage() {
                      <span className="w-1 h-6 bg-graident-200 rounded-full"></span>
                      <p className="font-medium text-xs text-black whitespace-nowrap">{APTITUDE_TYPE_MAP[category]}</p>
                   </div>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 ">
                     {questionsByCategory[category]?.map((q, index) => (
                        <a
-  key={q.originalIndex}
-  href={`#q-${q.originalIndex}`}
-  onClick={() => setActiveQuestion(q.originalIndex)}
-  style={{ textDecoration: 'none' }}
-  className={`
-    h-6 w-6 inline-flex items-center bg-white text-black justify-center rounded-full font-bold text-xs
-    transition-colors duration-200
-    ${activeQuestion === q.originalIndex
-      ? 'bg-teal-400 text-black'
-      : userAnswers[q.originalIndex] !== null
-        ? 'bg-gray-500 text-black'
-        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}
-  `}
->
-  {index + 1}
-</a>
+                          key={q.originalIndex}
+                          href={`#q-${q.originalIndex}`}
+                          onClick={() => setActiveQuestion(q.originalIndex)}
+                          style={{ textDecoration: 'none' }}
+                          className={`
+                            h-6 w-6 inline-flex items-center justify-center rounded-full font-bold text-xs
+                            transition-all duration-200 text-black 
+                            ${activeQuestion === q.originalIndex
+                              ? 'bg-teal-100 !text-black ring-2 ring-teal-500' 
+                              : userAnswers[q.originalIndex] !== null
+                                ? 'bg-green-200 text-green-800' 
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-300'} // Unanswered question
+                          `}
+                        >
+                          {index + 1}
+                        </a>
 
                     ))}
                   </div>
@@ -329,7 +331,7 @@ export default function AptitudeTestPage() {
             </div>
           </div>
 
-          {/* Questions List - NOW SHOWS ALL QUESTIONS */}
+
           <div className="space-y-8">
             {Object.keys(questionsByCategory).map(category => (
               <div key={category}>
@@ -343,24 +345,24 @@ export default function AptitudeTestPage() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ">
                       {question.options.map((option, optIndex) => (
                         <button 
-    key={optIndex} 
-    onClick={() => handleAnswerSelect(question.originalIndex, option)} 
-    className={`p-2 text-xs border-2 text-left transition-all duration-200 group ${
-        userAnswers[question.originalIndex] === option 
-            ? "bg-[#BDF5FD] border-[#BDF5FD] ring-2 ring-[#BDF5FD]" 
-            : "bg-gray-100 border-gray-200 hover:border-[#BDF5FD] hover:bg-[#BDF5FD]"
-    }`}
-    style={{
-        borderRadius: '8px' // <-- INLINE CSS FIX: Applies moderate rounding (equivalent to rounded-lg)
-    }}
->
-    <span className={`font-bold mr-3 ${userAnswers[question.originalIndex] === option ? 'text-black' : 'text-gray-700'}`}>
-        {String.fromCharCode(97 + optIndex)})
-    </span>
-    <span className={`${userAnswers[question.originalIndex] === option ? 'text-black' : 'text-gray-700'}`}>
-        {option}
-    </span>
-</button>
+                            key={optIndex} 
+                            onClick={() => handleAnswerSelect(question.originalIndex, option)} 
+                            className={`p-2 text-xs border-2 text-left transition-all duration-200 group ${
+                                userAnswers[question.originalIndex] === option 
+                                    ? "bg-[#BDF5FD] border-[#BDF5FD] ring-2 ring-[#BDF5FD]" 
+                                    : "bg-gray-100 border-gray-200 hover:border-[#BDF5FD] hover:bg-[#BDF5FD]"
+                            }`}
+                            style={{
+                                borderRadius: '8px' 
+                            }}
+                        >
+                            <span className={`font-bold mr-3 ${userAnswers[question.originalIndex] === option ? 'text-black' : 'text-gray-700'}`}>
+                                {String.fromCharCode(97 + optIndex)})
+                            </span>
+                            <span className={`${userAnswers[question.originalIndex] === option ? 'text-black' : 'text-gray-700'}`}>
+                                {option}
+                            </span>
+                        </button>
                       ))}
                       </div>
                   </div>
@@ -370,9 +372,11 @@ export default function AptitudeTestPage() {
             ))}
           </div>
           
-          {/* Central Finish Button */}
+
           <div className="mt-8 flex justify-center">
-             <button onClick={() => setTestState('finished')} className="w-full max-w-xs bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition duration-300 text-xs">
+             <button onClick={() => setTestState('finished')} className="w-full max-w-xs bg-green-600 text-white font-bold py-2 px-4 mb-5 mt-3 hover:bg-green-700 transition duration-300 text-xs"  style={{
+        borderRadius: '8px' 
+    }}>
                   Finish Test
               </button>
           </div>

@@ -107,11 +107,11 @@ export default function Header() {
       else setUserName(currentUser.email?.split("@")[0] || "User");
       
       setAvatarUrl(profile?.avatar_url || null);
-      // ✅ 3. Set college name state
+    
       setCollegeName(profile?.College?.clg_name || null);
 
 
-      // --- Score logic is unchanged ---
+
       const { data: interviewResults } = await supabase
         .from("interview_results")
         .select(`final_score, interview_sessions!inner(user_id)`)
@@ -174,9 +174,9 @@ export default function Header() {
   }%`;
 
   return (
-    <header className="px-4 pt-2">
+    <header className="px-5 pt-3">
       <style dangerouslySetInnerHTML={{ __html: embeddedCSS }} />
-      <div className="mt-2 flex justify-between items-center bg-[#1D3540] text-white px-4 py-4 rounded-[20px] ">
+      <div className="mt-2 flex justify-between items-center bg-[#1D3540] text-white px-7 py-4 rounded-[20px] ">
         <div className="flex items-center gap-4 relative">
           {/* Avatar Button (Unchanged) */}
           <button

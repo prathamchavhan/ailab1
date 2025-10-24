@@ -143,7 +143,7 @@ export default function Header() {
   return (
     <header className="px-2 pt-2">
       <style dangerouslySetInnerHTML={{ __html: embeddedCSS }} />
-      <div className="mt-0 flex justify-between items-center bg-[#1D3540] text-white px-4 py-7 rounded-[20px] ">
+      <div className="mt-1 flex justify-between items-center bg-[#1D3540] text-white px-4 py-4 rounded-[20px] ">
   
         <div className="flex items-center gap-4 relative">
           <button

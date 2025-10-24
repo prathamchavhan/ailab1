@@ -21,12 +21,12 @@ export async function POST(request) {
       return NextResponse.json({ error: 'User not authenticated.' }, { status: 401 });
     }
     
-    // Insert the score into the database
+
     // CHANGED: Use the correct column names: `type`, `level`, and `score`
     const { data, error } = await supabase
       .from('aptitude') // Note: your table is 'aptitude', not 'apptitude'
       .insert({
-        type: type,         // Matches SQL column `type`
+        type: type,         
         level: level,       // Matches SQL column `level`
         score: score,       // Matches SQL column `score`
         user_id: user.id,

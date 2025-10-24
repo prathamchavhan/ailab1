@@ -1,5 +1,3 @@
-// File: app/dashboard/page.js
-
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -11,7 +9,7 @@ import Leaderboard from "../../components/dashbord/Leaderboard";
 import Kpicard from "../../components/dashbord/Kpicard"; 
 import Overall_header from '@/components/Header/Overall_header';
 
-// FIX: Dynamically import the entire ScoreAnalytics component with ssr: false
+
 const ClientScoreAnalytics = dynamic(
   () => import("@/components/dashbord/ScoreAnalytics"),
   { 
@@ -141,9 +139,9 @@ export default function DashboardPage() {
     
     
      
-      {/* 1. Top Section: Leaderboard and Announcement - Spacing is minimized */}
+
       <div className="flex flex-col md:flex-row gap-6 mb-6"> 
-        <div className="flex-grow mt-5">
+        <div className="flex-grow mt-7">
           <Leaderboard />
         </div>
         <div className="hidden lg:block w-full md:w-1/4 md:min-w-[250px] md:max-w-[300px]">
@@ -152,12 +150,12 @@ export default function DashboardPage() {
       </div>
       
 
-      {/* 2. KPI Section - Spacing is minimized */}
-      <div className="mb-4"> 
+   
+      <div className="mb-6"> 
           <Kpicard />
       </div>
       
-      {/* 3. Score Analytics Section - Using the dynamic import component */}
+     
       <div className="mt-0">
           <ClientScoreAnalytics
             interviewDomains={interviewDomains}

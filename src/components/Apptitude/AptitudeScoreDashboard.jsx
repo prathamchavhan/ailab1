@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 import Announcement from '@/components/Announcement'; 
 import Apptitude_header from '@/components/Header/Apptitude_header';
-
+import { toast} from 'sonner';
 const APTITUDE_TYPE_MAP = {
   quantitative: "Quantitative Aptitude",
   logical: "Logical Reasoning",
@@ -59,6 +59,7 @@ export default function AptitudeScoreDashboard({
         setRecommendations(data.recommendations);
       } catch (err) {
         console.error("Recommendations fetch error:", err);
+        toast.error("Failed to fetch recommendations.");
       } finally {
         setIsRecsLoading(false);
       }

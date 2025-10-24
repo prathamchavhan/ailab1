@@ -11,10 +11,10 @@ export default function AptitudeLandingPage({ level, setLevel, onStartTest, isLo
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
-          {/* --- LEFT COLUMN --- */}
+
           <div className="lg:col-span-2 space-y-6">
             
-            {/* Aptitude Section Container */}
+        
             <div className=" p-6 rounded-lg ">
           <p className="text-xl font-bold mb-4 bg-[#09407F] bg-clip-text text-transparent">
   Aptitude
@@ -25,7 +25,7 @@ export default function AptitudeLandingPage({ level, setLevel, onStartTest, isLo
                   Level:
                 </span>
                 
-                {/* Level Buttons Container with Gradient Border */}
+               
                 <div
                   className="p-0.5 rounded-md"
                   style={{
