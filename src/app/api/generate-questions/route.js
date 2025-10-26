@@ -1,12 +1,14 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
-
+// 1. Import Supabase helpers
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { cookies } from "next/headers";
 
 async function generateAptitudeCategory(genAI, level, category) {
   console.log(`Starting generation for: ${category} (Level: ${level})`);
   
   const model = genAI.getGenerativeModel({
-    model: "gemini-2.5-flash-preview-09-2025",
+    model: "gemini-2.5-flash", // Using latest flash model
     generationConfig: {
       responseMimeType: "application/json",
     }
@@ -29,10 +31,22 @@ async function generateAptitudeCategory(genAI, level, category) {
 export async function POST(request) {
   console.log("API route '/api/generate' was hit.");
 
-  // Get API keys from environment variables and split them
+  // 2. Create the Supabase client for Route Handlers
+  const supabase = createRouteHandlerClient({ cookies });
+
+  // 3. Get the authenticated user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized user" }, { status: 401 });
+  }
+
+  // Get API keys from environment variables and split them (SECURE VERSION)
   const apiKeys = (process.env.GEMINI_API_KEYS || "").split(',');
   if (!apiKeys.length || !apiKeys[0]) {
-    console.error("NEXT_PUBLIC_GEMINI_API_KEY environment variable is not set or empty.");
+    console.error("GEMINI_API_KEYS environment variable is not set or empty.");
     return NextResponse.json(
       { error: "API keys are not configured on the server." },
       { status: 500 }
@@ -41,7 +55,6 @@ export async function POST(request) {
 
   try {
     const body = await request.json();
-
 
     const {
       level,
@@ -68,10 +81,10 @@ export async function POST(request) {
         let isInterviewFormat = false; // Flag to track format
 
         if ((jobRole && experienceLevel && industry) || (domain && company) || domain) {
-          // *** THIS IS YOUR ORIGINAL INTERVIEW LOGIC - UNCHANGED ***
+          // *** THIS IS YOUR ORIGINAL INTERVIEW LOGIC ***
           isInterviewFormat = true;
           const model = genAI.getGenerativeModel({
-            model: "gemini-2.5-flash-preview-09-2025", 
+            model: "gemini-2.5-flash", // ✅ FIXED: Using the correct, active model
             generationConfig: {
               responseMimeType: "application/json",
             }
@@ -111,6 +124,7 @@ export async function POST(request) {
           try {
             let responseText = rawText.trim();
 
+            // ... (your existing JSON cleaning logic) ...
             if (responseText.startsWith('```json')) {
               const startIndex = responseText.indexOf('```json') + 7;
               const endIndex = responseText.lastIndexOf('```');
@@ -121,30 +135,79 @@ export async function POST(request) {
                 responseText = responseText.replace(/^```json\s*/, '').trim();
               }
             }
-            
             if (responseText.startsWith('`')) {
               responseText = responseText.substring(1).trim();
             }
 
             const jsonData = JSON.parse(responseText);
-
-            const sessionId = `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
             const questionsArray = Array.isArray(jsonData) ? jsonData : (jsonData.questions || []);
 
+            // --- 4. START: NEW DATABASE LOGIC ---
+
+            // A. Create the session in 'interview_sessions'
+            console.log("Creating interview session in database...");
+            const { data: sessionData, error: sessionError } = await supabase
+              .from("interview_sessions")
+              .insert({
+                user_id: user.id,
+                type: exp,
+                domain: domain || role,
+                round: currentRound,
+                company: company || null,
+              })
+              .select("id") // Get the new session's UUID back
+              .single();
+
+            if (sessionError) {
+              console.error("Supabase session insert error:", sessionError);
+              throw new Error(`Failed to create interview session: ${sessionError.message}`);
+            }
+
+            const newSessionId = sessionData.id;
+            console.log(`Successfully created session with ID: ${newSessionId}`);
+
+            // B. Format questions for 'interview_question' table
+            const questionsToInsert = questionsArray.map(q => ({
+              session_id: newSessionId,
+              question: q.question,
+              round: currentRound,
+              // Create a unique code for the question, e.g., 'uuid::q1'
+              question_code: `${newSessionId}::${q.id}` 
+            }));
+
+            // C. Insert all questions into 'interview_question'
+            console.log(`Inserting ${questionsToInsert.length} questions into database...`);
+            const { error: questionError } = await supabase
+              .from("interview_question")
+              .insert(questionsToInsert);
+
+            if (questionError) {
+              console.error("Supabase question insert error:", questionError);
+              // Note: You might want to delete the session you just created for cleanup
+              await supabase.from("interview_sessions").delete().eq("id", newSessionId);
+              throw new Error(`Failed to save questions: ${questionError.message}`);
+            }
+
+            console.log("Successfully saved questions to database.");
+            
+            
+
+
+            // 5. Return the REAL session ID from the database
             return NextResponse.json({
-              sessionId,
+              sessionId: newSessionId, // Send the real UUID
               questions: questionsArray,
               config: { level, round, domain, company, jobRole, experienceLevel, industry }
             });
             
             
           } catch (parseError) {
-            console.error("JSON Parsing failed for LLM output (Interview):", parseError);
+            console.error("JSON Parsing or DB error (Interview):", parseError);
             const originalRawText = rawText; 
 
             return NextResponse.json(
               {
-                error: "Failed to parse generated questions (invalid JSON format from LLM).",
+                error: "Failed to parse or save generated questions.",
                 details: parseError.message,
                 raw_response_snippet: originalRawText.substring(0, 500) + (originalRawText.length > 500 ? '...' : ''),
               },
@@ -155,6 +218,7 @@ export async function POST(request) {
 
         } else {
      
+          // --- THIS IS YOUR EXISTING APTITUDE LOGIC (UNCHANGED) ---
           console.log("Starting parallel generation for aptitude test...");
           const categories = ["quantitative", "logical", "verbal"];
           const currentLevel = level || "medium";
@@ -177,6 +241,7 @@ export async function POST(request) {
               const category = categories[i];
               let responseText = rawResults[i].trim();
               
+              // ... (your existing JSON cleaning logic) ...
               if (responseText.startsWith('```json')) {
                 const startIndex = responseText.indexOf('```json') + 7;
                 const endIndex = responseText.lastIndexOf('```');
@@ -189,8 +254,6 @@ export async function POST(request) {
               if (responseText.startsWith('`')) {
                 responseText = responseText.substring(1).trim();
               }
-
-             
               if (!responseText.startsWith('[')) {
                  console.warn(`Response for ${category} did not start with '['. Attempting to fix...`);
                  const arrayStartIndex = responseText.indexOf('[');

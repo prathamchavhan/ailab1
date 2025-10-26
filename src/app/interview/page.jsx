@@ -485,8 +485,6 @@
 // ...existing code...
 
 
-
-
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
@@ -566,13 +564,19 @@ function InterviewPageContent() {
           const questions = JSON.parse(storedQuestions);
           const config = JSON.parse(storedConfig);
 
-          setQuestions(questions);
+     
+          const formattedQuestions = questions.map(q => ({
+            ...q,
+            id: `${storedSessionId}::${q.id}` 
+          }));
+
+          setQuestions(formattedQuestions); 
           setDomain(config.jobRole || "Interview");
           setLevel(config.experienceLevel || "");
           setRound("1");
 
           const initialAnswers = {};
-          questions.forEach((q, index) => {
+          formattedQuestions.forEach((q, index) => { 
             initialAnswers[index] = "";
           });
           setAnswers(initialAnswers);
@@ -625,15 +629,22 @@ function InterviewPageContent() {
           setRound(sessions[0].round);
         }
 
+        
         const { data: qData } = await supabase
           .from("interview_question")
-          .select("id, question")
+          .select("question_code, question") 
           .eq("session_id", sessionId);
 
         if (qData && qData.length > 0) {
-          setQuestions(qData);
+        
+           const formattedQuestions = qData.map(q => ({
+            id: q.question_code, 
+            question: q.question
+          }));
+
+          setQuestions(formattedQuestions);
           const initialAnswers = {};
-          qData.forEach((q, index) => {
+          formattedQuestions.forEach((q, index) => {
             initialAnswers[index] = "";
           });
           setAnswers(initialAnswers);
@@ -675,7 +686,7 @@ function InterviewPageContent() {
   }, []);
 
   useEffect(() => {
-    // ✅ FIX: Wait until voices are loaded before trying to speak
+
     if (availableVoices.length === 0) {
       return;
     }
@@ -723,7 +734,7 @@ function InterviewPageContent() {
         );
         utterance.voice = availableVoices[0];
       } else {
-        // This part should no longer be reachable due to the guard clause above
+       
         console.error("No voices available for speech synthesis.");
       }
 
@@ -743,20 +754,19 @@ function InterviewPageContent() {
         if (event.data.size > 0) audioChunks.current.push(event.data);
       };
 
-      // --- THIS IS THE MODIFIED SECTION ---
+      
       mediaRecorder.onstop = async () => {
         const audioBlob = new Blob(audioChunks.current, { type: "audio/webm" });
 
         try {
-          // Call server route to transcribe
-          const qId = questions[currentIndex]?.id ?? null;
+   
+          const qId = questions[currentIndex]?.id ?? null; 
           const data = await uploadRecording(audioBlob, sessionId, qId);
 
           if (data?.text) {
             setTranscript(data.text);
             
-            // The redundant upsert call has been REMOVED from here.
-            // The data will now only be saved inside handleNext().
+           
 
           } else {
             console.error("No transcription text found:", data);
@@ -764,11 +774,11 @@ function InterviewPageContent() {
         } catch (err) {
           console.error("Transcription error:", err);
         } finally {
-          // clear chunks for next recording
+
           audioChunks.current = [];
         }
       };
-      // --- END OF MODIFIED SECTION ---
+ 
 
       mediaRecorder.start();
       setListening(true);
@@ -788,7 +798,7 @@ function InterviewPageContent() {
     setListening(false);
   };
 
-  // ✅ Next Question Handler
+
   const handleNext = async () => {
     if (!sessionId || !questions[currentIndex]) return;
 
@@ -796,7 +806,7 @@ function InterviewPageContent() {
     const answerText = transcript.trim() || "(No response)";
 
     try {
-      // This is now the ONLY place the answer is saved.
+     
       await supabase.from("interview_answers").upsert(
         [
           {
@@ -839,7 +849,7 @@ function InterviewPageContent() {
   const handleConfirmExit = async () => {
     setIsExiting(true);
     stopListening();
-    router.push("/");
+    router.push("/ai-dashboard");
   };
 
   const radarData = [

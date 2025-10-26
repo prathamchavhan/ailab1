@@ -12,7 +12,7 @@ export default function DashboardPage() {
       {/* Header */}
       <Header />
 
-      {/* Main Content */}
+    
       <div>
         {/* Dashboard Layout */}
         <div className="p-6 grid grid-cols-3 gap-6">
@@ -24,7 +24,9 @@ export default function DashboardPage() {
 
           {/* Right Section */}
           <div className="space-y-6">
-            <Announcement />
+            <div className="w-full  pl-11">
+              <Announcement />
+            </div>
             <Dashboard />
           </div>
         </div>

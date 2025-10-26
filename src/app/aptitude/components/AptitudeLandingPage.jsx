@@ -2,8 +2,9 @@
 
 import React from 'react';
 import Announcement from '@/components/Announcement'; 
-import Aptitude_leaderboard from '@/components/Apptitude/Aptitude_leaderboard';
-import AptitudePerformanceChart from '@/components/Apptitude/AptitudePerformanceChart'; 
+import Aptitude_leaderboard from '@/app/aptitude/components/Aptitude_leaderboard';
+import AptitudePerformanceChart from '@/app/aptitude/components/AptitudePerformanceChart'; 
+import { Divide } from 'lucide-react';
 
 export default function AptitudeLandingPage({ level, setLevel, onStartTest, isLoading, error }) {
   return (
@@ -96,7 +97,9 @@ export default function AptitudeLandingPage({ level, setLevel, onStartTest, isLo
 
           {/* --- RIGHT COLUMN --- */}
           <div className="lg:col-span-1 space-y-6">
-            <Announcement />
+           <div className='w-full  pl-11'>
+    <Announcement />
+</div>
             <Aptitude_leaderboard/>
           </div>
         </div>

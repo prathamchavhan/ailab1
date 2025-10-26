@@ -4,7 +4,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Calendar, CheckSquare, Clock, Edit, FileText, Briefcase, BarChart, HardHat, Save, Camera } from 'lucide-react';
-import Calender  from "../../components/calender";
+import Calender  from "@/app/profilemain/components/calender";
 import Overall_header from "@/components/Header/Overall_header";
 import { toast} from 'sonner';
 

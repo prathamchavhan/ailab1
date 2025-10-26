@@ -5,13 +5,13 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import dynamic from 'next/dynamic'; 
 
 import Announcement from "../../components/Announcement";
-import Leaderboard from "../../components/dashbord/Leaderboard";
-import Kpicard from "../../components/dashbord/Kpicard"; 
+import Leaderboard from "@/app/dashboard/components/Leaderboard";
+import Kpicard from "@/app/dashboard/components/Kpicard"; 
 import Overall_header from '@/components/Header/Overall_header';
 
 
 const ClientScoreAnalytics = dynamic(
-  () => import("@/components/dashbord/ScoreAnalytics"),
+  () => import("@/app/dashboard/components/ScoreAnalytics"),
   { 
     ssr: false,
     loading: () => <div className="h-[400px] grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -80,16 +80,72 @@ export default function DashboardPage() {
   }, [supabase, processData]);
 
   const fetchInterviewData = useCallback(async (userId) => {
-    const { data } = await supabase.from('avee_interview').select('domain, score').eq('user_id', userId);
+    // 1. Fetch data
+    const { data } = await supabase
+      .from('interview_results')
+      .select(`
+        score: final_score, 
+        interview_sessions ( domain )
+      `)
+      .eq('user_id', userId);
+
     if (data) {
-      setInterviewData(data);
-      const { chartData, types } = processData(data, 'domain');
+      // 2. Flatten data
+      const flattenedData = data
+        .map(item => ({
+          score: item.score,
+          domain: item.interview_sessions?.domain 
+        }))
+        .filter(item => item.score != null && item.domain != null);
+
+      // 3. Helper function to normalize domain names
+      const normalizeDomainName = (domainStr) => {
+        if (!domainStr) return 'Other';
+        const lower = domainStr.toLowerCase();
+
+        // ⭐ MODIFICATION: Renamed "Information Technology" to "Interview"
+        if (lower.includes('information technology') || lower.includes('it') || lower.includes('formation tech')) {
+          return 'Interview';
+        }
+        if (lower.includes('artificial intelligence') || lower.includes('machine learning')) {
+          return 'AI & Machine Learning';
+        }
+        if (lower.includes('data science') || lower.includes('analytics')) {
+          return 'Data Science & Analytics';
+        }
+        if (lower.includes('hr')) {
+          return 'HR';
+        }
+        
+        return domainStr; 
+      };
+
+      // 4. Apply the cleaner to the data
+      const cleanData = flattenedData.map(item => ({
+        ...item,
+        domain: normalizeDomainName(item.domain) // Overwrite domain with the clean version
+      }));
+      
+      // 5. ⭐ MODIFICATION: Updated exclude list
+      //    We still filter AI and Data Science, but "Interview" (formerly IT) is now allowed.
+      const excludedDomains = new Set([
+        'AI & Machine Learning',
+        'Data Science & Analytics'
+      ]);
+
+      // 6. Filter the clean data
+      const filteredData = cleanData.filter(item => !excludedDomains.has(item.domain));
+
+      // 7. Use the 'filteredData' for everything else
+      setInterviewData(filteredData); // Use filtered data
+      
+      const { chartData, types } = processData(filteredData, 'domain'); // Use filtered data
       setInterviewChartData(chartData);
       setInterviewDomains(types);
       setInterviewFilters(types.reduce((acc, type) => ({ ...acc, [type]: true }), {}));
     }
   }, [supabase, processData]);
-
+  
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
       if (session?.user) {
@@ -103,9 +159,10 @@ export default function DashboardPage() {
   }, [router, supabase, fetchAptitudeData, fetchInterviewData]);
 
   const calculateAverage = (data) => {
-    if (data.length === 0) return 0;
-    const total = data.reduce((sum, item) => sum + item.score, 0);
-    return Math.round(total / data.length);
+    const validAttempts = data.filter(item => item.score > 0);
+    if (validAttempts.length === 0) return 0;
+    const total = validAttempts.reduce((sum, item) => sum + item.score, 0);
+    return Math.round(total / validAttempts.length);
   };
   
   useEffect(() => {
@@ -132,46 +189,40 @@ export default function DashboardPage() {
 
   return (
     <>
-    <div className="mt-4">
-      <Overall_header />
+      <div className="mt-4">
+        <Overall_header />
       </div>
-     <main className="p-4 sm:p-6 lg:p-8"> 
-    
-    
-     
 
-      <div className="flex flex-col md:flex-row gap-6 mb-6"> 
-        <div className="flex-grow mt-7">
-          <Leaderboard />
+      <main className="p-4 sm:p-6 lg:p-8"> 
+        <div className="flex flex-col md:flex-row gap-6 mb-6"> 
+          <div className="flex-grow mt-7">
+            <Leaderboard />
+          </div>
+          <div className="hidden lg:block w-full md:w-1/4 md:min-w-[250px] md:max-w-[300px]">
+            <Announcement />
+          </div>
         </div>
-        <div className="hidden lg:block w-full md:w-1/4 md:min-w-[250px] md:max-w-[300px]">
-          <Announcement />
+        
+        <div className="mb-6"> 
+            <Kpicard />
         </div>
-      </div>
-      
-
-   
-      <div className="mb-6"> 
-          <Kpicard />
-      </div>
-      
-     
-      <div className="mt-0">
-          <ClientScoreAnalytics
-            interviewDomains={interviewDomains}
-            interviewFilters={interviewFilters}
-            interviewChartData={interviewChartData}
-            aptitudeTypes={aptitudeTypes}
-            aptitudeFilters={aptitudeFilters}
-            aptitudeChartData={aptitudeChartData}
-            overallPieData={overallPieData}
-            totalAverage={totalAverage}
-            expandedChart={expandedChart}
-            handleChartClick={handleChartClick}
-            handleFilterChange={handleFilterChange}
-          />
-      </div>
-    </main>
+        
+        <div className="mt-0">
+            <ClientScoreAnalytics
+              interviewDomains={interviewDomains}
+              interviewFilters={interviewFilters}
+              interviewChartData={interviewChartData}
+              aptitudeTypes={aptitudeTypes}
+              aptitudeFilters={aptitudeFilters}
+              aptitudeChartData={aptitudeChartData}
+              overallPieData={overallPieData}
+              totalAverage={totalAverage}
+              expandedChart={expandedChart}
+              handleChartClick={handleChartClick}
+              handleFilterChange={handleFilterChange}
+            />
+        </div>
+      </main>
     </>
   );
 }

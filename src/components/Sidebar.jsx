@@ -35,7 +35,7 @@ const navLinks = [
   { href: '/news', label: 'News', icon: Newspaper },
   { href: '/event_challenge', label: 'Challenges', icon: CalendarDays },
   { href: '/assignment', label: 'Assignement', icon: BookOpenCheck },
-  { href: '/carrer', label: 'Career Counselling', icon: MessagesSquare },
+  { href: '/carrercounselling', label: 'Career Counselling', icon: MessagesSquare },
   { href: '/billing', label: 'Billing', icon: CreditCard },
   { href: '/profilemain', label: 'Profile', icon: User },
 

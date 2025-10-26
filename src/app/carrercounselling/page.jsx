@@ -1,7 +1,7 @@
 
-import Hero from '@/components/Hero'; 
-import FiveStepProcess from '@/components/FiveStepProcess';
-import ServiceCards from '@/components/ServiceCards';
+import Hero from '@/app/carrercounselling/components/Hero'; 
+import FiveStepProcess from '@/app/carrercounselling/components/FiveStepProcess';
+import ServiceCards from '@/app/carrercounselling/components/ServiceCards';
 import Overall_header from '@/components/Header/Overall_header';
 // ... rest of the code
 

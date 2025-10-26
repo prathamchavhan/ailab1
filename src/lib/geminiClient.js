@@ -9,5 +9,5 @@ if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
 const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY);
 
 // ✅ Export both model and client
-export const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+export const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 export default genAI;

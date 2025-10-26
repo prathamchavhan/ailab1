@@ -208,6 +208,9 @@
 //   const valid = arr.filter((n) => typeof n === "number" && !isNaN(n));
 //   return valid.length ? valid.reduce((a, b) => a + b, 0) / valid.length : 0;
 // }
+
+
+
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabaseServer";
 import { model as geminiModel } from "@/lib/geminiClient";

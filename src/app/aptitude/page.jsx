@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import AptitudeScoreDashboard from "@/components/Apptitude/AptitudeScoreDashboard";
+import AptitudeScoreDashboard from "@/app/aptitude/components/AptitudeScoreDashboard";
 import Apptitude_header from '@/components/Header/Apptitude_header';
-import AptitudeLandingPage from "@/components/Apptitude/AptitudeLandingPage"; 
+import AptitudeLandingPage from "@/app/aptitude/components/AptitudeLandingPage"; 
 import { toast} from 'sonner';
 const FALLBACK_QUESTIONS = [
   

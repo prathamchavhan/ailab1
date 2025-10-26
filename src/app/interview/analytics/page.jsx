@@ -33,6 +33,10 @@ function AnalyticsPageContent() {
 
     const fetchResult = async () => {
       try {
+        // ✅ --- THIS IS THE FIX ---
+        // We now order by 'created_at' and limit to 1.
+        // This prevents the ".single()" error if there are duplicate rows
+        // by only selecting the most recent result.
         const { data: result, error } = await supabase
           .from("interview_results")
           .select(
@@ -44,7 +48,11 @@ function AnalyticsPageContent() {
           `
           )
           .eq("session_id", sessionId)
-          .single();
+          .order("created_at", { ascending: false }) // Get newest first
+          .limit(1) // Only take the newest one
+          .single(); // Now this is safe to use
+
+        // ✅ --- END OF FIX ---
 
         if (error || !result) {
           console.error("Error fetching analytics:", error || {});
@@ -228,7 +236,7 @@ function AnalyticsPageContent() {
                 {/* Practice Again */}
                 <div className="flex justify-start mt-5">
                   <button
-                    onClick={() => (window.location.href = "/")}
+                    onClick={() => (window.location.href = "/ai-dashboard")}
                     className="w-[282px] h-[47px] rounded-[12px] bg-gradient-to-r from-[#2DC5DA] to-[#2B84D0] 
                                text-white font-[Inter] font-semibold text-[20px] shadow hover:opacity-90 transition-all"
                   >
