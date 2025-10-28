@@ -193,20 +193,27 @@ export default function DashboardPage() {
         <Overall_header />
       </div>
 
-      <main className="p-4 sm:p-6 lg:p-8"> 
-        <div className="flex flex-col md:flex-row gap-6 mb-6"> 
-          <div className="flex-grow mt-7">
-            <Leaderboard />
-          </div>
-          <div className="hidden lg:block w-full md:w-1/4 md:min-w-[250px] md:max-w-[300px]">
-            <Announcement />
-          </div>
-        </div>
-        
-        <div className="mb-6"> 
-            <Kpicard />
-        </div>
-        
+     <main className="p-4 sm:p-6 lg:p-8">
+
+  <div
+    className="flex flex-col md:flex-row mb-6"
+    style={{ marginTop: '1.75rem' }} 
+  >
+   
+    <div className="flex-grow">
+      <Leaderboard />
+    </div>
+    
+    
+    <div className="hidden lg:block md:w-1/4 md:min-w-[250px] md:max-w-[300px]">
+      <Announcement />
+    </div>
+  </div>
+
+  <div className="mb-6">
+    <Kpicard />
+  </div>
+
         <div className="mt-0">
             <ClientScoreAnalytics
               interviewDomains={interviewDomains}

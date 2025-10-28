@@ -100,6 +100,9 @@
 // }
 // File: components/Leaderboard.js
 
+
+
+
 "use client";
 import { useEffect, useState } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
@@ -111,14 +114,12 @@ export default function LeaderboardPage() {
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
-      // FIX 1: Removed extra parenthesis from the function name
       const { data, error } = await supabase.rpc('get_top_5_leaderboard');
 
       if (error) {
         console.error("Error fetching leaderboard:", error);
       } else {
-        // FIX 3: Only set data if there is no error
-        console.log(data); // 'data' is your leaderboard
+        console.log(data); 
         setLeaderboard(data);
       }
     };
@@ -132,40 +133,43 @@ export default function LeaderboardPage() {
 
       <CardContent className="p-0 overflow-x-auto">
         <table
-          className="shadow-md w-full table-fixed"
+          className="shadow-md table-fixed" 
           style={{
             background: 'linear-gradient(to bottom, #EAFFFD, #F3FFFE, #FDFFFF)'
           }}
         >
           <thead>
             <tr className="text-left text-[#152935] font-semibold text-sm">
-              <th className="px-3 py-2 w-[80px] text-center">
+              {/* FIX: Increased HORIZONTAL padding */}
+              <th className="px-4 py-2 w-[80px] text-center">
                 <div className="bg-teal-600 text-white px-2 py-1 rounded-lg text-sm font-bold w-fit mx-auto">
                   Rank
                 </div>
               </th>
 
-              <th className="px-4 py-2 w-1/4 text-left">
+              {/* FIX: Increased HORIZONTAL padding */}
+              <th className="px-4 py-2 text-left">
                 <div className="bg-teal-600 text-white px-2 py-1 rounded-lg text-sm font-bold w-fit mr-4">
                   Name
                 </div>
               </th>
 
-              <th className="px-3 py-2 w-1/4 text-center">
-                <div className="bg-teal-600 text-white text-right px-2 py-1 rounded-lg text-sm font-bold w-fit ml-left">
+              {/* FIX: Increased HORIZONTAL padding */}
+              <th className="px-4 py-2 text-center">
+                <div className="bg-teal-600 text-white px-2 py-1 rounded-lg text-sm font-bold w-fit mx-auto">
                   College
                 </div>
               </th>
 
-              {/* Score - Small fixed width */}
-              <th className="px-2 py-2 w-[80px] text-center">
+              {/* FIX: Increased HORIZONTAL padding */}
+              <th className="px-4 py-2 w-[80px] text-center">
                 <div className="bg-teal-600 text-white px-2 py-1 rounded-lg text-sm font-bold w-fit mx-auto">
                   Score
                 </div>
               </th>
 
-              {/* Avg. Score - Small fixed width */}
-              <th className="px-3 py-2 w-[100px] text-center">
+              {/* FIX: Increased HORIZONTAL padding */}
+              <th className="px-4 py-2 w-[100px] text-center">
                 <div className="bg-teal-600 text-white px-2 py-1 rounded-lg text-sm font-bold w-fit mx-auto">
                   Avg.Score
                 </div>
@@ -176,20 +180,16 @@ export default function LeaderboardPage() {
            
             {leaderboard && leaderboard.map((user, index) => (
               <tr key={index} className="border-b text-[#09407F]">
-                <td className="px-3 py-2 font-bold w-[80px] text-center"># {index + 1}</td>
-
-               
-                <td className="px-4 py-2 w-1/4 font-medium truncate">{user.name}</td>
-
-               
-                <td className="px-4 py-2 w-1/4 text-[15px] font-medium truncate">{user.clg_name}</td>
-
-             
-                <td className="px-2 py-2 w-[80px] text-center font-medium">{user.combined_total_score}</td>
-                
-
-                <td className="px-3 py-2 w-[100px] text-center font-medium">
-            
+                {/* FIX: Increased HORIZONTAL padding */}
+                <td className="px-4 py-2 font-bold w-[80px] text-center"># {index + 1}</td>
+                {/* FIX: Increased HORIZONTAL padding */}
+                <td className="px-4 py-2 font-medium truncate">{user.name}</td>
+                {/* FIX: Increased HORIZONTAL padding */}
+                <td className="px-4 py-2 text-[15px] font-medium truncate">{user.clg_name}</td>
+                {/* FIX: Increased HORIZONTAL padding */}
+                <td className="px-4 py-2 w-[80px] text-center font-medium">{user.combined_total_score}</td>
+                {/* FIX: Increased HORIZONTAL padding */}
+                <td className="px-4 py-2 w-[100px] text-center font-medium">
                   {user.combined_avg_score ? user.combined_avg_score.toFixed(2) : '0.00'}
                 </td>
               </tr>
@@ -199,4 +199,4 @@ export default function LeaderboardPage() {
       </CardContent>
     </main>
   );
-}
+} 

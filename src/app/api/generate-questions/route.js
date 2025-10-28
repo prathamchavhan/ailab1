@@ -95,7 +95,7 @@ export async function POST(request) {
           const exp = experienceLevel || level || "Entry";
           const numQuestions = numberOfQuestions || 10;
           const currentRound = round || "1"; // Use the round variable
-
+const companyContext = company ? `Specific company context: ${company}` : "";
           const promptTemplate = `
             Generate ${numQuestions} question bank questions for the domain "${domain}".
             
@@ -103,6 +103,8 @@ export async function POST(request) {
             Difficulty Level: ${exp}
             Target Role: ${role}
             Industry: ${industryType}
+            Industry: ${industryType}
+            ${companyContext}
             Question Types: ${interviewType || "mixed"}
             
             Return a JSON array of objects where each object has:

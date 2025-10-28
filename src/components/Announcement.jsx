@@ -54,7 +54,7 @@ export default function Announcement() {
   const AdContent = (
     <>
       {ad.image_url && (
-        <div className="relative w-[210px] h-[210px]">
+        <div className="relative w-[280px] h-[270px]">
           <img
             src={ad.image_url}
             // Using a generic alt text since the ad.content is no longer displayed

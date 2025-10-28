@@ -250,7 +250,6 @@ export default function PerformanceChart() {
             <p className="text-xl font-semibold text-[#09407F]">
               Performance Over Time
             </p>
-            <span className="view-report-link">View Full Report</span>
           </div>
 
           <ResponsiveContainer width="100%" height={350}>

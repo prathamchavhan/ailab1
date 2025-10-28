@@ -215,6 +215,9 @@ import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabaseServer";
 import { model as geminiModel } from "@/lib/geminiClient";
 
+// 1. ADDED: Prevents caching of this API route
+export const dynamic = "force-dynamic";
+
 // Utility
 function average(arr) {
   const valid = arr.filter((n) => typeof n === "number" && !isNaN(n));
@@ -222,8 +225,11 @@ function average(arr) {
 }
 
 export async function POST(req) {
+  let sessionId = null; // Declare sessionId here for broader logging scope
   try {
-    const { sessionId } = await req.json();
+    const body = await req.json();
+    sessionId = body.sessionId; // Assign sessionId
+
     if (!sessionId) {
       return NextResponse.json({ error: "Missing sessionId" }, { status: 400 });
     }
@@ -235,6 +241,7 @@ export async function POST(req) {
       .eq("session_id", sessionId);
 
     if (answersError || !answers?.length) {
+      console.warn(`[${sessionId}] No answers found or error:`, answersError);
       return NextResponse.json({ error: "No answers found" }, { status: 404 });
     }
 
@@ -242,6 +249,12 @@ export async function POST(req) {
       question: a.interview_question?.question || `Question ${i + 1}`,
       answer: a.response || "",
     }));
+
+    // 2. ADDED: Debug log to check the exact data being sent
+    console.log(
+      `DEBUG [${sessionId}]: Sending ${qas.length} QAs to Gemini:`,
+      JSON.stringify(qas, null, 2)
+    );
 
     // 2️⃣ Fetch user_id
     const { data: sessionData, error: sessionError } = await supabase
@@ -251,6 +264,7 @@ export async function POST(req) {
       .single();
 
     if (sessionError || !sessionData?.user_id) {
+      console.error(`[${sessionId}] Invalid session:`, sessionError);
       return NextResponse.json({ error: "Invalid session" }, { status: 500 });
     }
 
@@ -274,7 +288,9 @@ Return valid JSON:
 ]
 `;
 
-  const FASTAPI_URL = process.env.NEXT_PUBLIC_ML_API_URL || "http://127.0.0.1:8000/evaluate";
+    const FASTAPI_URL =
+      process.env.NEXT_PUBLIC_ML_API_URL ||
+      "https://score-model-b7hcdfa4e4fed9b9.centralindia-01.azurewebsites.net/evaluate";
 
     // 4️⃣ Run Gemini + ML in parallel
     const [geminiResult, mlResponse] = await Promise.allSettled([
@@ -288,17 +304,59 @@ Return valid JSON:
 
     // 5️⃣ Parse Gemini output safely
     let geminiEvaluation = [];
+    let rawGeminiText = ""; // To store raw text for debugging
     if (geminiResult.status === "fulfilled") {
       try {
-        const rawText = await geminiResult.value.response.text();
-        const cleanText = rawText.replace(/```json/gi, "").replace(/```/g, "").trim();
+        rawGeminiText = await geminiResult.value.response.text();
+        const cleanText = rawGeminiText
+          .replace(/```json/gi, "")
+          .replace(/```/g, "")
+          .trim();
+        
+        // Handle empty or malformed responses
+        if (!cleanText.startsWith("[")) {
+            throw new Error("Response is not a JSON array.");
+        }
+        
         geminiEvaluation = JSON.parse(cleanText);
+
       } catch (err) {
-        console.warn("⚠️ Gemini JSON parse failed:", err);
-        geminiEvaluation = [];
+        // 3. UPDATED: Gracefully handle JSON parse failure instead of scoring 0
+        console.error(
+          `❌ [${sessionId}] Gemini JSON parse failed:`,
+          err.message
+        );
+        console.warn(`[${sessionId}] Raw Gemini Text:`, rawGeminiText);
+        
+        // Create a fallback evaluation with a neutral 5/10 score
+        geminiEvaluation = qas.map((q) => ({
+          question: q.question,
+          score: 5, 
+          feedback:
+            "AI evaluation failed to parse. Score is a default placeholder.",
+        }));
       }
     } else {
-      console.error("❌ Gemini evaluation failed:", geminiResult.reason);
+      console.error(
+        `❌ [${sessionId}] Gemini evaluation API failed:`,
+        geminiResult.reason
+      );
+      // Create a fallback if the API call itself failed
+      geminiEvaluation = qas.map((q) => ({
+        question: q.question,
+        score: 5,
+        feedback: "AI evaluation API call failed.",
+      }));
+    }
+
+    // 4. ADDED: Handle case where Gemini returns an empty array
+    if (Array.isArray(geminiEvaluation) && geminiEvaluation.length === 0 && qas.length > 0) {
+        console.warn(`[${sessionId}] Gemini returned an empty array. Using fallback.`);
+        geminiEvaluation = qas.map((q) => ({
+            question: q.question,
+            score: 5,
+            feedback: "AI returned no evaluation data. Score is a default placeholder.",
+        }));
     }
 
     // 6️⃣ Parse ML model result safely
@@ -313,10 +371,10 @@ Return valid JSON:
         const data = await mlResponse.value.json().catch(() => ({}));
         mlEvaluation = data || mlEvaluation;
       } catch (err) {
-        console.error("⚠️ ML response parse failed:", err);
+        console.error(`⚠️ [${sessionId}] ML response parse failed:`, err);
       }
     } else {
-      console.error("❌ ML model fetch failed:", mlResponse.reason);
+      console.error(`❌ [${sessionId}] ML model fetch failed:`, mlResponse.reason);
     }
 
     // 7️⃣ Compute hybrid score
@@ -357,23 +415,36 @@ Return valid JSON:
 
     // 🔟 Generate unified feedback safely
     let finalFeedback = {};
+    let rawFeedbackText = ""; // For debugging
     try {
       const feedbackRes = await geminiModel.generateContent(feedbackPrompt);
-      const feedbackText = await feedbackRes.response.text();
-      const cleanText = feedbackText.replace(/```json/gi, "").replace(/```/g, "").trim();
+      rawFeedbackText = await feedbackRes.response.text();
+      const cleanText = rawFeedbackText
+        .replace(/```json/gi, "")
+        .replace(/```/g, "")
+        .trim();
       finalFeedback = JSON.parse(cleanText);
     } catch (err) {
-      console.warn("⚠️ Feedback generation failed:", err);
-      finalFeedback = {
-        strengths: [
-          "Demonstrates solid understanding of core concepts.",
-          "Communicates technical ideas effectively.",
-        ],
-        improvements: [
-          "Provide deeper insights when explaining solutions.",
-          "Use more structured examples when responding.",
-        ],
-      };
+      // 5. UPDATED: Provide a default fallback for feedback
+      console.warn(
+        `⚠️ [${sessionId}] Feedback generation failed:`,
+        err.message
+      );
+      console.warn(`[${sessionId}] Raw Feedback Text:`, rawFeedbackText);
+      // Use ML feedback as a fallback
+      finalFeedback = mlFeedback.strengths || mlFeedback.improvements
+        ? {
+            strengths: mlFeedback.strengths || ["Good communication skills."],
+            improvements: mlFeedback.improvements || ["Continue to elaborate on technical examples."],
+          }
+        : { // Absolute fallback
+            strengths: [
+              "Demonstrates solid understanding of core concepts.",
+            ],
+            improvements: [
+              "Provide deeper insights when explaining solutions.",
+            ],
+          };
     }
 
     // 11️⃣ Store final result in Supabase
@@ -389,13 +460,13 @@ Return valid JSON:
           radar_scores: radarScores,
           feedback: finalFeedback,
           ml_result: mlEvaluation,
-          gemini_result: geminiEvaluation,
+          gemini_result: geminiEvaluation, // This will now store the fallback if it failed
           created_at: new Date().toISOString(),
         },
       ]);
 
     if (insertError) {
-      console.error("⚠️ Supabase insert error:", insertError);
+      console.error(`⚠️ [${sessionId}] Supabase insert error:`, insertError);
       return NextResponse.json({ error: "DB insert failed" }, { status: 500 });
     }
 
@@ -410,7 +481,7 @@ Return valid JSON:
       feedback: finalFeedback,
     });
   } catch (err) {
-    console.error("🔥 Hybrid Evaluation Error:", err);
+    console.error(`🔥 [${sessionId || "UNKNOWN"}] Hybrid Evaluation Error:`, err);
     return NextResponse.json(
       { error: err?.message || "Internal Server Error" },
       { status: 500 }

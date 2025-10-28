@@ -1,14 +1,19 @@
 'use client';
 
-
 import React, { useState, useEffect, useMemo } from 'react';
 import Overall_header from '@/components/Header/Overall_header';
 const JSpdfScript = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
 const AutoTableScript = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js';
 
-import { Download } from 'lucide-react';
-import { Trash2 } from "lucide-react";
+
+import { Download, Trash2, MoveRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast} from 'sonner';
+
+// --- Reusable UI Components (cn, Input, Label, Select, Separator, Loader) ---
+
+function cn(...inputs) {
+  return inputs.filter(Boolean).join(' ');
+}
 
 const Input = React.forwardRef(({ className, ...props }, ref) => {
   return (
@@ -74,51 +79,48 @@ const Loader = ({ className }) => (
 );
 Loader.displayName = "Loader";
 
-function cn(...inputs) {
-  return inputs.filter(Boolean).join(' ');
-}
+// --- End of Reusable UI Components ---
 
 
-const getInitialBanks = () => {
+// --- getInitialBanks REMOVED ---
 
-  if (typeof window === 'undefined') {
-    return [];
-  }
-  
-  const savedBanksJSON = localStorage.getItem('questionBanks');
-  
-  if (savedBanksJSON) {
-    try {
-    
-      return JSON.parse(savedBanksJSON);
-    } catch (e) {
-      console.error("Failed to parse saved banks:", e);
-       toast.error("Failed to parse saved banks:");
-      return [];
-    }
-  }
-  
-  return []; 
-}
+// --- 1. TIMESTAMP HELPER FUNCTION ---
+const formatTimestamp = (bankId) => {
+  const timestamp = parseInt(bankId.split('-')[1]);
+  if (isNaN(timestamp)) return "Just now";
 
+  const now = Date.now();
+  const diff = now - timestamp; // difference in ms
 
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes} minutes ago`;
+  if (hours < 24) return `${hours} hours ago`;
+  return `${days} days ago`;
+};
 
 
 export default function QuestionBankPage() {
   const [domain, setDomain] = useState("");
+  const [company, setCompany] = useState("");
   const [round, setRound] = useState("1");
-  
+  const [isRoundOpen, setIsRoundOpen] = useState(false);
+  const roundOptions = ["Round 1", "Round 2", "Round 3", "HR Round"]; // Added this line
 
-  const [questionBanks, setQuestionBanks] = useState(getInitialBanks);
+  // --- STATE INITIALIZATION FIXED ---
+  const [questionBanks, setQuestionBanks] = useState([]);
+  const [isLoaded, setIsLoaded] = useState(false); // New state to track hydration
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [isPdfLibLoaded, setIsPdfLibLoaded] = useState(false);
 
-
+  // PDF Library loading useEffect (unchanged)
   useEffect(() => {
-    
     if (window.jspdf) {
       setIsPdfLibLoaded(true);
       return;
@@ -129,7 +131,6 @@ export default function QuestionBankPage() {
     script1.async = true;
 
     script1.onload = () => {
-      
       let script2 = document.createElement('script');
       script2.src = AutoTableScript;
       script2.async = true;
@@ -157,14 +158,33 @@ export default function QuestionBankPage() {
       }
     };
   }, []); 
+
+  // --- NEW LOCALSTORAGE 'LOAD' EFFECT ---
+  // This runs ONCE on the client after mount to load data
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-  
+    const savedBanksJSON = localStorage.getItem('questionBanks');
+    if (savedBanksJSON) {
+      try {
+        setQuestionBanks(JSON.parse(savedBanksJSON));
+      } catch (e) {
+        console.error("Failed to parse saved banks:", e);
+        toast.error("Failed to parse saved banks:");
+      }
+    }
+    // Signal that loading is complete
+    setIsLoaded(true);
+  }, []); // Empty array ensures this runs only once on mount
+
+  // --- MODIFIED LOCALSTORAGE 'SAVE' EFFECT ---
+  // This now only runs *after* the initial load is complete
+  useEffect(() => {
+    if (isLoaded) {
       localStorage.setItem('questionBanks', JSON.stringify(questionBanks));
     }
-  }, [questionBanks]);
+  }, [questionBanks, isLoaded]); // Depends on isLoaded
 
 
+  // handleCreateBank (unchanged)
   const handleCreateBank = async () => {
     if (!domain.trim()) {
       setError("Please enter a domain or topic.");
@@ -176,7 +196,6 @@ export default function QuestionBankPage() {
     setError(null);
 
     try {
-    
       const response = await fetch('/api/generate-questions', { 
         method: 'POST',
         headers: {
@@ -184,6 +203,7 @@ export default function QuestionBankPage() {
         },
         body: JSON.stringify({
           domain: domain,
+          company: company,
           round: round,
           numberOfQuestions: 15,
           experienceLevel: 'medium'
@@ -198,18 +218,19 @@ export default function QuestionBankPage() {
 
       if (!data.questions || !Array.isArray(data.questions)) {
          throw new Error("API returned an unexpected data format.");
-         
       }
 
       const newBank = {
         id: `bank-${Date.now()}`,
         domain: domain,
+        company: company,
         round: round,
         questions: data.questions,
       };
 
       setQuestionBanks(prevBanks => [newBank, ...prevBanks]);
       setDomain("");
+      setCompany("");
       toast.success('Question bank created successfully!');
 
     } catch (err) {
@@ -230,6 +251,7 @@ export default function QuestionBankPage() {
     setQuestionBanks(prevBanks => prevBanks.filter(bank => bank.id !== id));
   };
 
+  // handleDownloadPdf (unchanged)
   const handleDownloadPdf = (bank) => {
     if (!isPdfLibLoaded) {
       setError("PDF libraries are still loading. Please try again in a moment.");
@@ -240,14 +262,13 @@ export default function QuestionBankPage() {
     setError(null);
     
     try {
-      
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF(); 
 
       doc.setFontSize(18);
       doc.text(`Question Bank: ${bank.domain}`, 14, 22);
       doc.setFontSize(12);
-      doc.text(`Round: ${bank.round} | Questions: ${bank.questions.length}`, 14, 30);
+      doc.text(`Company: ${bank.company || 'N/A'} | Round: ${bank.round} | Questions: ${bank.questions.length}`, 14, 30);
 
       const tableHead = [['#', 'Type', 'Category', 'Question', 'Answer']];
       const tableBody = bank.questions.map((q, index) => [
@@ -294,7 +315,7 @@ export default function QuestionBankPage() {
     }
   };
 
-
+  // filteredBanks (unchanged)
   const filteredBanks = useMemo(() => {
     if (!searchTerm.trim()) {
       return questionBanks; 
@@ -304,7 +325,8 @@ export default function QuestionBankPage() {
     
     return questionBanks.filter(bank => 
       bank.domain.toLowerCase().includes(lowerCaseSearch) ||
-      bank.round.toLowerCase().includes(lowerCaseSearch)
+      bank.round.toLowerCase().includes(lowerCaseSearch) ||
+      (bank.company && bank.company.toLowerCase().includes(lowerCaseSearch))
     );
   }, [questionBanks, searchTerm]);
 
@@ -315,42 +337,100 @@ export default function QuestionBankPage() {
     <div className="flex justify-center min-h-screen bg-gray-50 p-4 sm:p-8 font-sans">
       <main className="w-full max-w-4xl">
        
-
-        <div className="mb-8   text-gray-900 ">
-          <div className="flex flex-col space-y-1.5 p-6">
-            <p className="text-[25px] text-[#09407F] font-bold leading-none tracking-tight">
-              Question bank
+        {/* Form Section */}
+        <div className="mb-8 text-gray-900 ">
+         <div className="flex flex-col items-center space-y-1.5 p-6">
+           <p className="text-[25px] text-[#09407F] font-bold leading-none tracking-wide">
+             Interview  Question bank
             </p>
-            <p className="text-sm text-[#09407F]">
-              Enter a domain and select a round to generate questions.
+            <p className="text-sm text-[#09407F] text-center">
+             Offers a wide range of real interview questions and top-rated answers to help you prepare thoroughly.
+            </p>
+            <p className="text-sm text-[#09407F] text-center">
+              Welcome back! Access your personalized interview questions.
             </p>
           </div>
-          <div className="p-6 pt-0">
+         <div className="p-6 pt-0">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="sm:col-span-2 space-y-2 ">
-                <Label htmlFor="domain">Domain / Topic</Label>
-                <Input
-                  id="domain"
-                  placeholder="e.g., 'React Hooks', 'Python Data Structures'"
-                  value={domain}
-                  onChange={(e) => setDomain(e.target.value)}
-                  disabled={isLoading}
-                />
-              </div>
+              
+              {/* Domain Input with Gradient Border */}
               <div className="space-y-2">
-                <Label htmlFor="round">Round</Label>
-                <Select
-                  id="round"
-                  value={round}
-                  onChange={(e) => setRound(e.target.value)}
-                  disabled={isLoading}
+                <div 
+                  className="rounded-md p-[1px]" // Gradient wrapper
+                  style={{ background: 'linear-gradient(to right, #2DC2DB , #2B87D0)' }}
                 >
-                  <option value="1">Round 1</option>
-                  <option value="2">Round 2</option>
-                  <option value="3">Round 3</option>
-                  <option value="HR">HR Round</option>
-                </Select>
+                  <Input
+                    id="domain"
+                    placeholder="Domains"
+                    value={domain}
+                    onChange={(e) => setDomain(e.target.value)}
+                    disabled={isLoading}
+                    className="border-none" // Remove default border
+                  />
+                </div>
               </div>
+              
+              {/* Company Input with Gradient Border */}
+              <div className="space-y-2">
+                <div 
+                  className="rounded-md p-[1px]" // Gradient wrapper
+                  style={{ background: 'linear-gradient(to right, #2DC2DB , #2B87D0)' }}
+                >
+                  <Input
+                    id="company"
+                    placeholder="Company"
+                    value={company}
+                    onChange={(e) => setCompany(e.target.value)}
+                    disabled={isLoading}
+                    className="border-none" // Remove default border
+                  />
+                </div>
+              </div>
+              
+            {/* --- Custom Dropdown --- */}
+              <div className="space-y-2">
+                {/* Use a relative container for the dropdown */}
+                <div className="relative">
+                  {/* Gradient wrapper for the button */}
+                  <div 
+                    className="rounded-md p-[1px]"
+                    style={{ background: 'linear-gradient(to right, #2DC2DB , #2B87D0)' }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setIsRoundOpen(!isRoundOpen)}
+                      disabled={isLoading}
+                      className="flex items-center justify-between w-full h-10 px-3 py-2 bg-white rounded-md text-sm text-[#09407F]"
+                    >
+                      <span>
+                        {/* Show selected round, or "Rounds" if default */}
+                        {round === "1" ? "Rounds" : round} 
+                      </span>
+                      {isRoundOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  
+                  {/* Dropdown List */}
+                  {isRoundOpen && (
+                    <div className="absolute top-full mt-1 w-full z-10 rounded-md shadow-lg overflow-hidden flex flex-col">
+                      {roundOptions.map((option) => (
+                        <button
+                          key={option}
+                          type="button"
+                          onClick={() => {
+                            setRound(option); // Set the state
+                            setIsRoundOpen(false); // Close the dropdown
+                          }}
+                          className="w-full text-center px-4 py-3 bg-[#2B87D0] text-white font-semibold text-lg hover:bg-blue-700"
+                        >
+                          {option}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+              {/* --- End Custom Dropdown --- */}
             </div>
             
             {error && (
@@ -358,29 +438,29 @@ export default function QuestionBankPage() {
             )}
 
           </div>
-          <div className="flex items-center p-6 pt-0">
-         
+     <div className="flex items-center justify-center p-6 pt-0">
             <button
               onClick={handleCreateBank}
               disabled={isLoading}
-              className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background  text-white hover:bg-blue-700 h-10 py-2 px-4 w-full sm:w-auto"
-            style={{ borderRadius: '8px' ,background: 'linear-gradient(to right, #2DC2DB , #2B87D0)'}} >
+              className="inline-flex items-center justify-center gap-2 rounded-md text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background  text-white hover:bg-blue-700 h-10 py-2 px-4 w-full sm:w-auto"
+              style={{ borderRadius: '8px' ,background: 'linear-gradient(to right, #2DC2DB , #2B87D0)'}} >
               {isLoading ? (
                 <>
                   <Loader className="mr-2 h-4 w-4" />
                   Generating...
                 </>
               ) : (
-                'Create Question Bank'
-        
+               <>
+                  Generate Question Bank
+                  <MoveRight className="h-4 w-4" />
+                </>
               )}
             </button>
-          
           </div>
         </div>
        
 
-
+       {/* --- Generated Banks Section --- */}
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <p className="text-2xl text-[18px] font-semibold text-[#09407F]">Generated Banks</p>
@@ -389,16 +469,23 @@ export default function QuestionBankPage() {
             </span>
           </div>
 
-          <div className="mt-4 mb-2">
-            <Input
-              type="text"
-              placeholder="Search by domain or round..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+          <div className="mt-4 mb-7">
+            {/* Wrapper div for the gradient border */}
+            <div 
+              className="rounded-md p-[1px]" // p-[1px] creates the border thickness
+              style={{ background: 'linear-gradient(to right, #2DC2DB , #2B87D0)' }} // Your gradient
+            >
+              <Input
+                type="text"
+                placeholder="Search by domain, company, or round..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="border-none" // This removes the input's original border
+              />
+            </div>
           </div>
           
-          <Separator />
+          {/* Separator is removed */}
           
           {questionBanks.length === 0 && !isLoading ? (
             <p className="text-gray-500 text-center py-4">
@@ -410,47 +497,86 @@ export default function QuestionBankPage() {
             </p>
           ) : (
             filteredBanks.map((bank) => (
-            
-              <div key={bank.id} className="w-full shadow-sm p-2 flex flex-row items-center justify-between rounded-lg border bg-white text-[#09407F]">
-                <div className="flex-1 overflow-hidden">
-               
-                 <p className="text-[17px] p-1 font-semibold truncate mb-0">
-                  {bank.domain}
-                 </p>
-                 <p className="text-[9px] text-[#09407F]">
-                    Round: {bank.round}  |  Questions: {bank.questions.length}
-                 </p>
-               
+            <div 
+              key={bank.id} 
+              className="relative rounded-lg overflow-hidden p-[1px]" 
+              style={{ background: 'linear-gradient(to right, #2DC2DB , #2B87D0)' }} // Your gradient
+            >
+              {/* This inner div is your actual card content with a white background */}
+              <div 
+                className="w-full shadow-md p-6 rounded-lg bg-white text-[#09407F] h-full"
+              >
+                
+                {/* --- Top Section: Title, Timestamp, and Tags --- */}
+                <div className="flex justify-between items-start mb-4">
+                  {/* Left Side: Title and Tags */}
+                  <div className="flex-1 overflow-hidden pr-4">
+                    <p className="text-xl font-semibold text-black truncate"> 
+                      {bank.domain}
+                    </p>
+                    
+                    {/* Tags are now here, under the title */}
+                    <div className="flex items-center text-sm text-gray-500 space-x-2 mt-2 flex-wrap">
+                      {bank.questions[0]?.category && (
+                        <span className="whitespace-nowrap">{bank.questions[0].category}</span>
+                      )}
+                      
+                      {bank.company && (
+                        <>
+                          <span className="text-gray-300">|</span> 
+                          <span className="whitespace-nowrap">{bank.company}</span>
+                        </>
+                      )}
+
+                      {bank.round && (
+                        <>
+                          <span className="text-gray-300">|</span> 
+                          <span className="whitespace-nowrap">Round {bank.round}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Right Side: Timestamp */}
+                  <span className="text-sm text-gray-500 flex-shrink-0 ml-4"> 
+                    {formatTimestamp(bank.id)}
+                  </span>
                 </div>
-                <div className="flex-shrink-0 flex items-center gap-1 mt-0">
-            
+
+                {/* --- Bottom Blue Strip: Buttons Only --- */}
+                <div className="flex justify-between items-center mt-4 bg-[#CBF5FA] rounded-md px-4 py-3">
+                  
+                  {/* Left Button: Delete */}
+                  <button
+                    onClick={() => handleDeleteBank(bank.id)}
+                    className="flex items-center gap-2 text-[#09407F] font-medium text-sm hover:opacity-80 disabled:opacity-50"
+                  >
+                    Delete
+                    <div className="bg-white rounded-full p-1">
+                      <Trash2 className="h-4 w-4 text-[#09407F]" />
+                    </div>
+                  </button>
+                  
+                  {/* Right Button: Download */}
                   <button
                     onClick={() => handleDownloadPdf(bank)}
                     disabled={!isPdfLibLoaded}
-                    className="inline-flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background  text-[#09407F] h-12 px-3"
+                    className="flex items-center gap-2 text-[#09407F] font-medium text-sm hover:opacity-80 disabled:opacity-50"
                   >
+                    Download
                     {isPdfLibLoaded ? (
-                      <>
-                        <Download className="mr-2 h-5 w-5" />
-                       
-                       
-                      </>
+                      <div className="bg-white rounded-full p-1">
+                        <Download className="h-4 w-4 text-[#09407F]" />
+                      </div>
                     ) : (
-                      "Loading PDF..."
+                      <div className="bg-white rounded-full p-1">
+                        <Loader className="h-4 w-4 text-[#09407F]" /> 
+                      </div>
                     )}
                   </button>
-                
-                  <button
-                    onClick={() => handleDeleteBank(bank.id)}
-                    className="inline-flex items-center justify-center  focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background  text-red-500 h-11 px-1"
-                  >
-                    <Trash2 className="mr-2 h-5 w-5" />
-              
-                  </button>
-                
                 </div>
               </div>
-            
+            </div>
             ))
           )}
         </div>

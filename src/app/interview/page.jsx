@@ -491,6 +491,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { FiLogOut, FiMic } from "react-icons/fi";
+import { Mic } from "lucide-react"; // <-- 1. IMPORT ADDED
 import {
   PolarAngleAxis,
   PolarGrid,
@@ -552,7 +553,6 @@ function InterviewPageContent() {
     checkUser();
   }, [router]);
 
-
   useEffect(() => {
     const loadInterviewData = () => {
       try {
@@ -564,19 +564,18 @@ function InterviewPageContent() {
           const questions = JSON.parse(storedQuestions);
           const config = JSON.parse(storedConfig);
 
-     
-          const formattedQuestions = questions.map(q => ({
+          const formattedQuestions = questions.map((q) => ({
             ...q,
-            id: `${storedSessionId}::${q.id}` 
+            id: `${storedSessionId}::${q.id}`,
           }));
 
-          setQuestions(formattedQuestions); 
+          setQuestions(formattedQuestions);
           setDomain(config.jobRole || "Interview");
           setLevel(config.experienceLevel || "");
           setRound("1");
 
           const initialAnswers = {};
-          formattedQuestions.forEach((q, index) => { 
+          formattedQuestions.forEach((q, index) => {
             initialAnswers[index] = "";
           });
           setAnswers(initialAnswers);
@@ -629,17 +628,15 @@ function InterviewPageContent() {
           setRound(sessions[0].round);
         }
 
-        
         const { data: qData } = await supabase
           .from("interview_question")
-          .select("question_code, question") 
+          .select("question_code, question")
           .eq("session_id", sessionId);
 
         if (qData && qData.length > 0) {
-        
-           const formattedQuestions = qData.map(q => ({
-            id: q.question_code, 
-            question: q.question
+          const formattedQuestions = qData.map((q) => ({
+            id: q.question_code,
+            question: q.question,
           }));
 
           setQuestions(formattedQuestions);
@@ -662,7 +659,7 @@ function InterviewPageContent() {
 
   useEffect(() => {
     if (timeLeft <= 0) {
-      handleNext();
+      handleNext(); // Automatically call handleNext when timer runs out
       return;
     }
     const timer = setInterval(() => setTimeLeft((t) => t - 1), 1000);
@@ -686,7 +683,6 @@ function InterviewPageContent() {
   }, []);
 
   useEffect(() => {
-
     if (availableVoices.length === 0) {
       return;
     }
@@ -734,7 +730,6 @@ function InterviewPageContent() {
         );
         utterance.voice = availableVoices[0];
       } else {
-       
         console.error("No voices available for speech synthesis.");
       }
 
@@ -743,6 +738,8 @@ function InterviewPageContent() {
     }
   }, [questions, currentIndex, availableVoices]);
 
+  // --- 1. MODIFIED `startListening` ---
+  // Simplified: Just starts the recorder.
   const startListening = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -754,31 +751,8 @@ function InterviewPageContent() {
         if (event.data.size > 0) audioChunks.current.push(event.data);
       };
 
-      
-      mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunks.current, { type: "audio/webm" });
-
-        try {
-   
-          const qId = questions[currentIndex]?.id ?? null; 
-          const data = await uploadRecording(audioBlob, sessionId, qId);
-
-          if (data?.text) {
-            setTranscript(data.text);
-            
-           
-
-          } else {
-            console.error("No transcription text found:", data);
-          }
-        } catch (err) {
-          console.error("Transcription error:", err);
-        } finally {
-
-          audioChunks.current = [];
-        }
-      };
- 
+      // The 'onstop' logic is now in the `stopListening` function
+      // to allow it to return a promise.
 
       mediaRecorder.start();
       setListening(true);
@@ -788,31 +762,71 @@ function InterviewPageContent() {
     }
   };
 
+  // --- 2. MODIFIED `stopListening` ---
+  // Now returns a Promise that resolves with the final transcript text.
   const stopListening = () => {
-    if (
-      mediaRecorderRef.current &&
-      mediaRecorderRef.current.state !== "inactive"
-    ) {
+    return new Promise((resolve) => {
+      // If recorder is already stopped, just set listening to false
+      // and resolve with the transcript currently in state.
+      if (
+        !mediaRecorderRef.current ||
+        mediaRecorderRef.current.state === "inactive"
+      ) {
+        setListening(false);
+        resolve(transcript);
+        return;
+      }
+
+      // Define 'onstop' here to get access to the 'resolve' function
+      mediaRecorderRef.current.onstop = async () => {
+        const audioBlob = new Blob(audioChunks.current, { type: "audio/webm" });
+        let newTranscript = "(No response)";
+
+        // Only upload if there's actually audio
+        if (audioBlob.size > 0) {
+          try {
+            const qId = questions[currentIndex]?.id ?? null;
+            const data = await uploadRecording(audioBlob, sessionId, qId);
+
+            if (data?.text) {
+              newTranscript = data.text;
+            } else {
+              console.error("No transcription text found:", data);
+            }
+          } catch (err) {
+            console.error("Transcription error:", err);
+          }
+        }
+
+        audioChunks.current = [];
+        setTranscript(newTranscript); // Update UI
+        setListening(false);
+        resolve(newTranscript); // Resolve the promise with the final text
+      };
+
+      // Stop the recorder, which triggers the 'onstop' handler above
       mediaRecorderRef.current.stop();
-    }
-    setListening(false);
+    });
   };
 
 
   const handleNext = async () => {
+   
+    const answerText = await stopListening();
+
     if (!sessionId || !questions[currentIndex]) return;
 
     const qId = questions[currentIndex].id;
-    const answerText = transcript.trim() || "(No response)";
+    const cleanAnswer = answerText.trim() || "(No response)";
 
     try {
-     
+      // Save the final, correct answer
       await supabase.from("interview_answers").upsert(
         [
           {
             session_id: sessionId,
             question_id: qId,
-            response: answerText,
+            response: cleanAnswer,
             created_at: new Date().toISOString(),
           },
         ],
@@ -821,13 +835,15 @@ function InterviewPageContent() {
 
       setAnswers((prev) => ({
         ...prev,
-        [qId]: answerText,
+        [qId]: cleanAnswer,
       }));
 
+      // Move to the next question or finish
       if (currentIndex < questions.length - 1) {
         setCurrentIndex((i) => i + 1);
-        setTranscript("");
+        setTranscript(""); // Clear transcript for the new question
       } else {
+        // Finished interview
         const res = await fetch("/api/evaluate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -846,9 +862,18 @@ function InterviewPageContent() {
     }
   };
 
+  // This simple handler is for the "Start/Submit" button
+  const handleToggleListening = () => {
+    if (listening) {
+      stopListening(); // Just call it, don't await. It will update state.
+    } else {
+      startListening();
+    }
+  };
+
   const handleConfirmExit = async () => {
     setIsExiting(true);
-    stopListening();
+    await stopListening(); // Ensure recording stops before exiting
     router.push("/ai-dashboard");
   };
 
@@ -864,111 +889,162 @@ function InterviewPageContent() {
 
   return (
     <>
-      <Header />
+      <div className="w-full">
+        <Header />
+      </div>
       <div className="min-h-screen bg-[#F5F7FA] text-[#1A1A1A]">
-        <div className="flex justify-between items-center px-8 mt-4">
-          <button
-            onClick={() => router.push("/ai-dashboard")}
-            className="flex items-center justify-center gap-2 bg-gray-500 hover:bg-gray-600 text-white font-semibold text-[16px] rounded-[12px] px-6 h-[54px] shadow transition-colors"
-          >
-            ← Back to Dashboard
-          </button>
+        <div className="flex justify-between items-center px-8 mt-1 mb-0">
+          <div className="grid grid-cols-[auto_1fr] gap-x-2 font-semibold text-[16px] text-[#09407F]">
+            {/* Row 1 */}
+            <p className="mb-0">Round:</p>
+            <p className="mb-0">{round || "1"}</p>
+
+            {/* Row 2 */}
+            <p>Level:</p>
+            <p>{level || "Easy"}</p>
+          </div>
+
+          {questions.length > 0 && (
+            /* CHANGED: Added 'w-full' to ensure perfect centering */
+            <div className="flex w-full justify-center gap-1 my-4 px-8">
+              {questions.map((_, idx) => {
+                let bgColor = "#D9D9D9";
+                if (idx < currentIndex) bgColor = "#F7D8FF";
+                if (idx === currentIndex) bgColor = "#8BFFEC";
+                return (
+                  <div
+                    key={idx}
+                    className="w-[34px] h-[35px] rounded-full flex items-center justify-center font-[Poppins] font-semibold text-[15px] text-[#000000]"
+                    style={{
+                      backgroundColor: bgColor,
+                      boxShadow:
+                        idx === currentIndex
+                          ? "0 0 4px 2px rgba(43, 129, 208, 0.5)"
+                          : "none",
+                    }}
+                  >
+                    {idx + 1}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
           <button
             onClick={() => setShowExitPopup(true)}
-            className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#2DC5DB] to-[#2B81D0] text-white font-semibold text-[16px] rounded-[12px] w-[162px] h-[54px] shadow"
+            className="flex items-center justify-center gap-1 bg-gradient-to-r from-[#2DC5DB] to-[#2B81D0] text-white font-semibold text-[8px] rounded-[12px] w-[162px] h-[44px] shadow"
+            style={{ borderRadius: "8px" }}
           >
             Exit <FiLogOut />
           </button>
         </div>
 
-        <div className="font-[Poppins] p-8 grid grid-cols-3 gap-8">
+        <div className="font-[Poppins] px-8 pb-8 grid grid-cols-3 gap-8">
           {/* LEFT SECTION */}
-          <div className="col-span-2 flex flex-col items-center mt-4">
-            <div className="w-full flex justify-between items-center mb-3 px-2">
-              <div className="flex gap-10 font-semibold text-[15px] text-[#09407F]">
-                <p>Round: {round || "1"}</p>
-                <p>Level: {level || "Easy"}</p>
-              </div>
-              <p className="text-[#2B7ECF] font-semibold mr-6">{timeLeft}s</p>
+          <div className="col-span-2 flex flex-col items-center">
+            {/* START OF CHANGES */}
+            <div className="w-full flex justify-between  px-2">
+              <p className="font-semibold items-center text-[18px] text-[#09407F] w-full text-center">
+                Interviewer Aavi
+              </p>
             </div>
 
-            {questions.length > 0 && (
-              <div className="flex justify-center gap-4 mb-3">
-                {questions.map((_, idx) => {
-                  let bgColor = "#D9D9D9";
-                  if (idx < currentIndex) bgColor = "#F7D8FF";
-                  if (idx === currentIndex) bgColor = "#8BFFEC";
-                  return (
-                    <div
-                      key={idx}
-                      className="w-[34px] h-[35px] rounded-full flex items-center justify-center font-[Poppins] font-semibold text-[15px] text-[#000000]"
-                      style={{
-                        backgroundColor: bgColor,
-                        boxShadow:
-                          idx === currentIndex
-                            ? "0 0 4px 2px rgba(43, 129, 208, 0.5)"
-                            : "none",
-                      }}
-                    >
-                      {idx + 1}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            <p className="font-semibold text-[18px] text-[#09407F] mb-2 text-center">
-              Interviewer Aavi
-            </p>
-            <div className="bg-white rounded-[10px] shadow-md px-6 py-4 text-center text-[#000000] font-medium mb-4 w-[780px]">
+            {/* This <p> tag was removed from here */}
+            <div className="bg-white rounded-[10px] shadow-md px-4 py-3 text-left text-[#000000] font-medium mb-2 w-[680px]">
               Q{currentIndex + 1}.{" "}
               {questions[currentIndex]?.question || "Loading..."}
             </div>
-            <div className="relative w-[730px] h-[490px] rounded-[12px] overflow-hidden shadow bg-black border-[2px] border-[#2B81D0] mb-5">
+
+            {/* --- 3. VIDEO CONTAINER MODIFIED --- */}
+            <div className="relative w-[700px] h-[470px] rounded-[12px] overflow-hidden shadow  border-[2px]  mb-3">
+              {/* --- NEW RECORDING INDICATOR (TOP-LEFT) --- */}
+              {listening && (
+                <div className="absolute top-5 left-5 z-10">
+                  <div className="flex items-center gap-2 text-red-600/90  font-medium px-4 py-2 font-bold ">
+                    <Mic className="animate-pulse" size={18} />
+                    <span>Recording</span>
+                  </div>
+                </div>
+              )}
+
+              {/* --- NEW TIMER (TOP-RIGHT) --- */}
+              <div className="absolute top-5 right-5 z-10">
+               <p className="bg-red-50 text-red-500 font-semibold flex items-center justify-center w-12 h-12 rounded-full border !border-red-500">
+  <span className="animate-pulse">
+    {timeLeft}s
+  </span>
+</p>
+              </div>
+
+              {/* --- Existing Video Elements --- */}
               <video
-                src="/avee.mp4"
+                src="/AVEE2.mp4"
                 autoPlay
                 loop
                 muted
                 playsInline
                 className="w-full h-full object-cover"
               />
-              <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2">
+              <video
+                src="/RC.mp4" // <-- !! REPLACE WITH YOUR SPEAKING VIDEO FILE !!
+                autoPlay
+                loop
+                muted
+                playsInline
+                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
+                  listening ? "opacity-100" : "opacity-0"
+                }`}
+              />
+
+              {/* CHANGED: Aligned to bottom-left */}
+              <div className="absolute bottom-5 left-5 z-10">
                 <button
-                  onClick={listening ? stopListening : startListening}
+                  // --- CLICK HANDLER CHANGED ---
+                  onClick={handleToggleListening}
                   className="flex items-center gap-2 bg-[#7CE5FF] text-[#000000] 
-                    font-semibold text-[15px] w-[210px] h-[49px] rounded-[5px] 
+                    font-semibold text-[15px] w-[150px] h-[45px] rounded-[5px] 
                     justify-center shadow-sm hover:opacity-90 transition-all"
+                  style={{
+                    borderRadius: "8px",
+                    background:
+                      "linear-gradient(to right, #2DC2DB , #2B87D0)",
+                  }}
                 >
                   <FiMic />
-                  {listening ? "Recording..." : "Start Answer"}
+                  {listening ? "Submit..." : "Start Answer"}
+                </button>
+              </div>
+
+              
+              <div className="absolute bottom-5 right-5 z-10">
+                <button
+                  onClick={handleNext}
+                  className="w-[120px] h-[44px] rounded-[12px] bg-gradient-to-r 
+                    from-[#2DC5DB] to-[#2B81D0] text-[#000000] font-semibold shadow"
+                  style={{
+                    borderRadius: "8px",
+                    background:
+                      "linear-gradient(to right, #2DC2DB , #2B87D0)",
+                  }}
+                >
+                  {currentIndex < questions.length - 1 ? "Next →" : "Finish"}
                 </button>
               </div>
             </div>
 
-            <div className="bg-[#F0FAFF] border border-[#2DC5DB] rounded-[10px] shadow-sm px-6 py-4 text-[#000000] text-[15px] font-normal mb-5 w-[780px] text-left">
+            <div className="bg-[#F0FAFF] border border-[#2DC5DB] rounded-[10px] shadow-sm px-2 py-1 text-[#000000] text-[15px] font-normal mb-5 w-[720px] text-left">
               <p className="font-semibold text-[#09407F] mb-2">Your Answer:</p>
               <p>{transcript || "Start speaking to record your answer..."}</p>
             </div>
 
-            {/* Next Button */}
-            <div className="flex justify-center">
-              <button
-                onClick={handleNext}
-                className="w-[162px] h-[54px] rounded-[12px] bg-gradient-to-r 
-                  from-[#2DC5DB] to-[#2B81D0] text-[#000000] font-semibold shadow"
-              >
-                {currentIndex < questions.length - 1 ? "Next →" : "Finish"}
-              </button>
-            </div>
+            {/* Next Button was here, but has been MOVED into the video div */}
           </div>
 
-          {/* RIGHT SIDE */}
-          <div className="flex flex-col items-center gap-6">
+          <div className="flex flex-col items-center gap-3 pt-5">
             <p className="font-semibold text-[20px] text-[#09407F]">
               Student video
             </p>
-            <div className="rounded-[12px] overflow-hidden shadow bg-black w-[359px] h-[231px]">
+            <div className="rounded-[12px] overflow-hidden shadow bg-black w-[329px] h-[201px]">
               <video
                 ref={videoRef}
                 autoPlay
@@ -985,12 +1061,12 @@ function InterviewPageContent() {
               </span>
             </p>
 
-            <div className="bg-white rounded-xl shadow p-4 w-full max-w-[359px]">
-              <p className="text-[#09407F] font-semibold text-[20px] mb-1">
+            <div className="bg-white rounded-xl shadow p-4 w-full max-w-[299px]">
+              <p className="text-[#09407F] font-semibold text-[14px] ">
                 AI Video Score
               </p>
-              <ResponsiveContainer width="90%" height={200}>
-                <RadarChart cx="60%" cy="60%" outerRadius="50%" data={radarData}>
+              <ResponsiveContainer width="100%" height={200} className="-mt-8">
+                <RadarChart cx="50%" cy="50%" outerRadius="40%" data={radarData}>
                   <PolarGrid />
                   <PolarAngleAxis dataKey="subject" />
                   <PolarRadiusAxis angle={30} domain={[0, 100]} />
@@ -1013,17 +1089,25 @@ function InterviewPageContent() {
             <div className="bg-white rounded-[20px] shadow-lg w-[450px] p-8 text-center border-2 border-[#2B81D0]">
               <div className="flex flex-col items-center">
                 <div className="text-[40px] mb-4">😢</div>
-                <h2 className="text-[#000000] font-[Poppins] font-semibold text-[24px] mb-2">
+                <h2
+                  className="text-[#000000] font-[Poppins] font-semibold text-[24px] mb-2"
+                  style={{ borderRadius: "8px" }}
+                >
                   Exiting now
                 </h2>
                 <p className="text-[#000000] font-[Poppins] text-[16px] mb-6">
                   may affect your interview score
-              </p>
+                </p>
                 <div className="flex justify-center gap-4">
                   <button
                     onClick={() => setShowExitPopup(false)}
                     className="w-[130px] h-[47px] rounded-[12px] font-[Poppins] font-semibold text-[16px] 
                       text-white bg-gradient-to-r from-[#2DC5DA] to-[#2B84D0] shadow hover:opacity-90 transition-all"
+                    style={{
+                      borderRadius: "8px",
+                      background:
+                        "linear-gradient(to right, #2DC2DB , #2B87D0)",
+                    }}
                   >
                     Return
                   </button>
@@ -1032,6 +1116,7 @@ function InterviewPageContent() {
                     disabled={isExiting}
                     className="w-[130px] h-[47px] rounded-[12px] font-[Poppins] font-semibold text-[16px] 
                       text-[#000000] border border-[#2B84D0] hover:bg-[#E9F6FF] transition-all"
+                    style={{ borderRadius: "8px" }}
                   >
                     {isExiting ? "Exiting..." : "Exit"}
                   </button>
@@ -1044,6 +1129,7 @@ function InterviewPageContent() {
     </>
   );
 }
+
 
 export default function InterviewPage() {
   return (

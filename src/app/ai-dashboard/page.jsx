@@ -24,7 +24,7 @@ export default function DashboardPage() {
 
           {/* Right Section */}
           <div className="space-y-6">
-            <div className="w-full  pl-11">
+            <div className="w-full mt-9 pl-11">
               <Announcement />
             </div>
             <Dashboard />
