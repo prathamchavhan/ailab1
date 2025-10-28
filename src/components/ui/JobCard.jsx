@@ -34,7 +34,8 @@ const JobDescriptionModal = ({ job, onClose }) => {
             />
           )}
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">{job.job_role}</h2>
+            {/* This part in the modal is already correct from our last chat */}
+            <h2 className="text-2xl font-bold text-gray-900 mb-0">{job.job_role}</h2>
             <p className="text-lg text-gray-700">{job.company_name}</p>
           </div>
         </div>
@@ -107,7 +108,8 @@ const JobCard = ({ job }) => {
                 </div>
                 
                 <div>
-                    <p className="font-semibold text-[12px] text-[#09407F] leading-tight">
+                    {/* --- MODIFIED THIS LINE --- */}
+                    <p className="font-semibold text-[12px] text-[#09407F] leading-tight mb-0">
                         {job.job_role || 'No Title Provided'}
                     </p>
                     <p className="text-[9px] text-[#09407F]">
@@ -163,7 +165,7 @@ const JobCard = ({ job }) => {
             </p>
             <a 
            
-                href={job.apply_url || '#'} 
+                href={"https://hyreso.com/"|| 'https://hyreso.com/'} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="!no-underline hover:no-underline px-4 py-1.5 text-[10px] border border-gray-300 font-bold !text-white bg-[#006389] rounded-lg hover:bg-[#006389] transition duration-150 "

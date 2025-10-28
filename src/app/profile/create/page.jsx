@@ -118,7 +118,7 @@ export default function CreateProfilePage() {
     setError("");
 
     try {
-      // 1. Get the currently authenticated user
+     
       const { data: { user }, error: userError } = await supabase.auth.getUser();
 
       if (userError) {
@@ -130,8 +130,8 @@ export default function CreateProfilePage() {
 
       
       const profileData = {
-        user_id: user.id, // From authenticated user
-        email: user.email, // From authenticated user
+        user_id: user.id, 
+        email: user.email,
         name: form.name,
         surname: form.surname,
         sem: parseInt(form.sem, 10),
@@ -170,7 +170,7 @@ toast.success("Profile created successfully! Redirecting...");
   // --- STYLES ---
   const inputStyle = "w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition h-11";
 
-  // --- Inline Styles for Mobile Override (Applies scrollable 100svh to the right panel) ---
+  
   const rightPanelMobileStyle = isMobile ? {
       height: scrollableHeight, 
       overflowY: 'auto',
@@ -181,11 +181,11 @@ toast.success("Profile created successfully! Redirecting...");
 
 
   return (
-    // Outer container: Keep min-h-screen for overall page structure
+   
     <div className="w-full bg-gray-50 flex justify-center items-start min-h-screen"> 
       <div className="w-full bg-white flex flex-col lg:flex-row shadow-none lg:shadow-2xl">
         
-        {/* === Left Decorative Panel === */}
+       
         <div 
             className="w-full lg:w-1/2 min-h-fit lg:min-h-screen py-8 text-white bg-gradient-to-br from-[#2B7ECF] to-[#2DC7DB] lg:rounded-tr-[100px] lg:rounded-br-[100px] flex flex-col items-center justify-center text-center p-6 mb-0 lg:mb-0" 
         >
@@ -216,14 +216,14 @@ toast.success("Profile created successfully! Redirecting...");
             </div>
         </div>
         
-        {/* === Right Form Panel (Scrollable Container) === */}
+       
         <div 
-            // 💡 APPLY INLINE CSS HERE for mobile scrolling
+           
             style={rightPanelMobileStyle}
             className="w-full lg:w-1/2 flex flex-col items-center lg:justify-center lg:min-h-screen" 
         >
           
-          {/* Inner Content Container */}
+         
           <div className="w-full max-w-md px-8 pb-96 lg:px-12 lg:py-0 lg:pb-0"> 
               <p className="text-2xl md:text-3xl font-bold text-[#00046C] mb-8 underline text-center lg:text-left">
                   Create Your Profile
@@ -286,7 +286,7 @@ toast.success("Profile created successfully! Redirecting...");
                           <input id="clg_code" type="text" name="clg_code" value={collegeCode} readOnly placeholder="Code appears here" className={`${inputStyle} bg-gray-50 cursor-not-allowed`} />
                       </div>
 
-                      {/* Department - Spans 2 columns */}
+                    
                       <div className="sm:col-span-2">
                           <label htmlFor="department_id" className="block text-sm font-medium text-gray-700 mb-1">Department *</label>
                           <select id="department_id" name="department_id" value={form.department_id} onChange={handleChange} required disabled={!form.stream_id} className={`${inputStyle} disabled:bg-gray-100`}>
@@ -312,9 +312,9 @@ toast.success("Profile created successfully! Redirecting...");
               </form>
            
           </div>
-             {/* Logo position adjusted for responsiveness */}
+           
              <div className="w-full flex justify-center lg:justify-end mt-12 md:mt-20">
-                {/* Ensure you have the image at this path: /images/palloti.png */}
+              
                 <img src="/images/palloti.png" alt="AI Lab Logo" className="h-10" /> 
              </div>
         </div>

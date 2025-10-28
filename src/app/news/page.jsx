@@ -170,8 +170,9 @@ export default function NewsDashboard() {
                         {latestNewsItem && <LatestNewsCard news={latestNewsItem} onReadMore={handleShowPopup} />}
                     </div>
                   
-                       
+                       <div className=" pl-18 ">
                         <Announcement />
+                        </div>
                   
                 </div>
 

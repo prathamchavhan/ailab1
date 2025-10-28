@@ -11,12 +11,29 @@ export default function AIInterviewForm() {
   const [domain, setDomain] = useState("Select industry domain");
   const [company, setCompany] = useState("");
   const [loading, setLoading] = useState(false);
-  const [isDomainDropdownOpen, setIsDomainDropdownOpen] = useState(false);
+  // const [isDomainDropdownOpen, setIsDomainDropdownOpen] = useState(false); // Removed as Job Role is a simple input
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [isCompanyDropdownOpen, setIsCompanyDropdownOpen] = useState(false); // For Company dropdown
 
   const router = useRouter();
   const supabase = createClientComponentClient();
+
+  // --- Company Logic & Data (Moved from useEffect) ---
+  const companyOptions = [
+    "Google",
+    "Microsoft",
+    "Apple",
+    "Amazon",
+    "Tata Consultancy Services (TCS)",
+    "Infosys",
+    "Wipro",
+    "HCL Technologies",
+  ];
+  const handleSelectCompany = (selectedCompany) => {
+    setCompany(selectedCompany);
+    setIsCompanyDropdownOpen(false);
+  };
 
   useEffect(() => {
     const checkUser = async () => {
@@ -55,27 +72,16 @@ export default function AIInterviewForm() {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [supabase.auth]);
 
-  // Available domains
-  const domainOptions = [
-    "Information Technology (IT)",
-    "Software Development",
-    "Artificial Intelligence & Machine Learning",
-    "Data Science & Analytics",
-    "Mobile App Development",
-    "Cloud Computing",
-  ];
-
-  const handleSelectDomain = (selectedDomain) => {
-    setDomain(selectedDomain);
-    setIsDomainDropdownOpen(false);
-  };
+  // --- Domain Logic Removed (as it's a simple input now) ---
+  // const domainOptions = [ ... ];
+  // const handleSelectDomain = (selectedDomain) => { ... };
 
   // --- Start Interview Button Logic ---
   const handleStart = async () => {
     if (domain === "Select industry domain" || !company) {
-      alert("Please fill in both Domain and Company");
+      alert("Please fill in both Job Role/Domain and Company");
       return;
     }
 
@@ -142,8 +148,9 @@ export default function AIInterviewForm() {
 
   const labelCardClass =
     "bg-white rounded-[6px] shadow-md flex items-center justify-center";
+
   const labelCardStyle = {
-    width: "161px",
+    width: "120px",
     height: "47px",
     boxShadow: "0 4px 4px -2px rgba(0, 0, 0, 0.25)",
   };
@@ -225,6 +232,14 @@ export default function AIInterviewForm() {
         letter-spacing: 0;
         color: #09407F; 
     }
+
+    /* Style for the input's placeholder */
+    .domain-text::placeholder {
+        color: #577597; 
+        font-weight: 400; 
+        opacity: 1; /* Ensure placeholder is visible */
+    }
+
 
     .dropdown-item {
         font-family: 'Poppins', sans-serif;
@@ -308,37 +323,10 @@ export default function AIInterviewForm() {
         </div>
       )}
 
-      {/* Success message for authenticated users */}
-      {/* {!authLoading && user && (
-        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <svg
-                className="h-5 w-5 text-green-400"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-green-800">
-                You're logged in! Configure your interview settings below and
-                click "Start Interview".
-              </p>
-            </div>
-          </div>
-        </div>
-      )} */}
-
       {/* Loader */}
       {loading && (
         <div className="fixed inset-0 flex items-center justify-center bg-white/70 z-50">
-          <div className="w-10 h-10 border-4 border-t-4 border-t-blue-500 border-gray-200 rounded-full animate-spin"></div>
+          <div className="w-7 h-7 border-4 border-t-4 border-t-blue-500 border-gray-200 rounded-full animate-spin"></div>
         </div>
       )}
 
@@ -350,20 +338,29 @@ export default function AIInterviewForm() {
             <div className={labelCardClass} style={labelCardStyle}>
               <p className="label-text mt-3">Level</p>
             </div>
-            <div className="flex-grow gradient-border-wrap w-full">
-              <div className="segmented-control-inner flex justify-between w-full p-1 bg-white " >
+            <div
+              className="flex-grow shadow-md"
+              style={{
+                backgroundImage:
+                  "linear-gradient(to right, #2DC2DB , #2B87D0)",
+                padding: "2px",
+                borderRadius: "8px",
+              }}
+            >
+              <div
+                className="segmented-control-inner flex justify-between w-full p-1 bg-white "
+                style={{ borderRadius: "5px" }}
+              >
                 {["Easy", "Medium", "Hard"].map((l) => (
-                <button
+                  <button
                     key={l}
                     onClick={() => setLevel(l)}
-                    className={`rounded-lg text-sm font-medium transition duration-150 ${
+                    className={`text-sm font-medium transition duration-150 ${
                       level === l
                         ? activeGradientButtonClass
                         : inactiveSegmentButtonClass
                     }`}
-                   
-                    style={{ borderRadius: '8px' }} 
-                  
+                    style={{ borderRadius: "8px" }}
                   >
                     {l}
                   </button>
@@ -377,8 +374,21 @@ export default function AIInterviewForm() {
             <div className={labelCardClass} style={labelCardStyle}>
               <p className="label-text mt-3">Round</p>
             </div>
-            <div className="flex-grow gradient-border-wrap w-full">
-              <div className="segmented-control-inner flex justify-between w-full p-1 bg-white rounded-lg">
+            <div
+              className="flex-grow shadow-md"
+              style={{
+                backgroundImage:
+                  "linear-gradient(to right, #2DC2DB , #2B87D0)",
+                padding: "2px",
+                borderRadius: "8px",
+              }}
+            >
+              <div
+                className="segmented-control-inner flex justify-between w-full p-1 bg-white "
+                style={{
+                  borderRadius: "5px",
+                }}
+              >
                 {["R1", "R2", "R3"].map((r) => (
                   <button
                     key={r}
@@ -388,102 +398,144 @@ export default function AIInterviewForm() {
                         ? activeGradientButtonClass
                         : inactiveSegmentButtonClass
                     }`}
-                    style={{ borderRadius: '8px' }}
+                    style={{ borderRadius: "8px" }}
                   >
-                    
                     {r}
-                    
                   </button>
                 ))}
               </div>
             </div>
           </div>
 
-          {/* Domain */}
+          {/* Domain (Job Role) - Input */}
           <div className="flex items-center gap-6 relative">
             <div className={labelCardClass} style={labelCardStyle}>
               <p className="label-text mt-3">Job Role</p>
             </div>
-            <div className="flex-grow w-full relative">
-              <div className="gradient-border-wrap">
-                <button
-                  type="button"
-                  onClick={() => setIsDomainDropdownOpen(!isDomainDropdownOpen)}
-                  className="w-full relative bg-white rounded-lg text-gray-800"
+            <div className="flex-grow relative">
+              <div
+                className="shadow-md"
+                style={{
+                  backgroundImage:
+                    "linear-gradient(to right, #2DC2DB , #2B87D0)",
+                  padding: "2px",
+                  borderRadius: "8px",
+                }}
+              >
+                <div
+                  className="w-full relative bg-white text-black"
+                  style={{ borderRadius: "5px" }}
                 >
-                  <div className="w-full rounded-lg px-5 py-2.5 flex justify-between items-center text-left">
-                    <span
-                      className={`truncate domain-text !font-semibold !text-gray-300 ${
-                        domain === "Select Job Role"
-                          ? "placeholder-text"
-                          : "font-semibold"
-                      }`}
-                    >
-                      {domain}
-                    </span>
-                    <svg
-                      className="w-5 h-5 text-gray-500 ml-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M19 9l-7 7-7-7"
-                      ></path>
-                    </svg>
-                  </div>
-                </button>
-              </div>
-
-              {isDomainDropdownOpen && (
-                <div className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200  shadow-xl z-20 overflow-hidden" >
-                  {domainOptions.map((option) => (
-                    <div
-                      key={option}
-                      onClick={() => handleSelectDomain(option)}
-                      className={`dropdown-item ${
-                        domain === option ? "highlighted" : ""
-                      }`}
-                    >
-                      {option}
-                    </div>
-                  ))}
+                  <input
+                    type="text"
+                    value={domain === "Select industry domain" ? "" : domain}
+                    onChange={(e) => {
+                      setDomain(e.target.value);
+                    }}
+                    onFocus={() => {
+                      if (domain === "Select industry domain") setDomain("");
+                    }}
+                    onBlur={() => {
+                      if (domain.trim() === "")
+                        setDomain("Select industry domain");
+                    }}
+                    placeholder="Select or type Job Role"
+                    className="w-full px-5 py-2.5 outline-none bg-transparent domain-text !font-semibold"
+                    style={{ borderRadius: "8px", color: "#09407F" }}
+                  />
                 </div>
-              )}
+              </div>
             </div>
           </div>
 
-          {/* Company */}
-          <div className="flex items-center gap-6">
+          {/* --- COMPANY COMBOBOX --- */}
+          <div className="flex items-center gap-6 mb-12">
             <div className={labelCardClass} style={labelCardStyle}>
               <p className="label-text mt-3">Company</p>
             </div>
 
-            <div className="flex-grow w-full relative">
-              <div className="gradient-border-wrap">
-                <div className="w-full relative bg-white rounded-lg">
+            <div className="flex-grow relative">
+              <div
+                className="shadow-md"
+                style={{
+                  backgroundImage:
+                    "linear-gradient(to right, #2DC2DB , #2B87D0)",
+                  padding: "2px", // This controls the thickness of the border
+                  borderRadius: "8px", // This is the outer radius
+                }}
+              >
+                <div
+                  className="w-full relative bg-white "
+                  style={{
+                    borderRadius: "5px",
+                  }}
+                >
                   <input
                     type="text"
-                    placeholder=""
+                    placeholder="Search or type company name"
                     value={company}
-                    onChange={(e) => setCompany(e.target.value)}
-                    className="w-full rounded-lg px-5 py-2.5 outline-none text-gray-800 bg-transparent"
-                  />
-                  <span
-                    className="absolute left-5 top-1/2 -translate-y-1/2 !text-gray-300 pointer-events-none placeholder-text"
-                    style={{
-                      opacity: company ? 0 : 1,
-                      transition: "opacity 0.2s",
+                    onChange={(e) => {
+                      setCompany(e.target.value);
+                      setIsCompanyDropdownOpen(true);
                     }}
+                    onFocus={() => setIsCompanyDropdownOpen(true)}
+                    onBlur={() => {
+                      // Delay closing to allow click on dropdown items
+                      setTimeout(() => setIsCompanyDropdownOpen(false), 200);
+                    }}
+                    // Added pr-10 for arrow, and domain-text for styling
+                    className="w-full px-5 py-2.5 pr-10 outline-none bg-transparent domain-text !font-semibold"
+                    style={{ borderRadius: "8px", color: "#09407F" }}
+                  />
+                  {/* --- Arrow Icon Added --- */}
+                  <svg
+                    onClick={() =>
+                      setIsCompanyDropdownOpen(!isCompanyDropdownOpen)
+                    }
+                    className="w-5 h-5 text-gray-200 absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
                   >
-                    ..........Search by company name
-                  </span>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M19 9l-7 7-7-7"
+                    ></path>
+                  </svg>
                 </div>
               </div>
+
+              {/* --- Dropdown List Added --- */}
+              {(() => {
+                const filteredOptions = companyOptions.filter((option) =>
+                  option.toLowerCase().includes(company.toLowerCase())
+                );
+
+                return (
+                  isCompanyDropdownOpen &&
+                  filteredOptions.length > 0 && (
+                    <div
+                      className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 shadow-xl z-20 overflow-hidden"
+                      style={{ borderRadius: "5px" }}
+                    >
+                      {filteredOptions.map((option) => (
+                        <div
+                          key={option}
+                          onClick={() => handleSelectCompany(option)}
+                          className={`dropdown-item ${
+                            company === option ? "highlighted" : ""
+                          }`}
+                        >
+                          {option}
+                        </div>
+                      ))}
+                    </div>
+                  )
+                );
+              })()}
             </div>
           </div>
         </div>
@@ -494,14 +546,17 @@ export default function AIInterviewForm() {
           disabled={loading}
           className="mt-8 w-full mt-8 py-3 shadow-lg 
                      bg-gradient-to-r from-[#2DC7DB] to-[#2B7ECF] 
-                     text-white text-lg font-semibold transition hover:opacity-90 disabled:opacity-50"
-      style={{ borderRadius: '8px' }}   >
+                     text-white text-lg font-semibold transition hover:opacity-90 disabled:opacity-50 mt-9"
+          style={{ borderRadius: "8px" }}
+        >
           {loading ? "Generating..." : "Start Interview"}
         </button>
       </div>
     </div>
   );
 }
+
+
 
 // "use client";
 

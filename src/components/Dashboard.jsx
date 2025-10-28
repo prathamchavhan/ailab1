@@ -1,244 +1,149 @@
 "use client";
 
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useEffect, useState } from "react";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
-// -------------------------------------------------------------------
-// Table Component — with Inter/Intra toggle and top 10 limit
-// -------------------------------------------------------------------
-function InterviewDashboardTable({ results, currentUserCollegeId }) {
-  const [view, setView] = useState("Inter"); // Default mode
-
-  // ✅ Filter results for intra vs inter
-  const filteredResults =
-    view === "Intra" && currentUserCollegeId
-      ? results.filter((r) => r.profile?.clg_id === currentUserCollegeId)
-      : results;
-
-  // ✅ Limit to top 10 always
-  const displayResults = filteredResults.slice(0, 10);
-
-  // === Styles (unchanged) ===
-  const tealHeaderBgStyle = {
-    background: "#0CA396",
-    color: "white",
-    fontWeight: "bold",
-    borderRadius: "8px",
-    display: "flex",
-    alignItems: "center",
-    padding: "8px 15px",
-    height: "60px",
-    fontSize: "15px",
-    lineHeight: "1.2",
-  };
-
-  const rowTextStyleMedium = {
-    fontFamily: "Poppins, sans-serif",
-    fontWeight: 500,
-    fontSize: "12px",
-    color: "#09407F",
-    lineHeight: "1",
-  };
-
-  const scoreTextStyleSemiBold = {
-    fontFamily: "Poppins, sans-serif",
-    fontWeight: 600,
-    fontSize: "12px",
-    color: "#09407F",
-    lineHeight: "1",
-  };
-
-  const activeGradientStyle = {
-    background: "linear-gradient(to right, #0CA396, #04A2CF)",
-    color: "white",
-  };
-
-  const inactiveBgColor = "#D4F6FA";
-
-  return (
-    
-    <div className="w-full">
-      {/* 🟢 Toggle Section */}
-      <div
-        className="rounded-lg mb-4 p-1"
-        style={{
-          background: "#D4F6FA",
-          boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-        }}
-      >
-        <div className="flex justify-between rounded-md overflow-hidden">
-          {["Inter", "Intra"].map((v) => (
-            <button
-              key={v}
-              onClick={() => setView(v)}
-              className={`flex-1 text-center py-2 text-lg font-semibold transition duration-200 rounded-md ${
-                v !== view ? "text-gray-500 hover:text-gray-900" : ""
-              }`}
-              style={
-                v === view
-                  ? activeGradientStyle
-                  : { backgroundColor: inactiveBgColor }
-              }
-            >
-              {v}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* 🧾 Table Section */}
-      <div className="bg-[#D4F6FA] rounded-2xl p-4 shadow-xl">
-        {/* Table Header */}
-        <div className="grid grid-cols-[3fr_1fr_1fr] gap-3 mb-4">
-          <span style={{ ...tealHeaderBgStyle, justifyContent: "flex-start" }}>
-            Candidate Profile
-          </span>
-          <span style={tealHeaderBgStyle}>Rank</span>
-          <span style={tealHeaderBgStyle}>Score</span>
-        </div>
-
-        {/* Data Rows */}
-        {displayResults.map((result, idx) => (
-          <div
-            key={result.id}
-            className="grid grid-cols-[3fr_1fr_1fr] gap-2 items-center py-3 border-b border-gray-300/50 last:border-0"
-          >
-            {/* Profile */}
-            <div className="flex items-center gap-3" style={rowTextStyleMedium}>
-              <div className="w-9 h-9 rounded-full bg-gray-300 flex items-center justify-center text-sm font-medium text-gray-600">
-                {result.profile?.name ? result.profile.name.charAt(0) : "U"}
-              </div>
-              <span>{result.profile?.name || "Unknown User"}</span>
-            </div>
-
-            {/* Rank */}
-            <span
-              className="text-center font-medium"
-              style={rowTextStyleMedium}
-            >
-              #{idx + 1}
-            </span>
-
-            {/* Score */}
-            <span className="text-center" style={scoreTextStyleSemiBold}>
-              {result.final_score ?? "--"}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// -------------------------------------------------------------------
-// Main Dashboard (Fetches data, college ID, and passes to table)
-// -------------------------------------------------------------------
-export default function Dashboard() {
-  const [results, setResults] = useState([]);
-  const [currentUserCollegeId, setCurrentUserCollegeId] = useState(null);
-  const [loading, setLoading] = useState(true);
+export default function InterviewLeaderboard() {
   const supabase = createClientComponentClient();
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [activeTab, setActiveTab] = useState('Inter');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchResults = async () => {
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user) return;
 
-        // ✅ Get current user's clg_id
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("clg_id")
-          .eq("user_id", user.id)
-          .single();
+    const fetchInterviewLeaderboard = async () => {
+      setIsLoading(true);
+      
+      const { data: { user } } = await supabase.auth.getUser();
 
-        if (profileError) console.error("Profile fetch error:", profileError);
-        console.log("🎓 Current user college ID:", profile?.clg_id);
-        setCurrentUserCollegeId(profile?.clg_id ?? null);
-
-        // ✅ Fetch all interview results (global)
-        const { data: results, error: resultsError } = await supabase
-          .from("interview_results")
-          .select(
-            `
-            id,
-            final_score,
-            user_id,
-            interview_sessions ( company )
-          `
-          )
-          .order("final_score", { ascending: false });
-
-        if (resultsError) throw resultsError;
-
-        // ✅ Fetch all profiles for name + clg_id mapping
-        const userIds = (results || []).map((r) => r.user_id);
-        const { data: profiles, error: profilesError } = await supabase
-          .from("profiles")
-          .select("user_id, name, clg_id")
-          .in("user_id", userIds);
-
-        if (profilesError) throw profilesError;
-
-        const profilesMap = (profiles || []).reduce((acc, p) => {
-          acc[p.user_id] = p;
-          return acc;
-        }, {});
-
-        // ✅ Merge user profile info into results
-        const merged = (results || []).map((r) => ({
-          ...r,
-          profile: profilesMap[r.user_id] || null,
-        }));
-
-        console.log("✅ Total results fetched:", merged.length);
-        setResults(merged);
-      } catch (err) {
-        console.error("Error fetching results:", err);
-      } finally {
-        setLoading(false);
+      if (!user) {
+        console.error("User not found.");
+        setIsLoading(false);
+        return;
       }
+
+
+      const { data, error } = await supabase.rpc('get_interview_leaderboard2', {
+        filter_mode: activeTab.toLowerCase(), 
+        user_id_param: user.id              
+      });
+
+      if (error) {
+        console.error("Error fetching interview leaderboard:", error);
+        setLeaderboard([]);
+      } else {
+       
+        
+        setLeaderboard(data);
+      }
+      setIsLoading(false);
     };
 
-    fetchResults();
-  }, []);
-
-  if (loading)
-    return (
-      <div className="flex items-center justify-center min-h-screen text-gray-600">
-        Loading dashboard...
-      </div>
-    );
-
-  if (results.length === 0)
-    return (
-      <div className="flex items-center justify-center min-h-screen text-gray-600">
-        No interview results yet 🚀
-      </div>
-    );
+    fetchInterviewLeaderboard();
+  }, [supabase, activeTab]); 
 
   return (
-    <div style={{ fontFamily: "Poppins, sans-serif" }} className="p-6">
-      <div className="max-w-4xl mx-auto">
-        <h2
-          className="mb-4"
-          style={{
-            fontFamily: "Poppins, sans-serif",
-            fontWeight: 600,
-            fontSize: "20px",
-            color: "#09407F",
-            lineHeight: "1",
-            letterSpacing: "0",
-          }}
+    <div className="bg-transparent p-6 rounded-lg w-full max-w-md">
+
+      <p className="font-bold text-[#09407F] text-[20px] mb-4">Interview Leaderboard</p>
+      
+
+      <div className="flex bg-[#D4F6FA] rounded-lg p-1 mb-4 w-88">
+        <button 
+          onClick={() => setActiveTab('Inter')}
+          className={`w-1/2 py-2 text-sm font-semibold rounded-md transition-colors ${
+            activeTab === 'Inter' ? 'bg-[#0CA396] text-white shadow' : 'text-[#09407F]'
+          }`}  style={{ borderRadius: '8px' }}
         >
-          Interview Dashboard
-        </h2>
-        <InterviewDashboardTable
-          results={results}
-          currentUserCollegeId={currentUserCollegeId}
-        />
+          Inter-College
+        </button>
+        <button
+          onClick={() => setActiveTab('Intra')}
+          className={`w-1/2 py-2 text-sm font-semibold transition-colors ${
+            activeTab === 'Intra' ? 'bg-[#0CA396] text-white shadow' : 'text-[#09407F]'
+          }`}
+          style={{ borderRadius: '8px' }}
+        >
+          Intra-College
+        </button>
+      </div>
+
+
+      <div 
+        className="w-88 rounded-lg p-19 pr-6 pb-4 pt-2 pl-1 shadow-md"
+        style={{ background: 'linear-gradient(to bottom, #d0fcf8ff, #eafdfbff, #eefcfcff)' }}
+      >
+        <table className="w-full border-separate border-spacing-y-2">
+    
+          <thead>
+            <tr>
+              <th className="p-2 text-left">
+                <div className="bg-[#0CA396] text-white text-[10px] font-bold py-2 px-4 rounded-md inline-block whitespace-nowrap">
+                  CANDIDATE PROFILE
+                </div>
+              </th>
+              <th className="p-2 text-center">
+                <div className="bg-[#0CA396] text-white text-[11px] font-bold py-2 px-3 rounded-md inline-block">
+                  RANK
+                </div>
+              </th>
+              <th className="p-2 text-center">
+                <div className="bg-[#0CA396] text-white text-[11px] font-bold py-2 px-3 rounded-md inline-block">
+                  SCORE
+                </div>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {isLoading ? (
+              <tr>
+                <td colSpan="3" className="text-center p-4 text-gray-500">Loading...</td>
+              </tr>
+            ) : leaderboard.length === 0 ? (
+              <tr>
+                <td colSpan="3" className="text-center p-4 text-gray-500">No data available.</td>
+              </tr>
+            ) : (
+              leaderboard.map((user, index) => (
+                <tr key={`${user.display_name}-${index}`} className="border-t border-gray-200">
+              
+                  {/* --- MODIFIED SECTION --- */}
+                  <td className="p-2">
+                    <div className="flex items-center space-x-3">
+                      <img 
+                        src={user.avatar_url || `https://ui-avatars.com/api/?name=${user.display_name || 'User'}&background=random`} 
+                        alt={user.display_name || 'User'}
+                        className="w-8 h-8 rounded-full object-cover"
+                      />
+                      {/* Stacks name and college */}
+                      <div>
+                        <span className="font-medium text-sm text-gray-700">
+                          {user.display_name}
+                        </span>
+                        {/* Shows college name if it exists */}
+                        {user.clg_name && (
+                          <span className="block text-xs text-gray-500">
+                            {user.clg_name}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+                  {/* --- END OF MODIFICATION --- */}
+            
+                  <td className="p-2 text-center font-bold text-sm text-gray-600">
+                    # {index + 1}
+                  </td>
+              
+                  <td className="p-2 text-center font-semibold text-sm text-gray-800">
+                 
+                    {user.average_score ? Number(user.average_score).toFixed(1) : '--'}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );

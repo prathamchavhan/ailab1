@@ -31,7 +31,7 @@ export default function Announcement() {
   // Loading State
   if (loading) {
     return (
-      <div className="bg-transparent rounded-2xl shadow-md p-5 animate-pulse">
+      <div className="bg-transparent rounded-2xl shadow-md  animate-pulse">
         <div className="h-5 bg-gray-200 rounded w-1/3 mb-4"></div>
         <div className="w-full h-[180px] bg-gray-200 rounded-lg"></div>
       </div>
@@ -54,7 +54,7 @@ export default function Announcement() {
   const AdContent = (
     <>
       {ad.image_url && (
-        <div className="relative w-[210px] h-[210px]">
+        <div className="relative w-[280px] h-[270px]">
           <img
             src={ad.image_url}
             // Using a generic alt text since the ad.content is no longer displayed
@@ -68,7 +68,7 @@ export default function Announcement() {
   );
 
   return (
-    <div className="bg-transparent rounded-2xl  p-4 ">
+    <div className="bg-transparent rounded-2xl   ">
       <p className="font-[Poppins] font-semibold text-[20px] leading-[100%] text-[#09407F] mb-2">
         Announcement
       </p>

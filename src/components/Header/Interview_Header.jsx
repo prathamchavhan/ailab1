@@ -174,9 +174,9 @@ export default function Header() {
   }%`;
 
   return (
-    <header className="px-4 pt-2">
+    <header className="px-5 pt-8">
       <style dangerouslySetInnerHTML={{ __html: embeddedCSS }} />
-      <div className="mt-2 flex justify-between items-center bg-[#1D3540] text-white px-4 py-4 rounded-[20px] ">
+      <div className="mt-1 flex justify-between items-center bg-[#1D3540] text-white px-7 py-7 rounded-[20px] ">
         <div className="flex items-center gap-4 relative">
           {/* Avatar Button (Unchanged) */}
           <button

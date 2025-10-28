@@ -266,7 +266,7 @@ export default function Header() {
                   data-content={newsContent} 
                 ></div>
                 <span className="ml-auto text-[11px] font-medium text-white whitespace-nowrap">
-                News
+                  Total News
                 </span>
               </div>
             )}

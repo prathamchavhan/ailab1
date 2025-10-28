@@ -4,7 +4,7 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import Header from "../../../components/Header";
-
+import { CheckCheck } from 'lucide-react';
 function CompletedPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -72,29 +72,38 @@ function CompletedPageContent() {
       {/* ✅ Main content area */}
       <div className="flex flex-col">
         {/* ✅ Center content */}
-        <div className="flex flex-col items-center justify-center flex-1 text-center px-6 space-y-8">
+        <div className="flex flex-col items-center justify-center flex-1 text-center px-6 mt-22" >
           {/* Thank You */}
-          <h2
-            className="font-[Poppins] font-semibold text-[36px] leading-[100%] text-[#0029A3]"
-            style={{ letterSpacing: "0px" }}
+          <p
+            className=" font-semibold text-[36px] leading-[100%] text-[#0029A3]  !mb-9"
+            style={{ letterSpacing: "3px", font: 'Poppins' }}
           >
             Thank you {userName}!
-          </h2>
+          </p>
 
           {/* Completed */}
           <p
-            className="font-[Poppins] font-bold text-[36px] leading-[100%] text-[#0029A3]"
-            style={{ letterSpacing: "0px" }}
+            className="font-bold text-[27px] leading-[100%]  text-[#0029A3] !mb-12"
+            style={{ letterSpacing: "0px",font:'Poppins' }}
           >
             Completed an interview
           </p>
 
           {/* Status Lines */}
-          <ul className="space-y-4 font-[Poppins] text-[24px] font-medium leading-[100%] text-[#0029A3] tracking-[0px]">
-            <li>✔ Responses are being uploaded...</li>
-            <li>✔ The interview is being analyzed...</li>
-            <li>✔ Actionable feedback is being created...</li>
-          </ul>
+         <ul className="space-y-9  text-[20px] font-medium leading-[100%] text-[#0029A3] tracking-[0px] !mb-18"    style={{  font: 'Poppins' }}>
+    <li className="flex items-center gap-4">
+      <CheckCheck className="text-green-500" size={24} />
+      Responses are being uploaded...
+    </li>
+    <li className="flex items-center gap-4">
+      <CheckCheck className="text-green-500" size={24} />
+      The interview is being analyzed...
+    </li>
+    <li className="flex items-center gap-4">
+      <CheckCheck className="text-green-500" size={24} />
+      Actionable feedback is being created...
+    </li>
+  </ul>
 
           {/* ✅ View Analytics Button */}
           <button
@@ -102,8 +111,8 @@ function CompletedPageContent() {
               router.push(`/interview/analytics?sessionId=${sessionId}`)
             }
             disabled={!sessionId}
-            className="w-[325px] h-[75px] rounded-[12px] bg-gradient-to-r from-[#2DC6DB] to-[#2B83D0] text-white font-[Poppins] font-semibold text-[20px] shadow hover:opacity-95 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-          >
+            className="w-[265px] h-[55px] rounded-[12px] bg-gradient-to-r from-[#2DC6DB] to-[#2B83D0] text-white font-[Poppins] font-bold text-[25px] shadow hover:opacity-95 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+      style={{ borderRadius: "8px" }}    >
             VIEW ANALYTICS
           </button>
         </div>
