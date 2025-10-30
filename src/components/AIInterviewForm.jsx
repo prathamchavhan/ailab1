@@ -557,15 +557,18 @@
 // }
 
 // Your AIInterviewForm file (e.g., app/ai-interview/page.jsx)
+
+
 "use client";
 
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useRouter } from "next/navigation";
+// --- MODIFIED: Added useState ---
 import { useEffect, useState } from "react";
 
 // --- IMPORT THE NEW COMPONENT ---
 // (Adjust the path if you saved it elsewhere)
-import TicTacToeLoader from "@/components/TicTacToeLoader"; 
+import TicTacToeLoader from "@/components/TicTacToeLoader";
 
 export default function AIInterviewForm() {
   // --- State and Logic ---
@@ -577,6 +580,8 @@ export default function AIInterviewForm() {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [isCompanyDropdownOpen, setIsCompanyDropdownOpen] = useState(false);
+  // --- NEW: State for disclaimer modal ---
+  const [showDisclaimerModal, setShowDisclaimerModal] = useState(false);
 
   const router = useRouter();
   const supabase = createClientComponentClient();
@@ -636,17 +641,28 @@ export default function AIInterviewForm() {
     return () => subscription.unsubscribe();
   }, [supabase.auth]);
 
-
-  // --- Start Interview Button Logic ---
+  // --- MODIFIED: This function now just shows the modal ---
   const handleStart = async () => {
+    // 1. Run validation first
     if (domain === "Select industry domain" || !company) {
       alert("Please fill in both Job Role/Domain and Company");
       return;
     }
 
+    // 2. Show the disclaimer modal instead of starting
+    setShowDisclaimerModal(true);
+  };
+
+  // --- NEW: This function contains the original logic from handleStart ---
+  const handleConfirmAndStart = async () => {
+    // 1. Hide the modal
+    setShowDisclaimerModal(false);
+
+    // 2. Set loading state
     setLoading(true); // This will now show the TicTacToeLoader
 
     try {
+      // 3. Check for user (this check is good to keep)
       const {
         data: { user },
         error: authError,
@@ -663,6 +679,7 @@ export default function AIInterviewForm() {
         return;
       }
 
+      // 4. Call the API
       const res = await fetch("/api/generate-questions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -675,6 +692,7 @@ export default function AIInterviewForm() {
         return;
       }
 
+      // 5. Process response
       const responseData = await res.json();
       const { sessionId, questions, config } = responseData;
 
@@ -683,7 +701,7 @@ export default function AIInterviewForm() {
         return;
       }
 
-      // Store the interview data in sessionStorage for the interview page
+      // 6. Store data and navigate
       if (questions && config) {
         sessionStorage.setItem("interviewQuestions", JSON.stringify(questions));
         sessionStorage.setItem("interviewConfig", JSON.stringify(config));
@@ -695,6 +713,7 @@ export default function AIInterviewForm() {
       console.error("❌ Unexpected error:", err);
       alert("Something went wrong while generating questions.");
     } finally {
+      // 7. Hide loader (though navigation will likely happen first)
       setLoading(false); // This will hide the TicTacToeLoader
     }
   };
@@ -1096,6 +1115,7 @@ export default function AIInterviewForm() {
         </div>
 
         {/* Start Interview Button */}
+        {/* --- MODIFIED: onClick handler is changed --- */}
         <button
           onClick={handleStart}
           disabled={loading}
@@ -1108,6 +1128,69 @@ export default function AIInterviewForm() {
           {loading ? "Generating..." : "Start Interview"}
         </button>
       </div>
+
+      {/* --- NEW: Disclaimer Modal --- */}
+      {showDisclaimerModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+          <div
+            className="bg-white rounded-[20px] shadow-lg w-full max-w-md p-8 m-4"
+            style={{ fontFamily: "'Poppins', sans-serif" }}
+          >
+            <h2 className="text-[#09407F] font-semibold text-2xl mb-4 text-center">
+              Before you begin
+            </h2>
+            <div className="text-gray-700 text-sm space-y-3 mb-8">
+              <p>Please note the following for the best experience:</p>
+              <ul className="list-disc list-inside space-y-2 pl-2">
+                <li>
+                  Make sure you are in a **quiet, well-lit room**.
+                </li>
+                <li>
+                  Ensure your **microphone and camera** are working and have the
+                  correct permissions.
+                </li>
+                <li>
+                  Once you start, a timer will begin for each question.
+                </li>
+                <li>
+                  Your answers will be recorded and analyzed by our AI to
+                  provide feedback.
+                </li>
+                <li>
+                  Do not refresh the page, as this will end your session.
+                </li>
+              </ul>
+              <p className="font-semibold text-center pt-2">
+                Click "Agree & Start" to proceed.
+              </p>
+            </div>
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={() => setShowDisclaimerModal(false)}
+                disabled={loading}
+                className="w-[150px] h-[47px] rounded-[12px] font-semibold text-[16px] 
+                      text-[#000000] border border-[#2B84D0] hover:bg-[#E9F6FF] transition-all"
+                style={{ borderRadius: "8px" }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmAndStart}
+                disabled={loading}
+                className="w-[150px] h-[47px] rounded-[12px] font-semibold text-[16px] 
+                      text-white bg-gradient-to-r from-[#2DC5DA] to-[#2B84D0] shadow hover:opacity-90 transition-all
+                      disabled:opacity-70"
+                style={{
+                  borderRadius: "8px",
+                  background: "linear-gradient(to right, #2DC2DB , #2B87D0)",
+                }}
+              >
+                {loading ? "Starting..." : "Agree & Start"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

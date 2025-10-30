@@ -1,5 +1,3 @@
-// File: app/profilemain/page.js
-
 "use client";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
@@ -111,9 +109,9 @@ export default function ProfilePage() {
     // Initialize form data on initial fetch
     setEditFormData({
         name: profile.name || '',
-        surname: profile.surname || '', // <-- FIX 1: Added surname to form state
+        surname: profile.surname || '',
         stream: profile.stream?.stream || profile.branch || '',
-        branch: profile.branch || '', 
+        branch: profile.branch || '', // <-- This was already correct, good!
         role: profile.role || 'Student',
     });
 
@@ -193,10 +191,13 @@ export default function ProfilePage() {
   const handleEdit = () => {
       setIsEditing(true);
    
+      // FIX 1: Ensure 'branch' is initialized in the edit form state
+      // This prevents the "uncontrolled input" error.
       setEditFormData({
           name: profileData.name || '',
           surname: profileData.surname || '', 
           stream: profileData.stream?.stream || profileData.branch || '',
+          branch: profileData.branch || '', // <-- FIX: ADDED THIS LINE
       });
   };
 
@@ -208,10 +209,11 @@ export default function ProfilePage() {
   const handleSave = async () => {
       setLoading(true); 
 
+      // FIX 2: Save the correct 'branch' state to the 'branch' column.
       const updatedFields = {
           name: editFormData.name,
           surname: editFormData.surname, 
-          branch: editFormData.stream, 
+          branch: editFormData.branch, // <-- FIX: Changed from editFormData.stream
       };
 
       const { error } = await supabase
@@ -422,7 +424,6 @@ export default function ProfilePage() {
           
          
           <div className="flex flex-col space-y-0.5">
-            {/* FIX 3a: Display profileData.name */}
             <ProfileDetail label="First Name" value={isEditing ? null : profileData.name || ''} />
             {isEditing && (
                 <input
@@ -436,13 +437,11 @@ export default function ProfilePage() {
           </div>
 
           <div className="flex flex-col space-y-0.5">
-            {/* FIX 3b: Display profileData.surname */}
             <ProfileDetail 
                 label="Last Name" 
                 value={isEditing ? null : profileData.surname || ''} 
             />
             {isEditing && (
-                // <-- FIX 4: Connected input to 'surname' state
                 <input
                     type="text"
                     name="surname" 
@@ -485,10 +484,11 @@ export default function ProfilePage() {
           <div className="flex flex-col space-y-0.5">
             <ProfileDetail label="Stream" value={isEditing ? null : streamName} />
             {isEditing && (
+                // FIX 3: Point this input's value to the 'stream' state.
                 <input
                     type="text"
                     name="stream"
-                   value={editFormData.branch || ''}
+                   value={editFormData.stream || ''} // <-- FIX: Changed from editFormData.branch
                     onChange={handleChange}
                     className="p-1 border border-blue-300 rounded text-sm text-black font-semibold"
                 />

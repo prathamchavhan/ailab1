@@ -4,7 +4,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "./globals.css";
 import { Toaster } from 'sonner';
 import BootstrapClient from "@/components/BootstrapClient"; 
-
+import AuthGuard from "@/components/AuthGuard";
 const inter = Inter({ subsets: ['latin'] });
 
 
@@ -36,7 +36,9 @@ export default function RootLayout({ children }) {
       color: 'black', 
     },
   }}/>
-          {children}
+         <AuthGuard>
+            {children}
+          </AuthGuard>
         </AppLayout>
         <BootstrapClient />
       </body>

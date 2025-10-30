@@ -96,7 +96,7 @@ function Event_Challenge({ challenge }) {
               <span>{challenge.duration_minutes} min</span>
             </div>
           </div>
-          <div className="flex justify-center items-center gap-1"> {/* Decreased gap from gap-2 to gap-1 */}
+          <div className="flex justify-start items-center gap-1"> {/* Decreased gap from gap-2 to gap-1 */}
             <Clock className="w-3 h-3 text-blue-500" /> {/* Decreased icon size from w-4 h-4 to w-3 h-3 */}
             <span>{`${startTime} - ${endTime}`}</span>
           </div>
