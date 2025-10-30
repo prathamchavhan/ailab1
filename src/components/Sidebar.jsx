@@ -8,6 +8,7 @@ import styles from "./Sidebar.module.css";
 
 
 import {
+  BookText ,
   CardSim,
   CloudSunRain,
   LayoutDashboard,
@@ -35,6 +36,7 @@ const navLinks = [
   { href: '/news', label: 'News', icon: Newspaper },
   { href: '/event_challenge', label: 'Challenges', icon: CalendarDays },
   { href: '/assignment', label: 'Assignement', icon: BookOpenCheck },
+  { href: '/bootcamps', label: 'Bootcamps', icon: BookText  },
   { href: '/carrercounselling', label: 'Career Counselling', icon: MessagesSquare },
   { href: '/billing', label: 'Billing', icon: CreditCard },
   { href: '/profilemain', label: 'Profile', icon: User },

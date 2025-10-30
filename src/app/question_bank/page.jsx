@@ -411,23 +411,24 @@ export default function QuestionBankPage() {
                   </div>
                   
                   {/* Dropdown List */}
-                  {isRoundOpen && (
-                    <div className="absolute top-full mt-1 w-full z-10 rounded-md shadow-lg overflow-hidden flex flex-col">
-                      {roundOptions.map((option) => (
-                        <button
-                          key={option}
-                          type="button"
-                          onClick={() => {
-                            setRound(option); // Set the state
-                            setIsRoundOpen(false); // Close the dropdown
-                          }}
-                          className="w-full text-center px-4 py-3 bg-[#2B87D0] text-white font-semibold text-lg hover:bg-blue-700"
-                        >
-                          {option}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                 {isRoundOpen && (
+  <div className="absolute top-full mt-1 w-full z-10 rounded-md shadow-lg overflow-hidden flex flex-col">
+    {roundOptions.map((option) => (
+      <button
+        key={option}
+        type="button"
+        onClick={() => {
+          setRound(option); // Set the state
+          setIsRoundOpen(false); // Close the dropdown
+        }}
+        className="w-full text-center px-2 py-2 bg-[#1B7192] text-white font-semibold text-lg hover:bg-white hover:!text-black transition-all duration-200 ease-in-out"
+      >
+        {option}
+      </button>
+    ))}
+  </div>
+)}
+
                 </div>
               </div>
               {/* --- End Custom Dropdown --- */}

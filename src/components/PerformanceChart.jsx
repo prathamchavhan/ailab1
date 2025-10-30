@@ -1,7 +1,7 @@
 "use client";
 
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   Bar,
   BarChart,
@@ -12,9 +12,9 @@ import {
   YAxis,
 } from "recharts";
 
+// --- CSS is unchanged ---
 const embeddedCSS = `
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
-
 .performance-card {
   font-family: 'Poppins', sans-serif;
   display: flex;
@@ -27,7 +27,6 @@ const embeddedCSS = `
   border-radius: 12px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
 }
-
 .score-circle {
   display: flex;
   align-items: center;
@@ -42,13 +41,11 @@ const embeddedCSS = `
   border: 3px solid;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
-
 .summary-label {
   font-weight: 600;
   font-size: 12px;
   color: #1A202C;
 }
-
 .custom-hover-tooltip {
   background: white;
   border: 1px solid #cfe8f9;
@@ -73,12 +70,10 @@ const embeddedCSS = `
   border-top: 6px solid white;
   filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.05));
 }
-
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(5px); }
   to { opacity: 1; transform: translateY(0); }
 }
-
 .view-report-link {
   font-family: 'Poppins', sans-serif;
   font-weight: 600;
@@ -90,7 +85,6 @@ const embeddedCSS = `
 .view-report-link:hover {
   opacity: 0.8;
 }
-
 .attempt-details {
   font-family: 'Poppins', sans-serif;
   background: #f9fbfd;
@@ -103,6 +97,7 @@ const embeddedCSS = `
 }
 `;
 
+// --- CustomHoverTooltip is unchanged ---
 const CustomHoverTooltip = ({ active, payload }) => {
   if (active && payload && payload.length > 0) {
     const p = payload[0];
@@ -126,6 +121,7 @@ const CustomHoverTooltip = ({ active, payload }) => {
   return null;
 };
 
+// --- SummaryCard is unchanged ---
 const SummaryCard = ({ score, label, border }) => (
   <div
     className="performance-card"
@@ -144,81 +140,150 @@ export default function PerformanceChart() {
   const [selectedAttempt, setSelectedAttempt] = useState(null);
   const supabase = createClientComponentClient();
 
-  useEffect(() => {
-    const fetchAndFormatResults = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
+  // --- NEW: State for the user object and a refetch trigger ---
+  const [user, setUser] = useState(null);
+  const [refetchTrigger, setRefetchTrigger] = useState(0);
+
+  // This function processes the raw results and updates state
+  const processResults = useCallback((results) => {
+    if (!results || results.length === 0) {
+      setChartData([]);
+      setSummaryData(null);
+      return;
+    }
+
+    // Format data for the bar chart
+    const rounds = ["Round 1", "Round 2", "Round 3"];
+    const groupedRounds = rounds.map((round, i) => {
+      const attempts = results.slice(i * 3, i * 3 + 3);
+      return {
+        name: round,
+        score1: attempts[0]?.final_score ?? 0,
+        date1: attempts[0]
+          ? new Date(attempts[0].created_at).toLocaleDateString("en-GB", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            })
+          : "",
+        score2: attempts[1]?.final_score ?? 0,
+        date2: attempts[1]
+          ? new Date(attempts[1].created_at).toLocaleDateString("en-GB", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            })
+          : "",
+        score3: attempts[2]?.final_score ?? 0,
+        date3: attempts[2]
+          ? new Date(attempts[2].created_at).toLocaleDateString("en-GB", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            })
+          : "",
+      };
+    });
+    setChartData(groupedRounds);
+
+    // Format data for the summary cards (based on the latest result)
+    const latest = results[0];
+    let radar = [];
+    try {
+      radar =
+        typeof latest.radar_scores === "string"
+          ? JSON.parse(latest.radar_scores)
+          : latest.radar_scores || [];
+    } catch {
+      radar = [];
+    }
+
+    const getMetric = (name) =>
+      radar.find((r) => r.subject?.toLowerCase() === name.toLowerCase())?.A ||
+      0;
+    
+    // --- THIS IS THE KEY ---
+    // setSummaryData now correctly updates the state for the KPI cards
+    setSummaryData({
+      current_rank: 1, 
+      confidence: getMetric("confidence"),
+      communication: getMetric("communication"),
+      interview: latest.final_score ?? 0,
+    });
+  }, []); // This function has no dependencies
+
+  // Data fetching function wrapped in useCallback
+  const fetchAndProcess = useCallback(
+    async (userToFetch) => {
+      if (!userToFetch) return;
 
       const { data: results } = await supabase
         .from("interview_results")
         .select("final_score, radar_scores, created_at, session_id")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+        .eq("user_id", userToFetch.id)
+        .order("created_at", { ascending: false })
+        .limit(9); 
 
-      if (!results || results.length === 0) return;
-
-      const rounds = ["Round 1", "Round 2", "Round 3"];
-      const groupedRounds = rounds.map((round, i) => {
-        const attempts = results.slice(i * 3, i * 3 + 3);
-        return {
-          name: round,
-          score1: attempts[0]?.final_score ?? 0,
-          date1: attempts[0]
-            ? new Date(attempts[0].created_at).toLocaleDateString("en-GB", {
-                day: "numeric",
-                month: "short",
-                year: "numeric",
-              })
-            : "",
-          score2: attempts[1]?.final_score ?? 0,
-          date2: attempts[1]
-            ? new Date(attempts[1].created_at).toLocaleDateString("en-GB", {
-                day: "numeric",
-                month: "short",
-                year: "numeric",
-              })
-            : "",
-          score3: attempts[2]?.final_score ?? 0,
-          date3: attempts[2]
-            ? new Date(attempts[2].created_at).toLocaleDateString("en-GB", {
-                day: "numeric",
-                month: "short",
-                year: "numeric",
-              })
-            : "",
-        };
-      });
-
-      setChartData(groupedRounds);
-
-      const latest = results[0];
-      let radar = [];
-      try {
-        radar =
-          typeof latest.radar_scores === "string"
-            ? JSON.parse(latest.radar_scores)
-            : latest.radar_scores || [];
-      } catch {
-        radar = [];
+      if (results) {
+        processResults(results);
       }
+    },
+    [supabase, processResults] // Depends on supabase client and processResults
+  );
 
-      const getMetric = (name) =>
-        radar.find((r) => r.subject?.toLowerCase() === name.toLowerCase())?.A ||
-        0;
+  // --- NEW: Effect 1: Fetches data ---
+  // Runs when the component loads (user is set) OR when the trigger is flipped
+  useEffect(() => {
+    if (user) {
+      console.log("Fetching data...", { user: user.id, trigger: refetchTrigger });
+      fetchAndProcess(user);
+    }
+  }, [user, refetchTrigger, fetchAndProcess]);
 
-      setSummaryData({
-        current_rank: 1,
-        confidence: getMetric("confidence"),
-        communication: getMetric("communication"),
-        interview: latest.final_score ?? 0,
-      });
+  // --- NEW: Effect 2: Manages Auth and Subscription ---
+  // Runs only once on mount to get the user and set up the listener
+  useEffect(() => {
+    let channel;
+
+    const setupAuthAndSub = async () => {
+      // Get user
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user); // This will trigger Effect 1 to run
+
+      // Set up subscription
+      if (user) {
+        channel = supabase
+          .channel(`public:interview_results:user_id=eq.${user.id}`)
+          .on(
+            "postgres_changes",
+            {
+              event: "INSERT",
+              schema: "public",
+              table: "interview_results",
+              filter: `user_id=eq.${user.id}`,
+            },
+            (payload) => {
+              console.log("New result! Triggering refetch.");
+              // This is the *only* job of the callback now
+              setRefetchTrigger((c) => c + 1); // This will trigger Effect 1
+            }
+          )
+          .subscribe();
+      }
     };
 
-    fetchAndFormatResults();
-  }, []);
+    setupAuthAndSub();
 
+    // Cleanup
+    return () => {
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
+  }, [supabase]); // Runs only when supabase client changes (which it won't)
+
+
+  // --- handleBarClick is unchanged ---
   const handleBarClick = (data, dataKey) => {
     const idx = dataKey.slice(-1);
     const score = data[`score${idx}`];
@@ -230,6 +295,7 @@ export default function PerformanceChart() {
     }
   };
 
+  // --- summaryCardMapping is unchanged ---
   const summaryCardMapping = [
     { key: "current_rank", label: "Current Rank", border: "#3CB371" },
     { key: "confidence", label: "Confidence", border: "#808080" },
@@ -237,6 +303,7 @@ export default function PerformanceChart() {
     { key: "interview", label: "Interview", border: "#4682B4" },
   ];
 
+  // --- JSX return is unchanged ---
   return (
     <div className="w-full">
       <style dangerouslySetInnerHTML={{ __html: embeddedCSS }} />

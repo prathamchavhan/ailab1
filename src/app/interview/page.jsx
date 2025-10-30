@@ -488,10 +488,16 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useRef, useState } from "react";
+import {
+  Suspense,
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+} from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { FiLogOut, FiMic } from "react-icons/fi";
-import { Mic } from "lucide-react"; // <-- 1. IMPORT ADDED
+import { Mic } from "lucide-react";
 import {
   PolarAngleAxis,
   PolarGrid,
@@ -521,7 +527,18 @@ function InterviewPageContent() {
   const [answers, setAnswers] = useState({});
   const [showExitPopup, setShowExitPopup] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
-  const [availableVoices, setAvailableVoices] = useState([]);
+
+  // --- 1. STATE & REF FOR PROCESSING ---
+  const [isProcessing, setIsProcessing] = useState(false);
+  const isProcessingRef = useRef(false);
+
+  // --- MODIFIED: State for 5-second intro video, triggered by question change ---
+  const [showIntroVideo, setShowIntroVideo] = useState(true);
+
+  // --- NEW: Ref for the intro video element to reset it ---
+  const introVideoRef = useRef(null);
+  // --- NEW: Ref to track the previous question index ---
+  const prevIndexRef = useRef(0);
 
   const mediaRecorderRef = useRef(null);
   const audioChunks = useRef([]);
@@ -551,7 +568,7 @@ function InterviewPageContent() {
       if (!data?.user) router.push("/login");
     };
     checkUser();
-  }, [router]);
+  }, [router, supabase.auth]);
 
   useEffect(() => {
     const loadInterviewData = () => {
@@ -591,26 +608,6 @@ function InterviewPageContent() {
 
     loadInterviewData();
   }, [router]);
-
-  useEffect(() => {
-    const synth = window.speechSynthesis;
-
-    const populateVoices = () => {
-      setAvailableVoices(synth.getVoices());
-    };
-
-    if ("onvoiceschanged" in synth) {
-      synth.onvoiceschanged = populateVoices;
-    }
-
-    populateVoices();
-
-    return () => {
-      if ("onvoiceschanged" in synth) {
-        synth.onvoiceschanged = null;
-      }
-    };
-  }, []);
 
   useEffect(() => {
     if (!sessionId || questions.length > 0) return;
@@ -655,16 +652,7 @@ function InterviewPageContent() {
       }
     };
     fetchData();
-  }, [sessionId, questions.length, router]);
-
-  useEffect(() => {
-    if (timeLeft <= 0) {
-      handleNext(); // Automatically call handleNext when timer runs out
-      return;
-    }
-    const timer = setInterval(() => setTimeLeft((t) => t - 1), 1000);
-    return () => clearInterval(timer);
-  }, [timeLeft]);
+  }, [sessionId, questions.length, router, supabase]);
 
   useEffect(() => setTimeLeft(60), [currentIndex]);
 
@@ -682,65 +670,106 @@ function InterviewPageContent() {
     enableCamera();
   }, []);
 
+  // Effect for speaking the question
   useEffect(() => {
-    if (availableVoices.length === 0) {
-      return;
-    }
+    const currentQuestionText = questions[currentIndex]?.question;
 
-    if (questions.length > 0 && questions[currentIndex]?.question) {
-      const utterance = new window.SpeechSynthesisUtterance(
-        questions[currentIndex].question
-      );
-
-      let preferredVoice = null;
-
-      preferredVoice = availableVoices.find(
-        (voice) =>
-          voice.lang.toLowerCase().includes("en-in") &&
-          (voice.name.toLowerCase().includes("female") ||
-            voice.name.toLowerCase().includes("sangeeta") ||
-            voice.name.toLowerCase().includes("heena"))
-      );
-
-      if (!preferredVoice) {
-        preferredVoice = availableVoices.find(
+    if (currentQuestionText) {
+      const synth = window.speechSynthesis;
+      const speak = () => {
+        const voices = synth.getVoices();
+        if (voices.length === 0) {
+          return;
+        }
+        const utterance = new window.SpeechSynthesisUtterance(
+          currentQuestionText
+        );
+        let preferredVoice = null;
+        preferredVoice = voices.find(
           (voice) =>
-            voice.lang.startsWith("en") &&
+            voice.lang.toLowerCase().includes("en-in") &&
             (voice.name.toLowerCase().includes("female") ||
-              voice.name.toLowerCase().includes("sandra") ||
-              voice.name.toLowerCase().includes("kate") ||
-              voice.name.toLowerCase().includes("ava"))
+              voice.name.toLowerCase().includes("sangeeta") ||
+              voice.name.toLowerCase().includes("heena"))
         );
-      }
-
-      if (!preferredVoice) {
-        preferredVoice = availableVoices.find(
-          (voice) =>
-            voice.lang.startsWith("en") &&
-            !voice.name.toLowerCase().includes("male")
-        );
-      }
-
-      if (preferredVoice) {
-        utterance.voice = preferredVoice;
-      } else if (availableVoices.length > 0) {
-        console.error(
-          "Preferred (IN/Female) voice not found. Using default available voice:",
-          availableVoices[0]?.name || "N/A"
-        );
-        utterance.voice = availableVoices[0];
+        if (!preferredVoice) {
+          preferredVoice = voices.find(
+            (voice) =>
+              voice.lang.startsWith("en") &&
+              (voice.name.toLowerCase().includes("female") ||
+                voice.name.toLowerCase().includes("sandra") ||
+                voice.name.toLowerCase().includes("kate") ||
+                voice.name.toLowerCase().includes("ava"))
+          );
+        }
+        if (!preferredVoice) {
+          preferredVoice = voices.find(
+            (voice) =>
+              voice.lang.startsWith("en") &&
+              !voice.name.toLowerCase().includes("male")
+          );
+        }
+        if (preferredVoice) {
+          utterance.voice = preferredVoice;
+        } else if (voices.length > 0) {
+          console.error(
+            "Preferred (IN/Female) voice not found. Using default available voice:",
+            voices[0]?.name || "N/A"
+          );
+          utterance.voice = voices[0];
+        } else {
+          console.error("No voices available for speech synthesis.");
+        }
+        synth.cancel();
+        synth.speak(utterance);
+      };
+      if (synth.getVoices().length > 0) {
+        speak();
       } else {
-        console.error("No voices available for speech synthesis.");
+        synth.onvoiceschanged = () => {
+          speak();
+          synth.onvoiceschanged = null;
+        };
+      }
+      return () => {
+        synth.cancel();
+        synth.onvoiceschanged = null;
+      };
+    }
+  }, [questions, currentIndex]);
+
+  // --- MODIFIED: Effect for 5-second intro, triggered by new question ---
+  useEffect(() => {
+    const prevIndex = prevIndexRef.current;
+
+    // Only run the intro animation if we are moving FORWARD
+    // or if it's the very first question load (index 0)
+    if (currentIndex > prevIndex || (currentIndex === 0 && prevIndex === 0)) {
+      // 1. Reset video to the start
+      if (introVideoRef.current) {
+        introVideoRef.current.currentTime = 0;
       }
 
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(utterance);
-    }
-  }, [questions, currentIndex, availableVoices]);
+      // 2. Show the intro video (it will fade in)
+      setShowIntroVideo(true);
 
-  // --- 1. MODIFIED `startListening` ---
-  // Simplified: Just starts the recorder.
+      // 3. Start a timer to hide it after 5 seconds
+      const timerId = setTimeout(() => {
+        setShowIntroVideo(false); // (it will fade out)
+      }, 5000); // 5000 milliseconds = 5 seconds
+
+      // 4. Cleanup function for this effect
+      return () => {
+        clearTimeout(timerId); // Clear the timer if the component unmounts or index changes again
+      };
+    }
+
+    // ALWAYS update the "previous index" ref for the next change
+    prevIndexRef.current = currentIndex;
+  }, [currentIndex]); // This effect re-runs whenever `currentIndex` changes
+
   const startListening = async () => {
+    if (isProcessingRef.current) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);
@@ -751,9 +780,6 @@ function InterviewPageContent() {
         if (event.data.size > 0) audioChunks.current.push(event.data);
       };
 
-      // The 'onstop' logic is now in the `stopListening` function
-      // to allow it to return a promise.
-
       mediaRecorder.start();
       setListening(true);
     } catch (err) {
@@ -762,12 +788,8 @@ function InterviewPageContent() {
     }
   };
 
-  // --- 2. MODIFIED `stopListening` ---
-  // Now returns a Promise that resolves with the final transcript text.
-  const stopListening = () => {
+  const stopListening = useCallback(() => {
     return new Promise((resolve) => {
-      // If recorder is already stopped, just set listening to false
-      // and resolve with the transcript currently in state.
       if (
         !mediaRecorderRef.current ||
         mediaRecorderRef.current.state === "inactive"
@@ -777,12 +799,10 @@ function InterviewPageContent() {
         return;
       }
 
-      // Define 'onstop' here to get access to the 'resolve' function
       mediaRecorderRef.current.onstop = async () => {
         const audioBlob = new Blob(audioChunks.current, { type: "audio/webm" });
         let newTranscript = "(No response)";
 
-        // Only upload if there's actually audio
         if (audioBlob.size > 0) {
           try {
             const qId = questions[currentIndex]?.id ?? null;
@@ -799,28 +819,32 @@ function InterviewPageContent() {
         }
 
         audioChunks.current = [];
-        setTranscript(newTranscript); // Update UI
+        setTranscript(newTranscript);
         setListening(false);
-        resolve(newTranscript); // Resolve the promise with the final text
+        resolve(newTranscript);
       };
 
-      // Stop the recorder, which triggers the 'onstop' handler above
       mediaRecorderRef.current.stop();
     });
-  };
+  }, [transcript, questions, currentIndex, sessionId]);
 
+  const handleNext = useCallback(async () => {
+    if (isProcessingRef.current) return;
+    isProcessingRef.current = true;
+    setIsProcessing(true);
 
-  const handleNext = async () => {
-   
     const answerText = await stopListening();
 
-    if (!sessionId || !questions[currentIndex]) return;
+    if (!sessionId || !questions[currentIndex]) {
+      isProcessingRef.current = false;
+      setIsProcessing(false);
+      return;
+    }
 
     const qId = questions[currentIndex].id;
     const cleanAnswer = answerText.trim() || "(No response)";
 
     try {
-      // Save the final, correct answer
       await supabase.from("interview_answers").upsert(
         [
           {
@@ -838,10 +862,11 @@ function InterviewPageContent() {
         [qId]: cleanAnswer,
       }));
 
-      // Move to the next question or finish
       if (currentIndex < questions.length - 1) {
         setCurrentIndex((i) => i + 1);
-        setTranscript(""); // Clear transcript for the new question
+        setTranscript("");
+        isProcessingRef.current = false;
+        setIsProcessing(false);
       } else {
         // Finished interview
         const res = await fetch("/api/evaluate", {
@@ -852,6 +877,8 @@ function InterviewPageContent() {
 
         if (!res.ok) {
           console.error("Evaluation failed:", await res.json());
+          isProcessingRef.current = false;
+          setIsProcessing(false);
           return;
         }
 
@@ -859,13 +886,37 @@ function InterviewPageContent() {
       }
     } catch (error) {
       console.error("Error saving answer:", error);
+      isProcessingRef.current = false;
+      setIsProcessing(false);
     }
-  };
+  }, [
+    stopListening,
+    sessionId,
+    questions,
+    currentIndex,
+    supabase,
+    router,
+  ]);
 
-  // This simple handler is for the "Start/Submit" button
-  const handleToggleListening = () => {
+  useEffect(() => {
+    if (timeLeft <= 0) {
+      handleNext();
+      return;
+    }
+    if (!isProcessing) {
+      const timer = setInterval(() => setTimeLeft((t) => t - 1), 1000);
+      return () => clearInterval(timer);
+    }
+  }, [timeLeft, handleNext, isProcessing]);
+
+  const handleToggleListening = async () => {
     if (listening) {
-      stopListening(); // Just call it, don't await. It will update state.
+      if (isProcessingRef.current) return;
+      isProcessingRef.current = true;
+      setIsProcessing(true);
+      await stopListening();
+      isProcessingRef.current = false;
+      setIsProcessing(false);
     } else {
       startListening();
     }
@@ -873,7 +924,7 @@ function InterviewPageContent() {
 
   const handleConfirmExit = async () => {
     setIsExiting(true);
-    await stopListening(); // Ensure recording stops before exiting
+    await stopListening();
     router.push("/ai-dashboard");
   };
 
@@ -893,19 +944,16 @@ function InterviewPageContent() {
         <Header />
       </div>
       <div className="min-h-screen bg-[#F5F7FA] text-[#1A1A1A]">
+        {/* Header/Progress Bar */}
         <div className="flex justify-between items-center px-8 mt-1 mb-0">
           <div className="grid grid-cols-[auto_1fr] gap-x-2 font-semibold text-[16px] text-[#09407F]">
-            {/* Row 1 */}
             <p className="mb-0">Round:</p>
             <p className="mb-0">{round || "1"}</p>
-
-            {/* Row 2 */}
             <p>Level:</p>
             <p>{level || "Easy"}</p>
           </div>
 
           {questions.length > 0 && (
-            /* CHANGED: Added 'w-full' to ensure perfect centering */
             <div className="flex w-full justify-center gap-1 my-4 px-8">
               {questions.map((_, idx) => {
                 let bgColor = "#D9D9D9";
@@ -942,22 +990,20 @@ function InterviewPageContent() {
         <div className="font-[Poppins] px-8 pb-8 grid grid-cols-3 gap-8">
           {/* LEFT SECTION */}
           <div className="col-span-2 flex flex-col items-center">
-            {/* START OF CHANGES */}
             <div className="w-full flex justify-between  px-2">
               <p className="font-semibold items-center text-[18px] text-[#09407F] w-full text-center">
                 Interviewer Aavi
               </p>
             </div>
 
-            {/* This <p> tag was removed from here */}
             <div className="bg-white rounded-[10px] shadow-md px-4 py-3 text-left text-[#000000] font-medium mb-2 w-[680px]">
-              Q{currentIndex + 1}.{" "}
-              {questions[currentIndex]?.question || "Loading..."}
+              {questions[currentIndex]
+                ? `Q${currentIndex + 1}. ${questions[currentIndex].question}`
+                : "Loading..."}
             </div>
 
-            {/* --- 3. VIDEO CONTAINER MODIFIED --- */}
             <div className="relative w-[700px] h-[470px] rounded-[12px] overflow-hidden shadow  border-[2px]  mb-3">
-              {/* --- NEW RECORDING INDICATOR (TOP-LEFT) --- */}
+              {/* Recording Indicator */}
               {listening && (
                 <div className="absolute top-5 left-5 z-10">
                   <div className="flex items-center gap-2 text-red-600/90  font-medium px-4 py-2 font-bold ">
@@ -967,43 +1013,50 @@ function InterviewPageContent() {
                 </div>
               )}
 
-              {/* --- NEW TIMER (TOP-RIGHT) --- */}
+              {/* Timer */}
               <div className="absolute top-5 right-5 z-10">
-               <p className="bg-red-50 text-red-500 font-semibold flex items-center justify-center w-12 h-12 rounded-full border !border-red-500">
-  <span className="animate-pulse">
-    {timeLeft}s
-  </span>
-</p>
+                <p className="bg-red-50 text-red-500 font-semibold flex items-center justify-center w-12 h-12 rounded-full border !border-red-500">
+                  <span className="animate-pulse">{timeLeft}s</span>
+                </p>
               </div>
 
-              {/* --- Existing Video Elements --- */}
+              {/* --- MODIFIED: Video Elements per new logic --- */}
+
+              {/* Video 2 (RC.mp4) - The default, always-on base video */}
               <video
-                src="/AVEE2.mp4"
+                src="/RC.mp4"
                 autoPlay
                 loop
                 muted
                 playsInline
                 className="w-full h-full object-cover"
               />
+
+              {/* Video 1 (Avatar.mp4) - The 5-second intro video */}
+              {/* --- NEW: Added ref --- */}
               <video
-                src="/RC.mp4" // <-- !! REPLACE WITH YOUR SPEAKING VIDEO FILE !!
+                ref={introVideoRef}
+                src="hd.mp4"
                 autoPlay
                 loop
                 muted
                 playsInline
-                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
-                  listening ? "opacity-100" : "opacity-0"
-                }`}
+                // --- MODIFIED: Made transition smoother (longer duration + ease) ---
+                className={`absolute inset-0 w-full h-full object-cover 
+                  transition-opacity ease-in-out duration-500 ${
+                    showIntroVideo ? "opacity-100" : "opacity-0"
+                  }`}
               />
 
-              {/* CHANGED: Aligned to bottom-left */}
+              {/* "Start/Submit" Button */}
               <div className="absolute bottom-5 left-5 z-10">
                 <button
-                  // --- CLICK HANDLER CHANGED ---
                   onClick={handleToggleListening}
+                  disabled={isProcessing}
                   className="flex items-center gap-2 bg-[#7CE5FF] text-[#000000] 
                     font-semibold text-[15px] w-[150px] h-[45px] rounded-[5px] 
-                    justify-center shadow-sm hover:opacity-90 transition-all"
+                    justify-center shadow-sm hover:opacity-90 transition-all
+                    disabled:opacity-50"
                   style={{
                     borderRadius: "8px",
                     background:
@@ -1011,35 +1064,45 @@ function InterviewPageContent() {
                   }}
                 >
                   <FiMic />
-                  {listening ? "Submit..." : "Start Answer"}
+                  {isProcessing
+                    ? "Submitting..."
+                    : listening
+                    ? "Submit"
+                    : "Start Answer"}
                 </button>
               </div>
 
-              
+              {/* "Next/Finish" Button */}
               <div className="absolute bottom-5 right-5 z-10">
                 <button
                   onClick={handleNext}
+                  disabled={isProcessing}
                   className="w-[120px] h-[44px] rounded-[12px] bg-gradient-to-r 
-                    from-[#2DC5DB] to-[#2B81D0] text-[#000000] font-semibold shadow"
+                    from-[#2DC5DB] to-[#2B81D0] text-[#000000] font-semibold shadow
+                    disabled:opacity-50"
                   style={{
                     borderRadius: "8px",
                     background:
                       "linear-gradient(to right, #2DC2DB , #2B87D0)",
                   }}
                 >
-                  {currentIndex < questions.length - 1 ? "Next →" : "Finish"}
+                  {isProcessing
+                    ? "Processing..."
+                    : currentIndex < questions.length - 1
+                    ? "Next →"
+                    : "Finish"}
                 </button>
               </div>
             </div>
 
+            {/* Answer Transcript Box */}
             <div className="bg-[#F0FAFF] border border-[#2DC5DB] rounded-[10px] shadow-sm px-2 py-1 text-[#000000] text-[15px] font-normal mb-5 w-[720px] text-left">
               <p className="font-semibold text-[#09407F] mb-2">Your Answer:</p>
               <p>{transcript || "Start speaking to record your answer..."}</p>
             </div>
-
-            {/* Next Button was here, but has been MOVED into the video div */}
           </div>
 
+          {/* RIGHT SECTION */}
           <div className="flex flex-col items-center gap-3 pt-5">
             <p className="font-semibold text-[20px] text-[#09407F]">
               Student video
@@ -1083,7 +1146,7 @@ function InterviewPageContent() {
           </div>
         </div>
 
-        {/* Exit Confirmation Popup */}
+        {/* Exit Popup */}
         {showExitPopup && (
           <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50">
             <div className="bg-white rounded-[20px] shadow-lg w-[450px] p-8 text-center border-2 border-[#2B81D0]">
@@ -1129,7 +1192,6 @@ function InterviewPageContent() {
     </>
   );
 }
-
 
 export default function InterviewPage() {
   return (

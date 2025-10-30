@@ -100,103 +100,148 @@
 // }
 // File: components/Leaderboard.js
 
-
-
-
 "use client";
 import { useEffect, useState } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { CardContent } from "@/components/ui/card";
+
+// Stub for CardContent
+const CardContent = ({ children, className, ...props }) => (
+  <div className={className} {...props}>
+    {children}
+  </div>
+);
+
+// Helper function to generate initials
+const getInitials = (name) => {
+  if (!name) return '??';
+  return name.split(' ')
+            .map(n => n[0])
+            .join('')
+            .toUpperCase()
+            .substring(0, 2);
+};
 
 export default function LeaderboardPage() {
-  const supabase = createClientComponentClient();
+  const [supabase] = useState(() => createClientComponentClient());
   const [leaderboard, setLeaderboard] = useState([]);
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
-      const { data, error } = await supabase.rpc('get_top_5_leaderboard');
+      if (!supabase) return; 
+
+      const { data, error } = await supabase.rpc('profileleaderboard2');
 
       if (error) {
         console.error("Error fetching leaderboard:", error);
       } else {
-        console.log(data); 
-        setLeaderboard(data);
+        setLeaderboard(data || []); 
       }
     };
 
     fetchLeaderboard();
-  }, [supabase]);
+  }, [supabase]); 
 
   return (
     <main className="p-0">
       <p className="text-2xl font-bold mb-3 text-[#09407F]">Leaderboard 🏆</p>
+      
+      {/* Width decrease & left shift:
+        - Used max-w-3xl for a noticeable width decrease.
+        - Used ml-0 mr-auto to pin the table to the left (instead of mx-auto for centering).
+      */}
+      <div className="max-w-3xl ml-0 mr-auto"> 
+        <CardContent className="p-0 overflow-x-auto">
+          <table
+            className="w-full border-collapse"
+style={{
+              background: 'linear-gradient(to bottom, #EAFFFD, #F3FFFE, #FDFFFF)',
+              borderSpacing: 0,
+              tableLayout: 'auto',
+              // DARKEST SHADOW: Increased vertical offset (18px) and opacity (0.8) for a heavy, dark bottom shadow.
+              boxShadow: '0 18px 25px -12px rgba(0, 0, 0, 0.8)' 
+            }}
+          >
+            <thead>
+              <tr className="text-left text-[#152935] font-semibold text-sm">
+                
+                {/* Rank */}
+                <th className="py-2 px-2 whitespace-nowrap">
+                  <div className="bg-teal-600 text-white px-2 py-1 rounded-lg text-sm font-bold w-fit">
+                    Rank
+                  </div>
+                </th>
 
-      <CardContent className="p-0 overflow-x-auto">
-        <table
-          className="shadow-md table-fixed" 
-          style={{
-            background: 'linear-gradient(to bottom, #EAFFFD, #F3FFFE, #FDFFFF)'
-          }}
-        >
-          <thead>
-            <tr className="text-left text-[#152935] font-semibold text-sm">
-              {/* FIX: Increased HORIZONTAL padding */}
-              <th className="px-4 py-2 w-[80px] text-center">
-                <div className="bg-teal-600 text-white px-2 py-1 rounded-lg text-sm font-bold w-fit mx-auto">
-                  Rank
-                </div>
-              </th>
+                {/* Candidate Profile */}
+                <th className="py-2 text-left" style={{ paddingLeft: '1rem', paddingRight: '0.5rem' }}>
+                  <div className="bg-teal-600 text-white px-2 py-1 rounded-lg text-sm font-bold w-fit whitespace-nowrap">
+                    Candidate Profile
+                  </div>
+                </th>
 
-              {/* FIX: Increased HORIZONTAL padding */}
-              <th className="px-4 py-2 text-left">
-                <div className="bg-teal-600 text-white px-2 py-1 rounded-lg text-sm font-bold w-fit mr-4">
-                  Name
-                </div>
-              </th>
+                {/* College */}
+                <th className="py-1" style={{ paddingLeft: '0.5rem', paddingRight: '0.5rem' }}>
+                  <div className="bg-teal-600 text-white py-1 px-3 rounded-lg text-sm font-bold w-fit whitespace-nowrap">
+                    College
+                  </div>
+                </th>
 
-              {/* FIX: Increased HORIZONTAL padding */}
-              <th className="px-4 py-2 text-center">
-                <div className="bg-teal-600 text-white px-2 py-1 rounded-lg text-sm font-bold w-fit mx-auto">
-                  College
-                </div>
-              </th>
+                {/* Score */}
+                <th className="py-2 px-2 whitespace-nowrap">
+                  <div className="bg-teal-600 text-white px-2 py-1 rounded-lg text-sm font-bold w-fit">
+                    Score
+                  </div>
+                </th>
 
-              {/* FIX: Increased HORIZONTAL padding */}
-              <th className="px-4 py-2 w-[80px] text-center">
-                <div className="bg-teal-600 text-white px-2 py-1 rounded-lg text-sm font-bold w-fit mx-auto">
-                  Score
-                </div>
-              </th>
-
-              {/* FIX: Increased HORIZONTAL padding */}
-              <th className="px-4 py-2 w-[100px] text-center">
-                <div className="bg-teal-600 text-white px-2 py-1 rounded-lg text-sm font-bold w-fit mx-auto">
-                  Avg.Score
-                </div>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-           
-            {leaderboard && leaderboard.map((user, index) => (
-              <tr key={index} className="border-b text-[#09407F]">
-                {/* FIX: Increased HORIZONTAL padding */}
-                <td className="px-4 py-2 font-bold w-[80px] text-center"># {index + 1}</td>
-                {/* FIX: Increased HORIZONTAL padding */}
-                <td className="px-4 py-2 font-medium truncate">{user.name}</td>
-                {/* FIX: Increased HORIZONTAL padding */}
-                <td className="px-4 py-2 text-[15px] font-medium truncate">{user.clg_name}</td>
-                {/* FIX: Increased HORIZONTAL padding */}
-                <td className="px-4 py-2 w-[80px] text-center font-medium">{user.combined_total_score}</td>
-                {/* FIX: Increased HORIZONTAL padding */}
-                <td className="px-4 py-2 w-[100px] text-center font-medium">
-                  {user.combined_avg_score ? user.combined_avg_score.toFixed(2) : '0.00'}
-                </td>
+                {/* Avg. Score */}
+                <th className="py-2 px-2 whitespace-nowrap">
+                  <div className="bg-teal-600 text-white px-2 py-1 rounded-lg text-sm font-bold w-fit">
+                    Avg. Score
+                  </div>
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </CardContent>
+            </thead>
+            <tbody>
+              
+              {leaderboard && leaderboard.map((user, index) => (
+                <tr key={index} className="text-[#09407F]">
+                  
+                  {/* Rank */}
+                  <td className="py-2 font-bold text-center px-2"># {index + 1}</td>
+                  
+                  {/* Candidate Profile: Ensure truncation on name */}
+                  <td className="py-2 font-medium" style={{ paddingLeft: '1rem', paddingRight: '0.5rem' }}>
+                    <div className="flex items-center space-x-3 min-w-0">
+                      <img
+                        src={user.avatar_url || `https://placehold.co/40x40/E0E0E0/999999?text=${getInitials(user.name)}`}
+                        alt={user.name || 'Avatar'}
+                        className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                        onError={(e) => {
+                          e.target.src = `https://placehold.co/40x40/E0E0E0/999999?text=${getInitials(user.name)}`;
+                        }}
+                      />
+                      {/* Flex-1 and min-w-0 on a child is often needed with truncate in a flex container */}
+                      <span className="truncate flex-1 min-w-0">{user.name}</span>
+                    </div>
+                  </td>
+                  
+                  {/* College: Ensure truncation */}
+                  <td className="py-1 text-[15px] font-medium" style={{ paddingLeft: '0.5rem', paddingRight: '0.5rem' }}>
+                    <span className="truncate block">{user.clg_name}</span>
+                  </td>
+                  
+                  {/* Score */}
+                  <td className="py-2 text-center font-medium px-2">{user.combined_total_score}</td>
+                  
+                  {/* Avg. Score */}
+                  <td className="py-2 text-center font-medium px-2">
+                    {user.combined_avg_score ? user.combined_avg_score.toFixed(2) : '0.00'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </CardContent>
+      </div>
     </main>
   );
-} 
+}

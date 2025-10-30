@@ -197,7 +197,7 @@ export default function DashboardPage() {
 
   <div
     className="flex flex-col md:flex-row mb-6"
-    style={{ marginTop: '1.75rem' }} 
+    style={{ marginTop: '1.60rem' }} 
   >
    
     <div className="flex-grow">
@@ -205,7 +205,7 @@ export default function DashboardPage() {
     </div>
     
     
-    <div className="hidden lg:block md:w-1/4 md:min-w-[250px] md:max-w-[300px]">
+    <div className="lg:block mt-1   md:min-w-[250px] md:max-w-[300px]">
       <Announcement />
     </div>
   </div>

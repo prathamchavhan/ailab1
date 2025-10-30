@@ -7,7 +7,7 @@ import News_header from '@/components/Header/News_header';
 // --- All sub-components (CategoryTabButton, etc.) are included and are unchanged ---
 
 const CategoryTabButton = ({ label, isActive, onClick }) => {
-    const baseClasses = "px-3 py-1 text-sm rounded-xl transition font-medium cursor-pointer";
+    const baseClasses = "px-3 py-1 text-sm !rounded-md transition font-medium cursor-pointer";
     const activeClasses = "bg-[#d0f6fa] text-[#09407F]"; 
     const inactiveClasses = "bg-gray-100 text-[#09407F] rounded-xl";
     return <button onClick={onClick} className={`${baseClasses} ${isActive ? activeClasses : inactiveClasses}`}>{label}</button>;
@@ -156,7 +156,7 @@ export default function NewsDashboard() {
             {/* --- 1. Main Page Content --- */}
             {/* We apply blur and pointer-events-none here when the popup is active */}
             <div className={`p-6 space-y-6 transition-all duration-300 ${popupNews ? 'blur-sm pointer-events-none' : ''}`}>
-                <div className="flex space-x-6 gap-9 text-[13px]"> 
+                <div className="flex space-x-6  gap-9 text-[13px]" style={{ borderRadius: '8px' }}> 
                     <CategoryTabButton label="All" isActive={activeTab === 'All'} onClick={() => setActiveTab('All')} />
                     <CategoryTabButton label="Start up" isActive={activeTab === 'Start up'} onClick={() => setActiveTab('Start up')} />
                     <CategoryTabButton label="Founders" isActive={activeTab === 'Founders'} onClick={() => setActiveTab('Founders')} />
