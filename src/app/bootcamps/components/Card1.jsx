@@ -44,13 +44,14 @@ export default function App() {
         </header>
 
         {/* --- Bootcamp Card --- */}
+        {/* This card is already responsive with lg:flex-row */}
         <div className="bg-white shadow-xl rounded-2xl overflow-hidden flex flex-col lg:flex-row">
 
           {/* --- Left Content Column --- */}
           <div className="w-full lg:w-2/3 p-6 md:p-10">
             
             {/* Tabs & Rating - single small line */}
-            <div className="flex items-center justify-between gap-3 mb-3 text-sm flex-nowrap">
+            <div className="flex items-center justify-between gap-3 mb-3 text-sm flex-wrap sm:flex-nowrap">
               {/* Tabs (left) */}
               <div className="flex items-center gap-2">
                 <button
@@ -120,7 +121,8 @@ export default function App() {
               Tools You'll Master
             </p >
             <div className="flex flex-wrap gap-1.5">
-              <ToolTag name="Excel" className="!text-[7px] px-2 py-0.5" />
+              {/* The ToolTag component is now fixed to accept these classes */}
+              <ToolTag name="Excel" className="!text-[10px] px-2 py-0.5" />
               <ToolTag name="SQL Server" className="text-[10px] px-2 py-0.5" />
               <ToolTag name="Power BI" className="text-[10px] px-2 py-0.5" />
               <ToolTag name="Python" className="text-[10px] px-2 py-0.5" />
@@ -159,7 +161,7 @@ export default function App() {
                 </button>
               </div>
 
-              <div className="flex justify-between text-sm mb-6">
+              <div className="flex flex-wrap justify-center sm:justify-between text-sm mb-6 gap-2">
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 size={18} className="text-white flex-shrink-0" />
                   <span className="text-white" style={{ textShadow: '2px 2px 4px rgba(0, 0, 0, 0.5)' }}>EMI available</span>
@@ -190,42 +192,50 @@ export default function App() {
               Complete Curriculum Breakdown
             </h2>
         </div>
-        <div className="mt-10 flex flex-wrap justify-center gap-6 md:gap-27 lg:gap-27 max-w-7xl mx-auto">
+        {/* MODIFIED: Added responsive gap */}
+        <div className="mt-10 flex flex-wrap justify-center gap-6 sm:gap-8 lg:gap-12 max-w-7xl mx-auto">
           {/* Card 1 */}
-          <div className="flex flex-col items-start p-6 rounded-xl w-62 sm:w-70 shadow-md" style={{ background: '#ffffffff' }}>
+          {/* MODIFIED: Set fixed width w-72 */}
+          <div className="flex flex-col items-start p-6 rounded-xl w-72 shadow-md" style={{ background: '#ffffffff' }}>
             <span className="!text-[10px] font-medium text-[#8C42A7] mb-2">Week 1-2</span>
             <span className="!text-[16px] font-bold text-[#09407F]">Foundations</span>
             <span className="!text-[10px] md:text-sm font-medium text-gray-700 opacity-80 mt-1">Excel Mastery, Statistics Fundamentals, Data Visualization Basics</span>
           </div>
           {/* Card 2 */}
-          <div className="flex flex-col items-start p-6 rounded-xl w-56 sm:w-60 shadow-md" style={{ background: '#ffffffff' }}>
+          {/* MODIFIED: Set fixed width w-72 */}
+          <div className="flex flex-col items-start p-6 rounded-xl w-72 shadow-md" style={{ background: '#ffffffff' }}>
             <span className="!text-[10px] font-medium text-[#8C42A7] mb-2">Week 3-4</span>
             <span className="!text-[16px] font-bold text-[#09407F]">SQL & Databases</span>
             <span className="!text-[10px] md:text-sm font-medium text-gray-700 opacity-80 mt-1">Advanced SQL Queries, Database Design, Performance Optimization</span>
           </div>
           {/* Card 3 */}
-          <div className="flex flex-col items-start p-4 rounded-xl w-56 sm:w-60 shadow-md" style={{ background: '#ffffffff' }}>
+          {/* MODIFIED: Set fixed width w-72 */}
+          <div className="flex flex-col items-start p-6 rounded-xl w-72 shadow-md" style={{ background: '#ffffffff' }}>
             <span className="!text-[10px] font-medium text-[#8C42A7] mb-2">Week 5-6</span>
             <span className="!text-[16px] font-bold text-[#09407F]">Power BI Mastery</span>
             <span className="!text-[10px] md:text-sm font-medium text-gray-700 opacity-80 mt-1">Dashboard Creation, DAX Functions, Advanced Analytic</span>
           </div>
         </div>
 
-        <div className="mt-10 flex flex-wrap justify-center gap-6 md:gap-27 lg:gap-27 max-w-7xl mx-auto">
+        {/* MODIFIED: Added responsive gap and mt-8 */}
+        <div className="mt-8 flex flex-wrap justify-center gap-6 sm:gap-8 lg:gap-12 max-w-7xl mx-auto">
           {/* Stat Item 1 */}
-          <div className="flex flex-col items-start p-6 rounded-xl w-56 sm:w-70 shadow-md" style={{ background: '#ffffffff' }}>
+          {/* MODIFIED: Set fixed width w-72 */}
+          <div className="flex flex-col items-start p-6 rounded-xl w-72 shadow-md" style={{ background: '#ffffffff' }}>
             <span className="!text-[10px] font-medium text-[#8C42A7] mb-2">Week 7-8</span>
             <span className="!text-[16px] font-bold text-[#09407F]">Python for Analytics</span>
             <span className="!text-[10px] md:text-sm font-medium text-grey-200 opacity-80 mt-1">Pandas, NumPy, Data Manipulation, Automation</span>
           </div>
           {/* Stat Item 2 */}
-          <div className="flex flex-col items-start p-6 rounded-xl w-56 sm:w-60 shadow-md" style={{ background: '#ffffffff' }}>
+          {/* MODIFIED: Set fixed width w-72 */}
+          <div className="flex flex-col items-start p-6 rounded-xl w-72 shadow-md" style={{ background: '#ffffffff' }}>
             <span className="!text-[10px] font-medium text-[#8C42A7] mb-2">Week 8-9</span>
             <span className="!text-[16px] font-bold text-[#09407F]">Advanced Analytics</span>
             <span className="!text-[10px] md:text-sm font-medium text-grey-200 opacity-80 mt-1">Machine Learning Basics, Predictive Modeling</span>
           </div>
           {/* Stat Item 3 */}
-          <div className="flex flex-col items-start p-6  rounded-xl w-56 sm:w-60 shadow-md" style={{ background: '#ffffffff' }}>
+          {/* MODIFIED: Set fixed width w-72 */}
+          <div className="flex flex-col items-start p-6  rounded-xl w-72 shadow-md" style={{ background: '#ffffffff' }}>
             <span className="!text-[10px] font-medium text-[#8C42A7] mb-2">Week 9-10</span>
             <span className="!text-[16px] font-bold text-[#09407F]">Capstone Project</span>
             <span className="!text-[10px] md:text-sm font-medium text-grey-200 opacity-80 mt-1">End-to-End Analytics Project, Portfolio Development</span>
@@ -479,8 +489,9 @@ function BookingForm({ onClose }) {
 /**
  * A component for the tag-like items in "Tools You'll Master".
  */
-const ToolTag = ({ name }) => (
-  <span className="bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full text-sm font-medium">
+// MODIFIED: This helper now correctly accepts and merges className
+const ToolTag = ({ name, className = '' }) => (
+  <span className={`bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full text-sm font-medium ${className}`}>
     {name}
   </span>
 );

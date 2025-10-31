@@ -4,9 +4,11 @@ import { NextResponse } from "next/server";
 export async function POST(request) {
   console.log("API route '/api/get-recommendations' was hit.");
 
-  const apiKeys = (process.env.NEXT_PUBLIC_GEMINI_API_KEY || "").split(',');
+  // --- FIX 1: Use secure, server-side environment variable ---
+  const apiKeys = (process.env.GEMINI_API_KEY || "").split(',');
   if (!apiKeys.length || !apiKeys[0]) {
-    console.error("NEXT_PUBLIC_GEMINI_API_KEY environment variable is not set or empty.");
+    // Updated error log
+    console.error("GEMINI_API_KEY environment variable is not set or empty.");
     return NextResponse.json(
       { error: "API keys are not configured on the server." },
       { status: 500 }
@@ -25,7 +27,6 @@ export async function POST(request) {
       'Verbal Ability': verbalScore
     };
 
-    // Find the highest and lowest scoring sections
     const sortedSections = Object.entries(scores).sort(([, a], [, b]) => b - a);
     const topSection = sortedSections[0][0];
     const bottomSection = sortedSections[sortedSections.length - 1][0];
@@ -36,7 +37,7 @@ export async function POST(request) {
 
         const genAI = new GoogleGenerativeAI(key.trim());
         const model = genAI.getGenerativeModel({
-          model: "gemini-2.5-flash",
+          model: "gemini-2.5-flash", // Using your specified model
           generationConfig: {
             response_mime_type: "application/json",
           }
@@ -70,15 +71,17 @@ export async function POST(request) {
 
         console.log(`API key "...${key.slice(-4)}" succeeded!`);
 
+        // --- FIX 2: Simplified JSON parsing ---
+        // Because we set response_mime_type: "application/json",
+        // we can parse the text directly without manual cleanup.
         try {
-          let responseText = response.text().trim();
-          responseText = responseText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+          const responseText = response.text();
           const jsonData = JSON.parse(responseText);
           return NextResponse.json({ recommendations: jsonData });
 
         } catch (parseError) {
           console.error("JSON Parsing failed for LLM output:", parseError);
-          const originalRawText = response.text();
+          const originalRawText = response.text(); // Get raw text for debugging
 
           return NextResponse.json(
             {
@@ -95,10 +98,12 @@ export async function POST(request) {
           continue;
         } else {
           console.error("A non-quota error occurred:", error);
-          throw error;
+          throw error; // Let the outer catch handle this
         }
       }
     }
+
+    // This code runs only if all keys fail the 429 check
     console.error("All API keys are exhausted or failed.");
     return NextResponse.json(
       { error: "All available API keys have exceeded their quota." },

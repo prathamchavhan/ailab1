@@ -483,7 +483,6 @@
 
 
 
-
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabaseServer";
 import { model as geminiModel } from "@/lib/geminiClient";
@@ -513,6 +512,10 @@ export async function POST(req) {
   try {
     const { sessionId: id } = await req.json();
     sessionId = id;
+
+    // --- NEW DEBUG LOG ---
+    console.log(`[DEBUG] 0️⃣: Evaluation started for sessionId: ${sessionId}`);
+    // --- END DEBUG LOG ---
 
     if (!sessionId) return NextResponse.json({ error: "Missing sessionId" }, { status: 400 });
 
@@ -632,6 +635,13 @@ ${qas
     // Weight: 60% technical + 40% behavioral
     const finalScore = Math.round(0.6 * technicalScore100 + 0.4 * behavioralScore100);
 
+    // --- NEW DEBUG LOG ---
+    console.log(`[DEBUG] 7️⃣: Calculated Scores
+      - Technical Score (100): ${technicalScore100} (from avg ${technicalScore10})
+      - Behavioral Score (100): ${behavioralScore100}
+      - Final Score (100): ${finalScore}`);
+    // --- END DEBUG LOG ---
+
     // 8️⃣ Merge radar chart data
     const radarScores = [
       ...(mlEvaluation.radar_scores || []),
@@ -656,27 +666,48 @@ ${qas
     };
 
     // 🔟 Store result in Supabase
-    const { error: insertErr } = await supabase.from("interview_results").upsert([
-      {
-        session_id: sessionId,
-        user_id: userId,
-        final_score: finalScore,
-        technical_score: technicalScore100,
-        behavioral_score: behavioralScore100,
-        radar_scores: radarScores,
-        feedback,
-        gemini_result: geminiEvaluation,
-        ml_result: mlEvaluation,
-        created_at: new Date().toISOString(),
-      },
-    ]);
+    
+    // --- NEW DEBUG LOGS ---
+    const resultPayload = {
+      session_id: sessionId,
+      user_id: userId,
+      final_score: finalScore,
+      technical_score: technicalScore100,
+      behavioral_score: behavioralScore100,
+      radar_scores: radarScores,
+      feedback,
+      gemini_result: geminiEvaluation,
+      ml_result: mlEvaluation,
+      created_at: new Date().toISOString(),
+    };
+
+    console.log("[DEBUG] 🔟: Attempting to upsert payload to 'interview_results':");
+    console.log(JSON.stringify(resultPayload, null, 2)); // Pretty-prints the full object
+
+    // Pre-insert checks
+    if (!userId || !sessionId) {
+       console.error(`[DEBUG] CRITICAL: userId (${userId}) or sessionId (${sessionId}) is null/undefined. Aborting insert.`);
+       return NextResponse.json({ error: "DB insert failed: Missing session or user ID." }, { status: 500 });
+    }
+    if (isNaN(finalScore) || isNaN(technicalScore100) || isNaN(behavioralScore100)) {
+       console.error(`[DEBUG] CRITICAL: One or more scores are NaN. Aborting insert.`);
+       return NextResponse.json({ error: "DB insert failed: Score calculation resulted in NaN." }, { status: 500 });
+    }
+    // --- END DEBUG LOGS ---
+
+
+    const { error: insertErr } = await supabase.from("interview_results").upsert([resultPayload]); // Use the payload object
 
     if (insertErr) {
-      console.error("⚠️ Supabase insert error:", insertErr);
-      return NextResponse.json({ error: "DB insert failed" }, { status: 500 });
+      // --- MODIFIED ERROR LOG ---
+      console.error("⚠️ Supabase insert error (Full Error):", insertErr);
+      console.error(`[DEBUG] Failed to insert for session_id: ${sessionId} and user_id: ${userId}`);
+      // --- END MODIFIED LOG ---
+      return NextResponse.json({ error: "DB insert failed", details: insertErr.message }, { status: 500 });
     }
 
     // ✅ Success
+    console.log(`[DEBUG] ✅: Successfully saved results for session: ${sessionId}`);
     return NextResponse.json({
       success: true,
       message: "Gemini + ML Hybrid Evaluation completed successfully",
@@ -687,7 +718,9 @@ ${qas
       feedback,
     });
   } catch (err) {
-    console.error("🔥 Evaluation error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error("🔥 Evaluation error (Outer Catch):", err);
+    // Add sessionId to the error if it's available
+    const errorMsg = `Error processing session ${sessionId}: ${err.message}`;
+    return NextResponse.json({ error: errorMsg, details: err.stack }, { status: 500 });
   }
 }

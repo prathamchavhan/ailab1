@@ -558,17 +558,43 @@
 
 // Your AIInterviewForm file (e.g., app/ai-interview/page.jsx)
 
-
 "use client";
 
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useRouter } from "next/navigation";
-// --- MODIFIED: Added useState ---
+// --- MODIFIED: Added useEffect ---
 import { useEffect, useState } from "react";
+// --- NEW: Import for animations ---
+import { motion, AnimatePresence } from "framer-motion";
 
 // --- IMPORT THE NEW COMPONENT ---
 // (Adjust the path if you saved it elsewhere)
 import TicTacToeLoader from "@/components/TicTacToeLoader";
+
+// --- NEW: Data for the instruction slider ---
+// I've used placeholders. Replace the `image` URLs with your own 5 images.
+const instructions = [
+  {
+    image: "/noise.png",
+    text: "sit in a quiet environment free from distractions.",
+  },
+  {
+    image: "mic_camera.png",
+    text: "Ensure your microphone and camera are working.",
+  },
+  {
+    image: "timere.png",
+    text: "Once you start, a timer will begin for each question.",
+  },
+  {
+    image: "avee.png",
+    text: "Your answers will be recorded and analyzed by our AI.",
+  },
+  {
+    image: "donotrefresh.png",
+    text: "Do not refresh the page, as this will end your session.",
+  },
+];
 
 export default function AIInterviewForm() {
   // --- State and Logic ---
@@ -580,8 +606,9 @@ export default function AIInterviewForm() {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [isCompanyDropdownOpen, setIsCompanyDropdownOpen] = useState(false);
-  // --- NEW: State for disclaimer modal ---
   const [showDisclaimerModal, setShowDisclaimerModal] = useState(false);
+ 
+  const [currentSlide, setCurrentSlide] = useState(0);
 
   const router = useRouter();
   const supabase = createClientComponentClient();
@@ -602,6 +629,7 @@ export default function AIInterviewForm() {
     setIsCompanyDropdownOpen(false);
   };
 
+  // --- Auth useEffect (Unchanged) ---
   useEffect(() => {
     const checkUser = async () => {
       const { data, error } = await supabase.auth.getUser();
@@ -617,11 +645,7 @@ export default function AIInterviewForm() {
       }
       setAuthLoading(false);
     };
-
-    // Check initial auth state
     checkUser();
-
-    // Listen for auth state changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
@@ -637,32 +661,39 @@ export default function AIInterviewForm() {
       }
       setAuthLoading(false);
     });
-
     return () => subscription.unsubscribe();
   }, [supabase.auth]);
 
-  // --- MODIFIED: This function now just shows the modal ---
+
+  useEffect(() => {
+
+    if (showDisclaimerModal) {
+      const timer = setInterval(() => {
+        setCurrentSlide((prevSlide) => (prevSlide + 1) % instructions.length);
+      }, 3000); // 3 seconds
+
+
+      return () => clearInterval(timer);
+    }
+  }, [showDisclaimerModal]);
+
+  // --- handleStart (Unchanged) ---
   const handleStart = async () => {
-    // 1. Run validation first
     if (domain === "Select industry domain" || !company) {
       alert("Please fill in both Job Role/Domain and Company");
       return;
     }
-
-    // 2. Show the disclaimer modal instead of starting
+    // --- NEW: Reset slide to 0 when opening modal ---
+    setCurrentSlide(0);
     setShowDisclaimerModal(true);
   };
 
-  // --- NEW: This function contains the original logic from handleStart ---
+  // --- handleConfirmAndStart (Unchanged) ---
   const handleConfirmAndStart = async () => {
-    // 1. Hide the modal
     setShowDisclaimerModal(false);
-
-    // 2. Set loading state
-    setLoading(true); // This will now show the TicTacToeLoader
+    setLoading(true);
 
     try {
-      // 3. Check for user (this check is good to keep)
       const {
         data: { user },
         error: authError,
@@ -679,7 +710,6 @@ export default function AIInterviewForm() {
         return;
       }
 
-      // 4. Call the API
       const res = await fetch("/api/generate-questions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -692,7 +722,6 @@ export default function AIInterviewForm() {
         return;
       }
 
-      // 5. Process response
       const responseData = await res.json();
       const { sessionId, questions, config } = responseData;
 
@@ -701,7 +730,6 @@ export default function AIInterviewForm() {
         return;
       }
 
-      // 6. Store data and navigate
       if (questions && config) {
         sessionStorage.setItem("interviewQuestions", JSON.stringify(questions));
         sessionStorage.setItem("interviewConfig", JSON.stringify(config));
@@ -713,30 +741,27 @@ export default function AIInterviewForm() {
       console.error("❌ Unexpected error:", err);
       alert("Something went wrong while generating questions.");
     } finally {
-      // 7. Hide loader (though navigation will likely happen first)
-      setLoading(false); // This will hide the TicTacToeLoader
+      setLoading(false);
     }
   };
 
-  // --- Design Constants ---
+  // --- Design Constants (Unchanged) ---
   const activeGradientButtonClass =
     "bg-gradient-to-r from-[#2DC7DB] to-[#2B7ECF] text-white shadow-md";
   const inactiveSegmentButtonClass =
     "placeholder-text transition hover:text-gray-900";
-
   const labelCardClass =
     "bg-white rounded-[6px] shadow-md flex items-center justify-center";
-
   const labelCardStyle = {
     width: "120px",
     height: "47px",
     boxShadow: "0 4px 4px -2px rgba(0, 0, 0, 0.25)",
   };
 
-  // --- Embedded CSS ---
+  // --- Embedded CSS (Unchanged) ---
   const gradientBorderCSS = `
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
-
+    /* ... (all your existing CSS styles are unchanged) ... */
     .ai-interview-title {
         font-family: 'Poppins', sans-serif;
         font-weight: 600;
@@ -840,7 +865,7 @@ export default function AIInterviewForm() {
     }
   `;
 
-  // --- JSX Layout ---
+  // --- JSX Layout (Main form is unchanged) ---
   return (
     <div className="p-4 w-full">
       <style dangerouslySetInnerHTML={{ __html: gradientBorderCSS }} />
@@ -901,10 +926,10 @@ export default function AIInterviewForm() {
         </div>
       )}
 
-      {/* --- RENDER THE LOADER COMPONENT --- */}
+      {/* RENDER THE LOADER COMPONENT */}
       {loading && <TicTacToeLoader />}
 
-      {/* Form */}
+      {/* Form (Unchanged) */}
       <div className="bg-transparent p-0">
         <div className="space-y-6">
           {/* Level */}
@@ -1022,7 +1047,7 @@ export default function AIInterviewForm() {
             </div>
           </div>
 
-          {/* --- COMPANY COMBOBOX --- */}
+          {/* COMPANY COMBOBOX */}
           <div className="flex items-center gap-6 mb-12">
             <div className={labelCardClass} style={labelCardStyle}>
               <p className="label-text mt-3">Company</p>
@@ -1115,7 +1140,6 @@ export default function AIInterviewForm() {
         </div>
 
         {/* Start Interview Button */}
-        {/* --- MODIFIED: onClick handler is changed --- */}
         <button
           onClick={handleStart}
           disabled={loading}
@@ -1124,46 +1148,50 @@ export default function AIInterviewForm() {
                      text-white text-lg font-semibold transition hover:opacity-90 disabled:opacity-50 mt-9"
           style={{ borderRadius: "8px" }}
         >
-          {/* This text will be hidden by the loader, but it's good practice */}
           {loading ? "Generating..." : "Start Interview"}
         </button>
       </div>
 
-      {/* --- NEW: Disclaimer Modal --- */}
+      {/* --- MODIFIED: Disclaimer Modal with Slider --- */}
       {showDisclaimerModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
           <div
-            className="bg-white rounded-[20px] shadow-lg w-full max-w-md p-8 m-4"
-            style={{ fontFamily: "'Poppins', sans-serif" }}
+            className="bg-[#EAFDFF] rounded-[20px] shadow-lg w-full max-w-md p-8 m-4"
+            style={{ fontFamily: "'Poppins', sans-serif",border:"2px solid #263E9F" }}
           >
             <h2 className="text-[#09407F] font-semibold text-2xl mb-4 text-center">
               Before you begin
             </h2>
-            <div className="text-gray-700 text-sm space-y-3 mb-8">
-              <p>Please note the following for the best experience:</p>
-              <ul className="list-disc list-inside space-y-2 pl-2">
-                <li>
-                  Make sure you are in a **quiet, well-lit room**.
-                </li>
-                <li>
-                  Ensure your **microphone and camera** are working and have the
-                  correct permissions.
-                </li>
-                <li>
-                  Once you start, a timer will begin for each question.
-                </li>
-                <li>
-                  Your answers will be recorded and analyzed by our AI to
-                  provide feedback.
-                </li>
-                <li>
-                  Do not refresh the page, as this will end your session.
-                </li>
-              </ul>
-              <p className="font-semibold text-center pt-2">
-                Click "Agree & Start" to proceed.
-              </p>
+
+            {/* --- NEW: Image and Text Slider --- */}
+            <div className="relative w-full h-56 mb-4 overflow-hidden">
+              <AnimatePresence>
+                <motion.div
+                  key={currentSlide} // This key tells AnimatePresence to animate
+                  initial={{ x: 300, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: -300, opacity: 0 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  className="absolute inset-0 flex flex-col items-center justify-center"
+                >
+                  <img
+                    src={instructions[currentSlide].image}
+                    alt="Interview instruction"
+                    className="w-36 h-36 object-cover rounded-lg shadow-md mb-4"
+                  />
+                  <p className="text-gray-700 text-base font-medium text-center px-4">
+                    {instructions[currentSlide].text}
+                  </p>
+                </motion.div>
+              </AnimatePresence>
             </div>
+            {/* --- END: Image and Text Slider --- */}
+
+            <p className="font-semibold text-center text-sm text-gray-600 mb-6">
+              Click "Agree & Start" to proceed.
+            </p>
+
+            {/* --- Buttons (Unchanged) --- */}
             <div className="flex justify-center gap-4">
               <button
                 onClick={() => setShowDisclaimerModal(false)}

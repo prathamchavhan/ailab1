@@ -26,25 +26,31 @@ export default function App() {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
   return (
-    <div className="min-h-screen bg-white font-sans shadow-md !rounded-lg text-gray-900" >
+    // Ensure min-h-screen is present and container styles are clean
+    <div className="min-h-screen bg-white font-sans text-gray-900" >
+      
+      {/* Retain max-w-7xl for standard centering and spacing */}
       <main className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
         
       
 
         {/* --- Bootcamp Card --- */}
-        <div className="bg-white shadow-xl rounded-2xl overflow-hidden flex flex-col lg:flex-row">
+        {/* MODIFIED: Changed lg:flex-row to md:flex-row to make the two-column layout kick in earlier on tablets/desktops */}
+        <div className="bg-white shadow-xl rounded-2xl overflow-hidden flex flex-col md:flex-row">
 
           {/* --- Left Content Column --- */}
-          <div className="w-full lg:w-2/3 p-6 md:p-10">
+          {/* MODIFIED: Changed w-full lg:w-2/3 to w-full md:w-2/3 to match the md:flex-row breakpoint */}
+          <div className="w-full md:w-2/3 p-6 md:p-10">
             
         
   {/* Tabs */}
 {/* Tabs & Rating - single small line */}
-<div className="flex items-center justify-between gap-3 mb-3 text-sm flex-nowrap">
+{/* MODIFIED: Added flex-wrap for tabs to break if necessary on very small screens */}
+<div className="flex items-center justify-between gap-3 mb-3 text-sm flex-wrap">
   {/* Tabs (left) */}
-  <div className="flex items-center gap-2">
+  <div className="flex items-center gap-2 flex-wrap">
     <button
-      className="px-3 py-1 !text-[8px] font-semibold bg-gradient-to-r from-[#79E0FF] to-[#00BAF2] text-black !rounded-md"
+      className="px-3 py-1 !text-[8px] font-semibold bg-gradient-to-r from-[#79EFF] to-[#00BAF2] text-black !rounded-md"
    style={{ textShadow: '1px 1px 2px rgba(65, 65, 65, 0.5)' }} >
       Beginner to Advanced
     </button>
@@ -114,19 +120,22 @@ Master SQL from basics to advanced level with real database projects. Learn data
               Tools You'll Master
             </p >
            <div className="flex flex-wrap gap-1.5">
-  <ToolTag name="MySQL" className="!text-[7px] px-2 py-0.5" />
-  <ToolTag name="SQL Server" className="text-[10px] px-2 py-0.5" />
-  <ToolTag name="PostgreSQL" className="text-[10px] px-2 py-0.5" />
-  <ToolTag name="Oracle" className="text-[10px] px-2 py-0.5" />
-  <ToolTag name="MongoDB" className="text-[10px] px-2 py-0.5" />
-  <ToolTag name="SSMS" className="text-[10px] px-2 py-0.5" />
-</div>
+              {/* MODIFIED: Ensured ToolTag accepts and applies className for responsiveness */}
+              <ToolTag name="MySQL" className="text-[10px] px-2 py-0.5" />
+              <ToolTag name="SQL Server" className="text-[10px] px-2 py-0.5" />
+              <ToolTag name="PostgreSQL" className="text-[10px] px-2 py-0.5" />
+              <ToolTag name="Oracle" className="text-[10px] px-2 py-0.5" />
+              <ToolTag name="MongoDB" className="text-[10px] px-2 py-0.5" />
+              <ToolTag name="SSMS" className="text-[10px] px-2 py-0.5" />
+            </div>
 
           </div>
 
           {/* --- Right Sidebar Column --- */}
-         <div className="w-full lg:w-1/3 bg-gradient-to-b from-[#103E50] to-[#1B7192] text-white p-8">
+         {/* MODIFIED: Changed w-full lg:w-1/3 to w-full md:w-1/3 to match the md:flex-row breakpoint */}
+         <div className="w-full md:w-1/3 bg-gradient-to-b from-[#103E50] to-[#1B7192] text-white p-8">
            
+     {/* Retain sticky top-8 but ensure it doesn't break layout on mobile */}
      <div className="sticky top-8 ">
     <div className="mb-4 text-center">
       <span 
@@ -154,7 +163,9 @@ Master SQL from basics to advanced level with real database projects. Learn data
                   Enroll Now
                 </button>
               </div>
-              <div className="flex justify-between text-sm mb-6">
+              
+              {/* MODIFIED: Used flex-wrap for responsiveness on small screens */}
+              <div className="flex flex-wrap justify-center sm:justify-between text-sm mb-6 gap-2">
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 size={18} className="text-white flex-shrink-0" style={{ textShadow: '2px 2px 4px rgba(0, 0, 0, 0.5)' }} />
                   <span className="text-white">EMI available</span>
@@ -186,10 +197,12 @@ Master SQL from basics to advanced level with real database projects. Learn data
             </h2>
            
         </div>
-<div className="mt-10 flex flex-wrap justify-center gap-6 md:gap-27 lg:gap-27 max-w-7xl mx-auto">
+{/* MODIFIED: Increased gap using responsive utilities */}
+<div className="mt-10 flex flex-wrap justify-center gap-6 sm:gap-8 lg:gap-12 max-w-7xl mx-auto">
 
     {/* Card 1 */}
-    <div className="flex flex-col items-start p-6 rounded-xl w-56 sm:w-70 shadow-md"
+    {/* Set a fixed 'w-72' to allow natural wrapping. */}
+    <div className="flex flex-col items-start p-6 rounded-xl w-72 shadow-md"
         style={{
             background: '#ffffffff'
         }}>
@@ -199,7 +212,8 @@ Master SQL from basics to advanced level with real database projects. Learn data
     </div>
 
     {/* Card 2 */}
-    <div className="flex flex-col items-start p-6 rounded-xl w-56 sm:w-60 shadow-md"
+    {/* Set a fixed 'w-72' to allow natural wrapping. */}
+    <div className="flex flex-col items-start p-6 rounded-xl w-72 shadow-md"
         style={{
             background: '#ffffffff'
         }}>
@@ -209,7 +223,8 @@ Master SQL from basics to advanced level with real database projects. Learn data
     </div>
 
     {/* Card 3 */}
-    <div className="flex flex-col items-start p-4 rounded-xl w-56 sm:w-60 shadow-md"
+    {/* Set a fixed 'w-72' to allow natural wrapping. */}
+    <div className="flex flex-col items-start p-6 rounded-xl w-72 shadow-md"
         style={{
             background: '#ffffffff'
         }}>
@@ -221,10 +236,12 @@ Master SQL from basics to advanced level with real database projects. Learn data
 
 </div>
 
- <div className="mt-10 flex flex-wrap justify-center gap-6 md:gap-27 lg:gap-27 max-w-7xl mx-auto">
+{/* MODIFIED: Increased gap using responsive utilities */}
+ <div className="mt-8 flex flex-wrap justify-center gap-6 sm:gap-8 lg:gap-12 max-w-7xl mx-auto">
 
-    {/* Stat Item 1: 5000+ Careers Transformed */}
- <div className="flex flex-col items-start p-6 rounded-xl w-56 sm:w-70 shadow-md"
+    {/* Stat Item 1 */}
+    {/* Set a fixed 'w-72' to allow natural wrapping. */}
+ <div className="flex flex-col items-start p-6 rounded-xl w-72 shadow-md"
         style={{
             background: '#ffffffff'
         }}>
@@ -233,8 +250,9 @@ Master SQL from basics to advanced level with real database projects. Learn data
         <span className="!text-[10px] md:text-sm font-medium text-grey-200 opacity-80 mt-1">Functions, Triggers, Error Handling</span>
     </div>
 
-    {/* Stat Item 2: 95% Success Rate */}
-    <div className="flex flex-col items-start p-6 rounded-xl w-56 sm:w-60 shadow-md"
+    {/* Stat Item 2 */}
+    {/* Set a fixed 'w-72' to allow natural wrapping. */}
+    <div className="flex flex-col items-start p-6 rounded-xl w-72 shadow-md"
         style={{
             background: '#ffffffff'
         }}>
@@ -243,8 +261,9 @@ Master SQL from basics to advanced level with real database projects. Learn data
         <span className="!text-[10px] md:text-sm font-medium text-grey-200 opacity-80 mt-1">Indexing, Query Optimization, Execution Plans</span>
     </div>
 
-    {/* Stat Item 3: 50+ Expert Counsellors */}
-     <div className="flex flex-col items-start p-6 rounded-xl w-56 sm:w-60 shadow-md"
+    {/* Stat Item 3 */}
+    {/* Set a fixed 'w-72' to allow natural wrapping. */}
+     <div className="flex flex-col items-start p-6 rounded-xl w-72 shadow-md"
         style={{
             background: '#ffffffff'
         }}>
@@ -254,15 +273,19 @@ Master SQL from basics to advanced level with real database projects. Learn data
     </div>
 
 </div>
+
  {/* Stat Item 3: 50+ Expert Counsellors */}
-    <div className="flex flex-col items-start mt-7 p-6 rounded-xl w-56 sm:w-70 shadow-md ml-15"
-        style={{
-            background: '#ffffffff'
-        }}>
+    <div className="flex justify-center mt-8 mx-auto max-w-7xl mb-8"> 
+        {/* Set a fixed 'w-72' to allow natural wrapping. */}
+        <div className="flex flex-col items-start p-6 rounded-xl w-72 shadow-md"
+            style={{
+                background: '#ffffffff'
+            }}>
               <span className="!text-[10px] font-medium text-[#8C42A7] mb-2">Week 9-10</span>
         <span className="!text-[16px] font-bold text-[#09407F]">Real Projects</span>
         <span className="!text-[10px] md:text-sm font-medium text-grey-200 opacity-80 mt-1">E-commerce Database, Analytics Projects, Portfolio</span>
     </div>
+  </div>
 
 
  {isModalOpen && (
@@ -281,13 +304,13 @@ function BookingForm({ onClose }) {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  // Set default course to the Bootcamp
-  const [course, setCourse] = useState('Complete Data Analytics Bootcamp'); 
+  // MODIFIED: Set default course to SQL Developer Bootcamp
+  const [course, setCourse] = useState('SQL Developer Bootcamp'); 
   const [message, setMessage] = useState('');
 
   // States for loading and submission status
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState(null); // null, 'success', or 'error'
+  const [isSubmitting, setIsSubmitting] = new useState(false);
+  const [submitStatus, setSubmitStatus] = new useState(null); // null, 'success', or 'error'
 
   // --- Form Submission Handler ---
   const handleSubmit = async (e) => {
@@ -330,7 +353,7 @@ function BookingForm({ onClose }) {
       setFullName('');
       setEmail('');
       setPhone('');
-      setCourse('Complete Data Analytics Bootcamp'); // Reset course to default
+      setCourse('SQL Developer Bootcamp'); // Reset course to default
       setMessage('');
 
       // Close modal after 2 seconds
@@ -510,8 +533,9 @@ function BookingForm({ onClose }) {
 /**
  * A component for the tag-like items in "Tools You'll Master".
  */
-const ToolTag = ({ name }) => (
-  <span className="bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full text-sm font-medium">
+const ToolTag = ({ name, className = '' }) => (
+  // MODIFIED: Accepts className prop for flexibility
+  <span className={`bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full text-sm font-medium ${className}`}>
     {name}
   </span>
 );

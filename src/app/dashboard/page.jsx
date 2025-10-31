@@ -9,7 +9,7 @@ import Leaderboard from "@/app/dashboard/components/Leaderboard";
 import Kpicard from "@/app/dashboard/components/Kpicard"; 
 import Overall_header from '@/components/Header/Overall_header';
 
-
+import MonthlyStreakTracker from "@/app/dashboard/components/MonthlyStreakTracker";
 const ClientScoreAnalytics = dynamic(
   () => import("@/app/dashboard/components/ScoreAnalytics"),
   { 
@@ -192,20 +192,25 @@ export default function DashboardPage() {
       <div className="mt-4">
         <Overall_header />
       </div>
+      <div className="mt-4 mb-1" > 
+      <MonthlyStreakTracker />
+     </div>
+      <main className="p-4 sm:p-6 lg:p-8">
 
-     <main className="p-4 sm:p-6 lg:p-8">
-
+  {/* ADJUSTED CLASSES HERE: Removed inline style and min/max width on announcement for better stacking on small screens */}
   <div
-    className="flex flex-col md:flex-row mb-6"
-    style={{ marginTop: '1.60rem' }} 
+    className="flex flex-col md:flex-row mb-6 mt-4 gap-6" 
   >
    
-    <div className="flex-grow">
+    {/* Leaderboard takes all available space on all screens, but allows the announcement to stack */}
+    <div className="flex-grow w-full"> 
       <Leaderboard />
     </div>
     
     
-    <div className="lg:block mt-1   md:min-w-[250px] md:max-w-[300px]">
+    {/* Announcement is full width on small screens, and only appears on medium+ screens */}
+    {/* Added 'w-full' for small screens and 'md:w-auto' to let it shrink to content/min-w on larger screens */}
+    <div className="w-full md:w-auto md:min-w-[250px] md:max-w-[300px]"> 
       <Announcement />
     </div>
   </div>

@@ -32,6 +32,7 @@ export default function App() {
      
 
         {/* --- Bootcamp Card --- */}
+        {/* This card is already responsive with lg:flex-row */}
         <div className="bg-white shadow-xl rounded-2xl overflow-hidden flex flex-col lg:flex-row">
 
           {/* --- Left Content Column --- */}
@@ -40,7 +41,7 @@ export default function App() {
         
   {/* Tabs */}
 {/* Tabs & Rating - single small line */}
-<div className="flex items-center justify-between gap-3 mb-3 text-sm flex-nowrap">
+<div className="flex items-center justify-between gap-3 mb-3 text-sm flex-wrap sm:flex-nowrap">
   {/* Tabs (left) */}
   <div className="flex items-center gap-2">
     <button
@@ -115,13 +116,13 @@ Become a Power BI expert with intensive hands-on training. Master advanced DAX, 
               Tools You'll Master
             </p >
            <div className="flex flex-wrap gap-1.5">
-  <ToolTag name="Power BI Desktop" className="!text-[7px] px-2 py-0.5" />
-  <ToolTag name="Power BI Service" className="text-[10px] px-2 py-0.5" />
-  <ToolTag name="DAX Studio" className="text-[10px] px-2 py-0.5" />
-  <ToolTag name="Power Query" className="text-[10px] px-2 py-0.5" />
-  <ToolTag name="Excel" className="text-[10px] px-2 py-0.5" />
-
-</div>
+              {/* ToolTag helper component is now fixed to accept className */}
+              <ToolTag name="Power BI Desktop" className="!text-[10px] px-2 py-0.5" />
+              <ToolTag name="Power BI Service" className="text-[10px] px-2 py-0.5" />
+              <ToolTag name="DAX Studio" className="text-[10px] px-2 py-0.5" />
+              <ToolTag name="Power Query" className="text-[10px] px-2 py-0.5" />
+              <ToolTag name="Excel" className="text-[10px] px-2 py-0.5" />
+            </div>
 
           </div>
 
@@ -156,7 +157,7 @@ Become a Power BI expert with intensive hands-on training. Master advanced DAX, 
                 </button>
               </div>
 
-              <div className="flex justify-between text-sm mb-6">
+              <div className="flex flex-wrap justify-center sm:justify-between text-sm mb-6 gap-2">
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 size={18} className="text-white flex-shrink-0" />
                   <span className="text-white"        style={{ textShadow: '2px 2px 4px rgba(0, 0, 0, 0.5)' }}>EMI available</span>
@@ -188,10 +189,12 @@ Become a Power BI expert with intensive hands-on training. Master advanced DAX, 
             </h2>
            
         </div>
-<div className="mt-10 flex flex-wrap justify-center gap-6 md:gap-27 lg:gap-27 max-w-7xl mx-auto">
+{/* MODIFIED: Changed gap to be responsive and match previous example */}
+<div className="mt-10 flex flex-wrap justify-center gap-6 sm:gap-8 lg:gap-12 max-w-7xl mx-auto">
 
     {/* Card 1 */}
-    <div className="flex flex-col items-start p-6 rounded-xl w-56 sm:w-70 shadow-md"
+    {/* MODIFIED: Changed width to fixed w-72 for natural wrapping */}
+    <div className="flex flex-col items-start p-6 rounded-xl w-72 shadow-md"
         style={{
             background: '#ffffffff'
         }}>
@@ -201,7 +204,8 @@ Become a Power BI expert with intensive hands-on training. Master advanced DAX, 
     </div>
 
     {/* Card 2 */}
-    <div className="flex flex-col items-start p-6 rounded-xl w-56 sm:w-60 shadow-md"
+    {/* MODIFIED: Changed width to fixed w-72 for natural wrapping */}
+    <div className="flex flex-col items-start p-6 rounded-xl w-72 shadow-md"
         style={{
             background: '#ffffffff'
         }}>
@@ -211,7 +215,8 @@ Become a Power BI expert with intensive hands-on training. Master advanced DAX, 
     </div>
 
     {/* Card 3 */}
-    <div className="flex flex-col items-start p-4 rounded-xl w-56 sm:w-60 shadow-md"
+    {/* MODIFIED: Changed width to fixed w-72 for natural wrapping */}
+    <div className="flex flex-col items-start p-6 rounded-xl w-72 shadow-md"
         style={{
             background: '#ffffffff'
         }}>
@@ -223,10 +228,12 @@ Become a Power BI expert with intensive hands-on training. Master advanced DAX, 
 
 </div>
 
- <div className="mt-10 flex flex-wrap justify-center gap-6 md:gap-27 lg:gap-27 max-w-7xl mx-auto">
+{/* MODIFIED: Changed gap and margin-top to match previous example */}
+ <div className="mt-8 flex flex-wrap justify-center gap-6 sm:gap-8 lg:gap-12 max-w-7xl mx-auto">
 
-    {/* Stat Item 1: 5000+ Careers Transformed */}
- <div className="flex flex-col items-start p-6 rounded-xl w-56 sm:w-70 shadow-md"
+    {/* Stat Item 1 */}
+    {/* MODIFIED: Changed width to fixed w-72 for natural wrapping */}
+ <div className="flex flex-col items-start p-6 rounded-xl w-72 shadow-md"
         style={{
             background: '#ffffffff'
         }}>
@@ -235,8 +242,9 @@ Become a Power BI expert with intensive hands-on training. Master advanced DAX, 
         <span className="!text-[10px] md:text-sm font-medium text-grey-200 opacity-80 mt-1">Relationships, Star Schema, Performance Optimization</span>
     </div>
 
-    {/* Stat Item 2: 95% Success Rate */}
-    <div className="flex flex-col items-start p-6 rounded-xl w-56 sm:w-60 shadow-md"
+    {/* Stat Item 2 */}
+    {/* MODIFIED: Changed width to fixed w-72 for natural wrapping */}
+    <div className="flex flex-col items-start p-6 rounded-xl w-72 shadow-md"
         style={{
             background: '#ffffffff'
         }}>
@@ -245,8 +253,9 @@ Become a Power BI expert with intensive hands-on training. Master advanced DAX, 
         <span className="!text-[10px] md:text-sm font-medium text-grey-200 opacity-80 mt-1">Row Level Security, Custom Visuals, Power BI Service</span>
     </div>
 
-    {/* Stat Item 3: 50+ Expert Counsellors */}
-     <div className="flex flex-col items-start p-6 rounded-xl w-56 sm:w-60 shadow-md"
+    {/* Stat Item 3 */}
+    {/* MODIFIED: Changed width to fixed w-72 for natural wrapping */}
+     <div className="flex flex-col items-start p-6 rounded-xl w-72 shadow-md"
         style={{
             background: '#ffffffff'
         }}>
@@ -272,8 +281,9 @@ function BookingForm({ onClose }) {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  // Set default course to the Bootcamp
-  const [course, setCourse] = useState('Complete Data Analytics Bootcamp'); 
+  
+  // MODIFIED: Set default course to this page's bootcamp
+  const [course, setCourse] = useState('Power BI Specialist Bootcamp'); 
   const [message, setMessage] = useState('');
 
   // States for loading and submission status
@@ -321,7 +331,8 @@ function BookingForm({ onClose }) {
       setFullName('');
       setEmail('');
       setPhone('');
-      setCourse('Complete Data Analytics Bootcamp'); // Reset course to default
+      // MODIFIED: Reset course to this page's bootcamp
+      setCourse('Power BI Specialist Bootcamp'); 
       setMessage('');
 
       // Close modal after 2 seconds
@@ -366,6 +377,7 @@ function BookingForm({ onClose }) {
             </button>
 
             {/* --- Form Title --- */}
+            {/* MODIFIED: Title matches this page's bootcamp */}
             <h3 className="text-xl font-bold text-center text-[#09407F] mb-1">
               Enroll: Power BI Specialist Bootcamp
             </h3>
@@ -500,8 +512,9 @@ function BookingForm({ onClose }) {
 /**
  * A component for the tag-like items in "Tools You'll Master".
  */
-const ToolTag = ({ name }) => (
-  <span className="bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full text-sm font-medium">
+// MODIFIED: This helper now correctly accepts and merges className
+const ToolTag = ({ name, className = '' }) => (
+  <span className={`bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full text-sm font-medium ${className}`}>
     {name}
   </span>
 );

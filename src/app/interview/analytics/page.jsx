@@ -157,19 +157,22 @@ function AnalyticsPageContent() {
       <Header />
 
       <div className="flex flex-col">
-        <div className="p-8 grid grid-cols-12 gap-8">
-          {/* 🎯 Left Section */}
-          <div className="col-span-8 space-y-8">
-            {/* Score Card */}
-            <div className="bg-[#103E50] text-white p-6 rounded-[12px] shadow-md w-[800px] h-[203px] flex flex-col justify-center">
-              <p className="text-xl font-bold !mt-8">
+        {/* Main Content Grid: Stacks on mobile/mid, switches to 8/4 grid on large screens */}
+        <div className="p-4 sm:p-8 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+          
+          {/* 🎯 Left Section (Score Card, Radar, Summary) - Full width on mobile/mid, 8 cols on large */}
+          <div className="lg:col-span-8 w-full space-y-6 lg:space-y-8">
+            
+            {/* Score Card - Now uses w-full and responsive height */}
+            <div className="bg-[#103E50] text-white p-6 rounded-[12px] shadow-md w-full min-h-[180px] flex flex-col justify-center">
+              <p className="text-xl font-bold !mt-4">
                 Your Final AI Interview Score
               </p>
-              <p className="text-2xl font-bold mt-2">
+              <p className="text-3xl font-bold mt-2">
                 {score?.toFixed(2)} /100
               </p>
               <p
-                className={`mt-2 font-semibold ${
+                className={`mt-2 text-lg font-semibold ${
                   score && score >= 70 ? "text-green-400" : "text-red-400"
                 }`}
               >
@@ -181,9 +184,11 @@ function AnalyticsPageContent() {
             </div>
 
            
-            <div className="flex flex-row items-start justify-center !mt-15 gap-10">
+            {/* Radar Chart & Overall Summary Container: Stacks on medium screens, row on large screens */}
+            <div className="flex flex-col md:flex-row items-center md:items-start justify-center gap-6 xl:gap-10">
              
-              <div className="flex flex-col w-[500px]">
+              {/* Radar Chart Block */}
+              <div className="flex flex-col w-full md:w-1/2 xl:w-[500px] max-w-lg">
                 <h3
                   className="font-[Poppins] !text-[#09407F] !font-bold mb-2 ml-1"
                   style={{
@@ -194,13 +199,14 @@ function AnalyticsPageContent() {
                   AI Video Score
                 </h3>
 
-                <div className="bg-white rounded-[12px] shadow-md flex flex-col items-center justify-center w-[480px] h-[370px] p-2">
+                {/* Radar Chart Card */}
+                <div className="bg-white rounded-[12px] shadow-md flex flex-col items-center justify-center w-full min-h-[370px] p-2">
                   {radarData.length > 0 ? (
-                    <ResponsiveContainer width="120%" height="90%">
+                    <ResponsiveContainer width="100%" height={350}>
                       <RadarChart
                         cx="50%"
                         cy="50%"
-                        outerRadius="85%"
+                        outerRadius="80%"
                         data={radarData}
                       >
                         <PolarGrid />
@@ -230,72 +236,73 @@ function AnalyticsPageContent() {
                   )}
                 </div>
 
-                {/* Practice Again */}
-    <div className="flex justify-end mt-5">
+                {/* Practice Again Button */}
+                <div className="flex justify-center md:justify-end mt-5">
                   <button
                     onClick={() => (window.location.href = "/ai-dashboard")}
-                    className="w-[282px] h-[47px] rounded-[12px] bg-gradient-to-r from-[#2DC5DA] to-[#2B84D0] 
-                               text-white font-[Inter] text-center font-semibold text-[20px] shadow hover:opacity-90 transition-all"
-                            style={{ borderRadius: '8px' }}  >
+                    className="w-full max-w-xs md:max-w-[282px] h-[47px] rounded-[12px] bg-gradient-to-r from-[#2DC5DA] to-[#2B84D0] 
+                               text-white font-[Inter] text-center font-semibold text-[18px] shadow hover:opacity-90 transition-all"
+                    style={{ borderRadius: '8px' }}
+                  >
                     Practice Again
                   </button>
                 </div>
               </div>
+
               {/* Overall Summary */}
-              <div className="flex flex-col items-center">
+              <div className="flex flex-col items-center w-full md:w-1/2 xl:w-auto max-w-md md:max-w-xs pt-4 md:pt-0">
                 <p className="text-[#09407F] font-bold text-[20px] mb-4 font-[Poppins] text-center">
                   Overall Summary
                 </p>
 
-                <div className="flex flex-col items-center space-y-6">
+                {/* Summary Cards: Ensure they don't overflow */}
+                <div className="flex flex-wrap justify-center gap-4">
                   {summaryData.map((item, index) => (
-                   <div
-                    key={index}
-                    className="flex justify-between items-center px-5 w-[190px] h-[54px]  rounded-[14px] shadow-md bg-gradient-to-r from-[#F8F8F8] to-[#BAF2FF]"
-                  >
                     <div
-                      className="flex items-center justify-center min-w-[44px] aspect-square rounded-full font-semibold text-[10px] bg-white px-1"
-                      style={{
-                        border: `3px solid ${item.color}`,
-                        lineHeight: "1",
-                      }}
+                      key={index}
+                      className="flex justify-between items-center px-4 py-2 w-full max-w-[190px] rounded-[14px] shadow-md bg-gradient-to-r from-[#F8F8F8] to-[#BAF2FF] sm:w-auto"
                     >
-                      {item.score}
+                      <div
+                        className="flex items-center justify-center min-w-[40px] h-[40px] rounded-full font-semibold text-[10px] bg-white px-1"
+                        style={{
+                          border: `3px solid ${item.color}`,
+                          lineHeight: "1",
+                        }}
+                      >
+                        {item.score}
+                      </div>
+                      <span
+                        className="font-[Poppins] font-semibold ml-3"
+                        style={{
+                          fontSize: "12px",
+                          color: "#09407F",
+                        }}
+                      >
+                        {item.label}
+                      </span>
                     </div>
-                    <span
-                      className="font-[Poppins] font-semibold"
-                      style={{
-                        fontSize: "12px",
-                        color: "#09407F",
-                      }}
-                    >
-                      {item.label}
-                    </span>
-                  </div>
                   ))}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* 🎯 Right Section: Feedback */}
-          <div className="col-span-4 flex flex-col space-y-6 ">
-            <div className="pl-22">
-            <Announcement />
-</div>
-  <p
-                className="font-[Poppins] font-semibold mb-6 text-[#09407F]"
-                style={{
-                  fontSize: "20px",
-                }}
-              >
-                Key Feedback & Next Steps
-              </p>
-            {/* ✅ Professional Feedback Section */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border-2 border-[#1E88E5]/40">
+          {/* 🎯 Right Section: Feedback - Full width on mobile/mid, 4 cols on large */}
+          <div className="lg:col-span-4 w-full flex flex-col space-y-6">
+            <div className="w-full">
+              <Announcement />
+            </div>
             
-
+            <p
+              className="font-[Poppins] font-semibold mb-2 text-[#09407F] text-xl"
+            >
+              Key Feedback & Next Steps
+            </p>
+            
+            {/* Professional Feedback Section */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border-2 border-[#1E88E5]/40 w-full">
               <div className="space-y-6">
+                
                 {/* ✅ Creativity Section */}
                 {radarData.some(
                   (r) => r.subject?.toLowerCase() === "creativity"
@@ -307,7 +314,7 @@ function AnalyticsPageContent() {
                         Creativity
                       </p>
                     </div>
-                    <ul className="list-disc list-inside text-[11px] text-gray-700 pl-6 leading-relaxed">
+                    <ul className="list-disc list-inside text-sm text-gray-700 pl-6 leading-relaxed">
                       <li>
                         Creativity score:{" "}
                         <span className="font-medium">
@@ -330,14 +337,15 @@ function AnalyticsPageContent() {
                       </p>
                     </div>
 
-                    <ul className="list-disc list-inside text-[11px] text-gray-700 pl-6 space-y-2 leading-relaxed">
+                    <ul className="list-disc list-inside text-sm text-gray-700 pl-6 space-y-2 leading-relaxed">
                       {feedbackImprovements.map((point, idx) => (
                         <li key={idx}>{point}</li>
                       ))}
                     </ul>
                   </div>
                 )}
-  <hr className="mt-4 border-t border-gray-300/60" />
+                <hr className="mt-4 border-t border-gray-300/60" />
+                
                 {/* ✅ Strengths */}
                 {feedbackStrengths.length > 0 && (
                   <div>
@@ -348,7 +356,7 @@ function AnalyticsPageContent() {
                       </p>
                     </div>
 
-                    <ul className="list-disc list-inside text-[11px] text-gray-700 pl-6 space-y-2 leading-relaxed">
+                    <ul className="list-disc list-inside text-sm text-gray-700 pl-6 space-y-2 leading-relaxed">
                       {feedbackStrengths.map((point, idx) => (
                         <li key={idx}>{point}</li>
                       ))}

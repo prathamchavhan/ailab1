@@ -5,6 +5,8 @@ import AptitudeScoreDashboard from "@/app/aptitude/components/AptitudeScoreDashb
 import Apptitude_header from '@/components/Header/Apptitude_header';
 import AptitudeLandingPage from "@/app/aptitude/components/AptitudeLandingPage"; 
 import { toast} from 'sonner';
+import TicTacToeLoader from "@/components/TicTacToeLoader"; // <-- ADDED IMPORT
+
 const FALLBACK_QUESTIONS = [
   
   { question: "If a car travels at 60 km/h, how long does it take to cover 180 km?", options: ["2 hours", "3 hours", "4 hours", "5 hours"], answer: "3 hours", category: 'quantitative' },
@@ -386,7 +388,16 @@ export default function AptitudeTestPage() {
     );
   }
   
-  if (testState === "setup") return renderSetup();
-  if (testState === "finished") return renderFinished();
-  return renderActiveTest();
+  // <-- MODIFIED RENDER LOGIC -->
+  return (
+    <>
+      {/* This loader will now appear as an overlay whenever isLoading is true */}
+      {isLoading && <TicTacToeLoader />}
+
+      {/* The rest of your page logic remains the same */}
+      {testState === "setup" && renderSetup()}
+      {testState === "finished" && renderFinished()}
+      {testState === "active" && renderActiveTest()}
+    </>
+  );
 }

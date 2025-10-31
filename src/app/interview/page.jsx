@@ -484,7 +484,6 @@
 
 // ...existing code...
 
-
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
@@ -945,16 +944,18 @@ function InterviewPageContent() {
       </div>
       <div className="min-h-screen bg-[#F5F7FA] text-[#1A1A1A]">
         {/* Header/Progress Bar */}
-        <div className="flex justify-between items-center px-8 mt-1 mb-0">
-          <div className="grid grid-cols-[auto_1fr] gap-x-2 font-semibold text-[16px] text-[#09407F]">
+        <div className="flex justify-between items-center px-3.8 sm:px-8 mt-1 mb-0">
+          {/* Interview Details (Round/Level) */}
+          <div className="grid grid-cols-[auto_1fr] gap-x-2 font-semibold text-[14px] sm:text-[16px] text-[#09407F]">
             <p className="mb-0">Round:</p>
             <p className="mb-0">{round || "1"}</p>
             <p>Level:</p>
             <p>{level || "Easy"}</p>
           </div>
 
+          {/* Progress Circles */}
           {questions.length > 0 && (
-            <div className="flex w-full justify-center gap-1 my-4 px-8">
+            <div className="hidden sm:flex w-full justify-center gap-1 my-4 px-4 sm:px-8 max-w-lg">
               {questions.map((_, idx) => {
                 let bgColor = "#D9D9D9";
                 if (idx < currentIndex) bgColor = "#F7D8FF";
@@ -962,7 +963,7 @@ function InterviewPageContent() {
                 return (
                   <div
                     key={idx}
-                    className="w-[34px] h-[35px] rounded-full flex items-center justify-center font-[Poppins] font-semibold text-[15px] text-[#000000]"
+                    className="w-[30px] h-[30px] sm:w-[34px] sm:h-[35px] rounded-full flex items-center justify-center font-[Poppins] font-semibold text-[12px] sm:text-[15px] text-[#000000]"
                     style={{
                       backgroundColor: bgColor,
                       boxShadow:
@@ -978,51 +979,54 @@ function InterviewPageContent() {
             </div>
           )}
 
+          {/* Exit Button */}
           <button
             onClick={() => setShowExitPopup(true)}
-            className="flex items-center justify-center gap-1 bg-gradient-to-r from-[#2DC5DB] to-[#2B81D0] text-white font-semibold text-[8px] rounded-[12px] w-[162px] h-[44px] shadow"
+            className="flex items-center justify-center gap-1 bg-gradient-to-r from-[#2DC5DB] to-[#2B81D0] text-white font-semibold text-[10px] sm:text-[12px] rounded-[12px] w-[90px] h-[35px] sm:w-[120px] sm:h-[44px] shadow"
             style={{ borderRadius: "8px" }}
           >
             Exit <FiLogOut />
           </button>
         </div>
-
-        <div className="font-[Poppins] px-8 pb-8 grid grid-cols-3 gap-8">
-          {/* LEFT SECTION */}
-          <div className="col-span-2 flex flex-col items-center">
-            <div className="w-full flex justify-between  px-2">
-              <p className="font-semibold items-center text-[18px] text-[#09407F] w-full text-center">
+        
+        {/* --- MODIFICATION START: Responsive Grid/Flex Layout --- */}
+        <div className="font-[Poppins] px-4 sm:px-8 pb-8 flex flex-col lg:grid lg:grid-cols-3 gap-6 lg:gap-8">
+          
+          {/* LEFT SECTION (Main Video and Question) */}
+          <div className="w-full lg:col-span-2 flex flex-col items-center">
+            
+            <div className="w-full flex justify-between px-2">
+              <p className="font-semibold items-start text-[16px] sm:text-[18px] text-[#09407F] w-full text-start">
                 Interviewer Aavi
               </p>
             </div>
-
-            <div className="bg-white rounded-[10px] shadow-md px-4 py-3 text-left text-[#000000] font-medium mb-2 w-[680px]">
+            
+            {/* Question Box - Full width on mobile */}
+            <div className="bg-white rounded-[10px] shadow-md px-4 py-3 text-left text-[#000000] font-medium mb-2 w-full max-w-[720px]">
               {questions[currentIndex]
                 ? `Q${currentIndex + 1}. ${questions[currentIndex].question}`
                 : "Loading..."}
             </div>
 
-            <div className="relative w-[700px] h-[470px] rounded-[12px] overflow-hidden shadow  border-[2px]  mb-3">
-              {/* Recording Indicator */}
+            {/* Video Container - Full width on mobile, adjusted height */}
+            <div className="relative w-full h-[400px] max-w-[700px] lg:h-[470px] rounded-[12px] overflow-hidden shadow border-[2px] mb-3">
+              
+              {/* Recording Indicator & Timer (no change needed here) */}
               {listening && (
-                <div className="absolute top-5 left-5 z-10">
-                  <div className="flex items-center gap-2 text-red-600/90  font-medium px-4 py-2 font-bold ">
-                    <Mic className="animate-pulse" size={18} />
-                    <span>Recording</span>
+                <div className="absolute top-3 left-3 z-10">
+                  <div className="flex items-center gap-2 text-red-600/90 font-medium px-2 py-1 font-bold bg-white/70 rounded-md">
+                    <Mic className="animate-pulse" size={16} />
+                    <span className="text-sm">Recording</span>
                   </div>
                 </div>
               )}
-
-              {/* Timer */}
-              <div className="absolute top-5 right-5 z-10">
-                <p className="bg-red-50 text-red-500 font-semibold flex items-center justify-center w-12 h-12 rounded-full border !border-red-500">
+              <div className="absolute top-3 right-3 z-10">
+                <p className="bg-red-50 text-red-500 font-semibold flex items-center justify-center w-10 h-10 rounded-full border !border-red-500 text-sm">
                   <span className="animate-pulse">{timeLeft}s</span>
                 </p>
               </div>
 
-              {/* --- MODIFIED: Video Elements per new logic --- */}
-
-              {/* Video 2 (RC.mp4) - The default, always-on base video */}
+              {/* Video elements (no change needed here) */}
               <video
                 src="/RC.mp4"
                 autoPlay
@@ -1031,9 +1035,6 @@ function InterviewPageContent() {
                 playsInline
                 className="w-full h-full object-cover"
               />
-
-              {/* Video 1 (Avatar.mp4) - The 5-second intro video */}
-              {/* --- NEW: Added ref --- */}
               <video
                 ref={introVideoRef}
                 src="hd.mp4"
@@ -1041,20 +1042,19 @@ function InterviewPageContent() {
                 loop
                 muted
                 playsInline
-                // --- MODIFIED: Made transition smoother (longer duration + ease) ---
                 className={`absolute inset-0 w-full h-full object-cover 
                   transition-opacity ease-in-out duration-500 ${
                     showIntroVideo ? "opacity-100" : "opacity-0"
                   }`}
               />
 
-              {/* "Start/Submit" Button */}
-              <div className="absolute bottom-5 left-5 z-10">
+              {/* Action Buttons - Adjusted sizing for mobile */}
+              <div className="absolute bottom-3 left-3 z-10">
                 <button
                   onClick={handleToggleListening}
                   disabled={isProcessing}
                   className="flex items-center gap-2 bg-[#7CE5FF] text-[#000000] 
-                    font-semibold text-[15px] w-[150px] h-[45px] rounded-[5px] 
+                    font-semibold text-[14px] w-[130px] h-[40px] rounded-[5px] 
                     justify-center shadow-sm hover:opacity-90 transition-all
                     disabled:opacity-50"
                   style={{
@@ -1072,12 +1072,11 @@ function InterviewPageContent() {
                 </button>
               </div>
 
-              {/* "Next/Finish" Button */}
-              <div className="absolute bottom-5 right-5 z-10">
+              <div className="absolute bottom-3 right-3 z-10">
                 <button
                   onClick={handleNext}
                   disabled={isProcessing}
-                  className="w-[120px] h-[44px] rounded-[12px] bg-gradient-to-r 
+                  className="w-[100px] h-[40px] rounded-[12px] bg-gradient-to-r 
                     from-[#2DC5DB] to-[#2B81D0] text-[#000000] font-semibold shadow
                     disabled:opacity-50"
                   style={{
@@ -1087,7 +1086,7 @@ function InterviewPageContent() {
                   }}
                 >
                   {isProcessing
-                    ? "Processing..."
+                    ? "Proc..."
                     : currentIndex < questions.length - 1
                     ? "Next →"
                     : "Finish"}
@@ -1095,19 +1094,21 @@ function InterviewPageContent() {
               </div>
             </div>
 
-            {/* Answer Transcript Box */}
-            <div className="bg-[#F0FAFF] border border-[#2DC5DB] rounded-[10px] shadow-sm px-2 py-1 text-[#000000] text-[15px] font-normal mb-5 w-[720px] text-left">
-              <p className="font-semibold text-[#09407F] mb-2">Your Answer:</p>
+            {/* Answer Transcript Box - Full width on mobile */}
+            <div className="bg-[#F0FAFF] border border-[#2DC5DB] rounded-[10px] shadow-sm px-2 py-1 text-[#000000] text-[14px] font-normal mb-5 w-full max-w-[720px] text-left">
+              <p className="font-semibold text-[#09407F] mb-1 text-sm">Your Answer:</p>
               <p>{transcript || "Start speaking to record your answer..."}</p>
             </div>
           </div>
 
-          {/* RIGHT SECTION */}
-          <div className="flex flex-col items-center gap-3 pt-5">
-            <p className="font-semibold text-[20px] text-[#09407F]">
+          {/* RIGHT SECTION (Student Video and Radar) */}
+          <div className="w-full lg:w-auto flex flex-col items-center gap-3 pt-0 lg:pt-5">
+            <p className="font-semibold text-[18px] sm:text-[20px] text-[#09407F]">
               Student video
             </p>
-            <div className="rounded-[12px] overflow-hidden shadow bg-black w-[329px] h-[201px]">
+            
+            {/* Student Video Container - Full width on mobile, max width on desktop */}
+            <div className="rounded-[12px] overflow-hidden shadow bg-black w-full max-w-[329px] h-[201px]">
               <video
                 ref={videoRef}
                 autoPlay
@@ -1124,7 +1125,8 @@ function InterviewPageContent() {
               </span>
             </p>
 
-            <div className="bg-white rounded-xl shadow p-4 w-full max-w-[299px]">
+            {/* Radar Chart Card - Full width on mobile */}
+            <div className="bg-white rounded-xl shadow p-4 w-full max-w-[329px]">
               <p className="text-[#09407F] font-semibold text-[14px] ">
                 AI Video Score
               </p>
@@ -1145,26 +1147,27 @@ function InterviewPageContent() {
             </div>
           </div>
         </div>
+        {/* --- MODIFICATION END --- */}
 
-        {/* Exit Popup */}
+        {/* Exit Popup (no functional changes, slightly adjusted text size for mobile) */}
         {showExitPopup && (
           <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50">
-            <div className="bg-white rounded-[20px] shadow-lg w-[450px] p-8 text-center border-2 border-[#2B81D0]">
+            <div className="bg-white rounded-[20px] shadow-lg w-[90%] max-w-[450px] p-6 sm:p-8 text-center border-2 border-[#2B81D0]">
               <div className="flex flex-col items-center">
-                <div className="text-[40px] mb-4">😢</div>
+                <div className="text-[30px] sm:text-[40px] mb-4">😢</div>
                 <h2
-                  className="text-[#000000] font-[Poppins] font-semibold text-[24px] mb-2"
+                  className="text-[#000000] font-[Poppins] font-semibold text-[20px] sm:text-[24px] mb-2"
                   style={{ borderRadius: "8px" }}
                 >
                   Exiting now
                 </h2>
-                <p className="text-[#000000] font-[Poppins] text-[16px] mb-6">
+                <p className="text-[#000000] font-[Poppins] text-[14px] sm:text-[16px] mb-6">
                   may affect your interview score
                 </p>
                 <div className="flex justify-center gap-4">
                   <button
                     onClick={() => setShowExitPopup(false)}
-                    className="w-[130px] h-[47px] rounded-[12px] font-[Poppins] font-semibold text-[16px] 
+                    className="w-[110px] h-[40px] sm:w-[130px] sm:h-[47px] rounded-[12px] font-[Poppins] font-semibold text-[14px] sm:text-[16px] 
                       text-white bg-gradient-to-r from-[#2DC5DA] to-[#2B84D0] shadow hover:opacity-90 transition-all"
                     style={{
                       borderRadius: "8px",
@@ -1177,7 +1180,7 @@ function InterviewPageContent() {
                   <button
                     onClick={handleConfirmExit}
                     disabled={isExiting}
-                    className="w-[130px] h-[47px] rounded-[12px] font-[Poppins] font-semibold text-[16px] 
+                    className="w-[110px] h-[40px] sm:w-[130px] sm:h-[47px] rounded-[12px] font-[Poppins] font-semibold text-[14px] sm:text-[16px] 
                       text-[#000000] border border-[#2B84D0] hover:bg-[#E9F6FF] transition-all"
                     style={{ borderRadius: "8px" }}
                   >
