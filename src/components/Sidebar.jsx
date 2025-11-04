@@ -101,7 +101,7 @@ const Sidebar = () => {
         <div className={styles.logoContainer}>
           <Link href="/">
             <Image
-              src="/images/palloti.png"
+              src="/ailablogo.png"
               alt="AI Lab Logo"
               width={180}
               height={40}

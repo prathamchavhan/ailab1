@@ -54,8 +54,9 @@ export default function InterviewLeaderboard() {
           className={`w-1/2 py-2 text-sm font-semibold rounded-md transition-colors ${
             activeTab === 'Inter' ? 'bg-[#0CA396] text-white shadow' : 'text-[#09407F]'
           }`}  style={{ borderRadius: '8px' }}
-        >
-          Inter-College
+        > 
+        Intra-College  
+       
         </button>
         <button
           onClick={() => setActiveTab('Intra')}
@@ -64,7 +65,7 @@ export default function InterviewLeaderboard() {
           }`}
           style={{ borderRadius: '8px' }}
         >
-          Intra-College
+          Inter-College
         </button>
       </div>
 

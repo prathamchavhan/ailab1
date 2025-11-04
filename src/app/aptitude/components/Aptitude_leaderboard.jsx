@@ -188,7 +188,7 @@ export default function Leaderboard() {
             activeTab === 'Inter' ? 'bg-[#0CA396] text-white shadow' : 'text-[#09407F]'
           }`}  style={{ borderRadius: '8px' }}
         >
-          Inter-College
+           Intra-College
         </button>
         <button
           onClick={() => setActiveTab('Intra')}
@@ -197,7 +197,7 @@ export default function Leaderboard() {
           }`}
           style={{ borderRadius: '8px' }}
         >
-          Intra-College
+       Inter-College  
         </button>
       </div>
 

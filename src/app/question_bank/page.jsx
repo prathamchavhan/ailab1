@@ -400,7 +400,7 @@ export default function QuestionBankPage() {
                       type="button"
                       onClick={() => setIsRoundOpen(!isRoundOpen)}
                       disabled={isLoading}
-                      className="flex items-center justify-between w-full h-10 px-3 py-2 bg-white rounded-md text-sm text-[#09407F]"
+                      className="flex items-center justify-between w-full h-10 px-2 py-2 bg-white rounded-md text-sm text-[#09407F]"
                     >
                       <span>
                         {/* Show selected round, or "Rounds" if default */}
