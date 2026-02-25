@@ -4,7 +4,7 @@ I'll help you understand and improve the ailab1 repository. Let me first load th
 
 **Repository:** [prathamchavhan/ailab1](https://github.com/prathamchavhan/ailab1)  
 **Tech Stack:** Next.js (JavaScript), Supabase, Google Generative AI, OpenAI  
-**Live Demo:** https://ailab1.vercel.app
+**Live Demo:**[ https://ailab1.vercel.app](https://ailab.hyreso.com/)
 
 ### ✨ Core Features
 
@@ -58,14 +58,3 @@ Database
 - **Database:** Supabase + Auth Helpers
 - **Styling:** Tailwind CSS, Bootstrap
 - **Charts:** Recharts for radar charts & analytics
-
----
-
-**What would you like help with?** I can:
-- Explore specific features or components
-- Help with improving documentation
-- Debug issues
-- Add new features
-- Improve the scoring model
-- Enhance the analytics system
-- Or something else?
