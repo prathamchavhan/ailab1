@@ -58,6 +58,11 @@ Database
 - **Database:** Supabase + Auth Helpers
 - **Styling:** Tailwind CSS, Bootstrap
 - **Charts:** Recharts for radar charts & analytics
-  📸 Screenshots
+
+
+ ###📸 Screenshots
   <img width="6912" height="4488" alt="image" src="https://github.com/user-attachments/assets/25b902e4-92bf-4362-92f0-e59b7665ed72" />
+  <img width="6912" height="4468" alt="image" src="https://github.com/user-attachments/assets/9e62f4cb-dfcb-48d2-bd6e-98294132a526" />
+  <img width="6912" height="4488" alt="image" src="https://github.com/user-attachments/assets/0a4b8f9d-85e8-4c0a-95a5-b2f2b409c503" />
+
 
